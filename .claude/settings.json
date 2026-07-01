@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/c/Users/Yassine/Documents/buts2/www/meriz/**)",
+      "Bash(mv _scaffold/* _scaffold/.gitignore .)",
+      "Bash(rmdir _scaffold)",
+      "Read(//c/c/Users/Yassine/Documents/buts2/www/**)",
+      "Bash(mv _scaffold/.* .)",
+      "Bash(rm src/App.css public/icons.svg)",
+      "Bash(rm -r src/assets)",
+      "Bash(mkdir -p src/model src/canvas src/components src/lib)",
+      "Bash(touch src/model/.gitkeep src/canvas/.gitkeep src/components/.gitkeep src/lib/.gitkeep)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:5173/)",
+      "Bash(curl -s -o /dev/null -w \"src OK %{http_code}\\\\n\" http://localhost:5173/src/App.tsx)",
+      "Bash(taskkill //F //IM node.exe //FI \"WINDOWTITLE eq *\")",
+      "Bash(awk '{print $1}')",
+      "Bash(xargs -r kill)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --max-time 3 http://localhost:5173/)"
+    ]
+  }
+}
