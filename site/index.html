@@ -16,10 +16,10 @@
 <body>
   <a href="#contenu" class="skip-link">Aller au contenu</a>
 
-  <header class="hero">
-    <div class="container">
-      <div class="brand">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <nav class="topnav" aria-label="Navigation principale">
+    <div class="container topnav-row">
+      <a class="brand" href="#haut" aria-label="Meriz, retour en haut de page">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M12 3c-2 2.6-4.5 4.2-5.4 9M12 3c1 3.6 3 6 4.6 9.6" stroke="#4338ca" stroke-width="1.6" stroke-linecap="round"/>
           <path d="M12 3c2.2-1.4 4.6-1.2 6 .2-1.8 1.2-4.2 1.3-6-.2Z" fill="#4338ca" fill-opacity="0.35" stroke="#4338ca" stroke-width="1.2" stroke-linejoin="round"/>
           <circle cx="6.2" cy="15.6" r="3.6" fill="#4338ca"/>
@@ -28,9 +28,19 @@
           <circle cx="16.2" cy="15.1" r="1" fill="#c7d2fe"/>
         </svg>
         <span class="brand-name">Meriz</span>
+      </a>
+      <div class="topnav-links">
+        <a href="#points-forts">Fonctionnalités</a>
+        <a href="#telecharger">Télécharger</a>
+        <a href="https://github.com/Yassine-Daif/meriz" rel="noreferrer noopener">GitHub</a>
+        <a class="button button-primary button-small" href="app/">Ouvrir l'app</a>
       </div>
+    </div>
+  </nav>
 
-      <h1>Modéliser en Merise, simplement, partout.</h1>
+  <header class="hero" id="haut">
+    <div class="container">
+      <h1>Modéliser en Merise,<br />simplement, partout.</h1>
       <p class="lede">
         Meriz est l'alternative moderne à AnalyseSI. Dessinez votre MCD, l'outil vérifie
         votre modèle puis génère le MLD, le MPD et le script SQL. Dans le navigateur ou
@@ -42,87 +52,110 @@
         <a class="button" href="#telecharger">Télécharger le logiciel</a>
       </div>
 
-      <figure class="preview" aria-label="Aperçu d'un MCD dans Meriz : l'entité Client reliée à l'entité Commande par l'association passer">
-        <svg viewBox="0 0 640 210" role="img" aria-hidden="true">
-          <!-- Entité Client -->
-          <g>
-            <rect x="20" y="55" width="170" height="100" rx="10" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5"/>
-            <rect x="20" y="55" width="170" height="32" rx="10" fill="#f7f7f5" stroke="#d4d4d8" stroke-width="1.5"/>
-            <rect x="22" y="76" width="166" height="12" fill="#f7f7f5"/>
-            <text x="105" y="77" text-anchor="middle" class="svg-title">Client</text>
-            <text x="36" y="112" class="svg-attr svg-key">numeroClient</text>
-            <text x="132" y="112" class="svg-type">entier</text>
-            <rect x="36" y="118" width="86" height="2" fill="#4338ca"/>
-            <text x="36" y="140" class="svg-attr">nom</text>
-            <text x="132" y="140" class="svg-type">texte</text>
-          </g>
-          <!-- Entité Commande -->
-          <g>
-            <rect x="450" y="55" width="170" height="100" rx="10" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5"/>
-            <rect x="450" y="55" width="170" height="32" rx="10" fill="#f7f7f5" stroke="#d4d4d8" stroke-width="1.5"/>
-            <rect x="452" y="76" width="166" height="12" fill="#f7f7f5"/>
-            <text x="535" y="77" text-anchor="middle" class="svg-title">Commande</text>
-            <text x="466" y="112" class="svg-attr svg-key">numeroCommande</text>
-            <rect x="466" y="118" width="112" height="2" fill="#4338ca"/>
-            <text x="466" y="140" class="svg-attr">dateCommande</text>
-            <text x="586" y="140" class="svg-type">date</text>
-          </g>
-          <!-- Pattes -->
-          <line x1="190" y1="105" x2="265" y2="105" stroke="#a1a1aa" stroke-width="1.5"/>
-          <line x1="375" y1="105" x2="450" y2="105" stroke="#a1a1aa" stroke-width="1.5"/>
-          <!-- Association passer -->
-          <ellipse cx="320" cy="105" rx="56" ry="28" fill="#eef2ff" stroke="#a5b4fc" stroke-width="1.5"/>
-          <text x="320" y="110" text-anchor="middle" class="svg-title">passer</text>
-          <!-- Cardinalités -->
-          <rect x="200" y="76" width="34" height="20" rx="4" fill="#ffffff" stroke="#d4d4d8"/>
-          <text x="217" y="90" text-anchor="middle" class="svg-card">0,n</text>
-          <rect x="406" y="76" width="34" height="20" rx="4" fill="#ffffff" stroke="#d4d4d8"/>
-          <text x="423" y="90" text-anchor="middle" class="svg-card">1,1</text>
-        </svg>
-        <figcaption>Le canvas de Meriz : entités, association, cardinalités, identifiants soulignés.</figcaption>
-      </figure>
+      <ol class="steps" aria-label="La démarche en trois étapes">
+        <li><span class="step-n" aria-hidden="true">1</span> Dessine ton MCD</li>
+        <li><span class="step-n" aria-hidden="true">2</span> Vérifie le modèle</li>
+        <li><span class="step-n" aria-hidden="true">3</span> Génère MLD, MPD et SQL</li>
+      </ol>
+
+      <div class="showcase">
+        <figure class="preview" aria-label="Aperçu d'un MCD dans Meriz : l'entité Client reliée à l'entité Commande par l'association passer">
+          <svg viewBox="0 0 640 210" role="img" aria-hidden="true">
+            <g class="anim-entity anim-left">
+              <rect x="20" y="55" width="170" height="100" rx="10" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5"/>
+              <rect x="20" y="55" width="170" height="32" rx="10" fill="#f7f7f5" stroke="#d4d4d8" stroke-width="1.5"/>
+              <rect x="22" y="76" width="166" height="12" fill="#f7f7f5"/>
+              <text x="105" y="77" text-anchor="middle" class="svg-title">Client</text>
+              <text x="36" y="112" class="svg-attr svg-key">numeroClient</text>
+              <text x="132" y="112" class="svg-type">entier</text>
+              <rect x="36" y="118" width="86" height="2" fill="#4338ca"/>
+              <text x="36" y="140" class="svg-attr">nom</text>
+              <text x="132" y="140" class="svg-type">texte</text>
+            </g>
+            <g class="anim-entity anim-right">
+              <rect x="450" y="55" width="170" height="100" rx="10" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5"/>
+              <rect x="450" y="55" width="170" height="32" rx="10" fill="#f7f7f5" stroke="#d4d4d8" stroke-width="1.5"/>
+              <rect x="452" y="76" width="166" height="12" fill="#f7f7f5"/>
+              <text x="535" y="77" text-anchor="middle" class="svg-title">Commande</text>
+              <text x="466" y="112" class="svg-attr svg-key">numeroCommande</text>
+              <rect x="466" y="118" width="112" height="2" fill="#4338ca"/>
+              <text x="466" y="140" class="svg-attr">dateCommande</text>
+              <text x="586" y="140" class="svg-type">date</text>
+            </g>
+            <line class="anim-leg" x1="190" y1="105" x2="265" y2="105" stroke="#a1a1aa" stroke-width="1.5"/>
+            <line class="anim-leg anim-leg2" x1="450" y1="105" x2="375" y2="105" stroke="#a1a1aa" stroke-width="1.5"/>
+            <g class="anim-assoc">
+              <ellipse cx="320" cy="105" rx="56" ry="28" fill="#eef2ff" stroke="#a5b4fc" stroke-width="1.5"/>
+              <text x="320" y="110" text-anchor="middle" class="svg-title">passer</text>
+            </g>
+            <g class="anim-pill">
+              <rect x="200" y="76" width="34" height="20" rx="4" fill="#ffffff" stroke="#d4d4d8"/>
+              <text x="217" y="90" text-anchor="middle" class="svg-card">0,n</text>
+            </g>
+            <g class="anim-pill anim-pill2">
+              <rect x="406" y="76" width="34" height="20" rx="4" fill="#ffffff" stroke="#d4d4d8"/>
+              <text x="423" y="90" text-anchor="middle" class="svg-card">1,1</text>
+            </g>
+          </svg>
+          <figcaption>Le canvas de Meriz : entités, association, cardinalités.</figcaption>
+        </figure>
+
+        <figure class="sqlcard" aria-label="Extrait du script SQL généré par Meriz">
+          <figcaption>… et le SQL généré :</figcaption>
+          <pre><code><span class="kw">CREATE TABLE</span> Commande (
+  numeroCommande INT <span class="kw">NOT NULL</span> <span class="kw">AUTO_INCREMENT</span>,
+  dateCommande DATE <span class="kw">NOT NULL</span>,
+  numeroClient INT <span class="kw">NOT NULL</span>,
+  <span class="kw">PRIMARY KEY</span> (numeroCommande)
+);
+<span class="kw">ALTER TABLE</span> Commande
+  <span class="kw">ADD CONSTRAINT</span> fk_commande_client
+  <span class="kw">FOREIGN KEY</span> (numeroClient)
+  <span class="kw">REFERENCES</span> Client (numeroClient);</code></pre>
+        </figure>
+      </div>
     </div>
   </header>
 
   <main id="contenu">
-    <section class="container" aria-labelledby="points-forts">
-      <h2 id="points-forts">Ce que Meriz fait pour vous</h2>
+    <section class="container reveal" aria-labelledby="points-forts-titre" id="points-forts">
+      <h2 id="points-forts-titre">Ce que Meriz fait pour vous</h2>
       <ul class="cards">
-        <li>
+        <li class="reveal">
           <h3>Éditeur visuel de MCD</h3>
           <p>Entités, associations, cardinalités : tout se dessine à la souris ou au clavier, avec un dictionnaire central des propriétés.</p>
         </li>
-        <li>
+        <li class="reveal">
           <h3>Vérification en direct</h3>
           <p>Erreurs bloquantes et avertissements s'affichent pendant que vous travaillez, chacun cliquable vers l'élément concerné.</p>
         </li>
-        <li>
+        <li class="reveal">
           <h3>Du MCD au SQL</h3>
           <p>Le MLD, le MPD et le script <span class="mono">CREATE TABLE</span> sont générés selon les règles Merise, en MySQL ou PostgreSQL.</p>
         </li>
-        <li>
+        <li class="reveal">
           <h3>Pensé pour apprendre</h3>
           <p>Une page Apprendre explique la méthode, les cardinalités et les règles de passage, avec le même exemple du début à la fin.</p>
         </li>
       </ul>
     </section>
 
-    <section class="container download" id="telecharger" aria-labelledby="telecharger-titre">
+    <section class="container download reveal" id="telecharger" aria-labelledby="telecharger-titre">
       <h2 id="telecharger-titre">Télécharger le logiciel</h2>
       <p>La même application que la version web, installée sur votre machine, qui marche hors ligne.</p>
       <div class="actions">
-        <a class="button button-primary" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noreferrer">Windows <span class="via">(via GitHub)</span></a>
-        <a class="button button-primary" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noreferrer">macOS <span class="via">(via GitHub)</span></a>
-        <a class="button button-primary" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noreferrer">Linux <span class="via">(via GitHub)</span></a>
+        <a class="button button-primary" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noreferrer noopener">Windows <span class="via">(.exe)</span></a>
+        <a class="button button-primary" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noreferrer noopener">macOS <span class="via">(.dmg)</span></a>
+        <a class="button button-primary" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noreferrer noopener">Linux <span class="via">(.deb, .AppImage)</span></a>
       </div>
-      <p class="note">Ou utilisez la <a href="app/">version web</a>, sans rien installer.</p>
+      <p class="note">Téléchargements servis par GitHub Releases. Ou utilisez la <a href="app/">version web</a>, sans rien installer.</p>
     </section>
 
-    <section class="container opensource" aria-labelledby="opensource-titre">
+    <section class="container opensource reveal" aria-labelledby="opensource-titre">
       <h2 id="opensource-titre">Libre et open source</h2>
       <p>
         Meriz est distribué sous licence MIT. Le code est ouvert, les contributions bienvenues :
-        <a href="https://github.com/Yassine-Daif/meriz" rel="noreferrer">github.com/Yassine-Daif/meriz</a>.
+        <a href="https://github.com/Yassine-Daif/meriz" rel="noreferrer noopener">github.com/Yassine-Daif/meriz</a>.
       </p>
     </section>
   </main>
@@ -131,8 +164,29 @@
     <div class="container footer-row">
       <span>Meriz, licence MIT</span>
       <span>Développé par Yassine Daif</span>
-      <a href="https://github.com/Yassine-Daif/meriz" rel="noreferrer">Code source</a>
+      <a href="https://github.com/Yassine-Daif/meriz" rel="noreferrer noopener">Code source</a>
     </div>
   </footer>
+
+  <script>
+    // Révélations douces au défilement. Sans JavaScript, tout reste
+    // visible ; avec mouvement réduit, aucune animation.
+    document.documentElement.classList.add('js')
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    var targets = document.querySelectorAll('.reveal')
+    if (reduced || !('IntersectionObserver' in window)) {
+      targets.forEach(function (el) { el.classList.add('visible') })
+    } else {
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible')
+            observer.unobserve(entry.target)
+          }
+        })
+      }, { threshold: 0.15 })
+      targets.forEach(function (el) { observer.observe(el) })
+    }
+  </script>
 </body>
 </html>
