@@ -137,6 +137,7 @@ h1 {
 .button:hover {
   background: var(--shell);
   border-color: #d4d4d8;
+  color: var(--ink);
 }
 .button-primary {
   background: var(--accent);
@@ -147,6 +148,8 @@ h1 {
   background: var(--accent-dark);
   border-color: var(--accent-dark);
   box-shadow: 0 4px 14px rgba(67, 56, 202, 0.25);
+  /* Toujours blanc sur indigo : jamais indigo sur indigo. */
+  color: #fff;
 }
 .button-small { padding: 7px 14px; font-size: 0.88rem; }
 .via {
@@ -298,8 +301,18 @@ h2 {
 
 .opensource p { color: var(--muted); max-width: 640px; }
 
-a { color: var(--accent); }
-a:hover { color: var(--accent-dark); }
+/* Liens de contenu seulement : jamais les boutons, qui gèrent
+   leurs propres couleurs (fond plein, texte blanc). */
+main a:not(.button),
+footer a,
+.note a {
+  color: var(--accent);
+}
+main a:not(.button):hover,
+footer a:hover,
+.note a:hover {
+  color: var(--accent-dark);
+}
 
 /* Révélation au défilement (activée seulement si le JS tourne et
    si le mouvement n'est pas réduit). */
