@@ -40,8 +40,13 @@ jobs:
           chmod 600 ~/.ssh/id_deploy
           ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Envoyer dist sur le VPS
+      - name: Envoyer la vitrine (racine) et l'application (app/)
+        # Deux rsync ciblés : la vitrine à la racine du site, l'app
+        # sous app/. --delete par dossier, l'un n'efface pas l'autre.
         run: |
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/id_deploy" \
-            dist/ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/"
+            dist/ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/app/"
+          rsync -avz \
+            -e "ssh -i ~/.ssh/id_deploy" \
+            site/ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/"
