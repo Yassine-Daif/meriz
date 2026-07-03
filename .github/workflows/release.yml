@@ -64,6 +64,8 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: 'Meriz ${{ github.ref_name }}'
           releaseBody: 'Installateurs Windows, macOS et Linux de Meriz.'
-          releaseDraft: true
+          # Publication directe : les boutons du site pointent sur
+          # releases/latest, qui ignore les brouillons.
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
