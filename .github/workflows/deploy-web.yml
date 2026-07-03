@@ -25,7 +25,10 @@ jobs:
           cache: npm
 
       - name: Installer les dépendances
-        run: npm ci
+        # Le lock est écrit par npm 11 : on aligne le runner dessus.
+        run: |
+          npm install -g npm@11
+          npm ci
 
       - name: Construire
         run: npm run build
