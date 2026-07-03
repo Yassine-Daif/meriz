@@ -54,6 +54,16 @@ Utilise toujours ces termes, en français, dans le code et les commentaires.
 - Cardinalité : couple (min, max). Valeurs valides : (0,1), (1,1), (0,n), (1,n).
 - MCD, MLD, MPD : les trois niveaux du modèle. Pour l'instant on ne traite que le MCD.
 
+## Types de données, règle conceptuel et physique
+
+Au niveau MCD, les attributs portent uniquement des types conceptuels abstraits, les sept suivants : texte, entier, decimal, booleen, date, datetime, heure. Le MCD ne connaît jamais les types SQL.
+
+Les types SQL concrets, comme VARCHAR, INT ou TEXT, et leurs tailles, apparaissent seulement au niveau MPD, via un mappage vers la base cible, MySQL, PostgreSQL et autres. Le passage du conceptuel au physique se fait à cette étape, et le mappage reste éditable par attribut. Ne remonte jamais un type SQL dans le modèle conceptuel.
+
+## Dictionnaire central des propriétés
+
+Le dictionnaire est la liste maîtresse des propriétés. Une propriété, un nom et un type conceptuel, est définie une seule fois. Les entités et les associations la référencent au lieu de la redéfinir. Une propriété est placée dans au plus une entité ou une association, c'est la règle d'unicité de Merise. Une propriété peut exister dans le dictionnaire sans être placée. Ne redéfinis jamais une propriété en double.
+
 ## Accessibilité (exigence forte)
 
 Vise le niveau WCAG 2.1 AA.

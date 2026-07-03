@@ -17,7 +17,20 @@
       "Bash(taskkill //F //IM node.exe //FI \"WINDOWTITLE eq *\")",
       "Bash(awk '{print $1}')",
       "Bash(xargs -r kill)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --max-time 3 http://localhost:5173/)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --max-time 3 http://localhost:5173/)",
+      "Read(//c/Users/Yassine/.ssh/**)",
+      "Bash(gh auth *)",
+      "Bash(netstat -ano)",
+      "Bash(awk '{print $5}')",
+      "Bash(python -)",
+      "Bash(grep -rn \"—\" src/ examples/ README.md index.html LICENSE CLAUDE.md)",
+      "Bash(curl -s -o /dev/null -w \"dev HTTP %{http_code}\\\\n\" --max-time 5 http://localhost:5173/)",
+      "PowerShell(winget install --id Microsoft.VisualStudio.2022.BuildTools --exact --silent --accept-package-agreements --accept-source-agreements --override \"--wait --passive --norestart --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended\")",
+      "PowerShell(winget install --id Rustlang.Rustup --exact --silent --accept-package-agreements --accept-source-agreements)",
+      "Bash(npx tauri *)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\('Path','User'\\) + ';' + [System.Environment]::GetEnvironmentVariable\\('Path','Machine'\\); rustc --version; cargo --version; rustup show active-toolchain)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\('Path','User'\\) + ';' + [System.Environment]::GetEnvironmentVariable\\('Path','Machine'\\); Set-Location \"c:\\\\Users\\\\Yassine\\\\Documents\\\\buts2\\\\www\\\\meriz\"; npx tauri build)",
+      "PowerShell($exe = \"c:\\\\Users\\\\Yassine\\\\Documents\\\\buts2\\\\www\\\\meriz\\\\src-tauri\\\\target\\\\release\\\\app.exe\"; Start-Process -FilePath $exe; Start-Sleep -Seconds 6; $p = Get-Process | Where-Object { $_.Path -eq $exe } | Select-Object -First 1; if \\($p\\) { \"Lancé : PID $\\($p.Id\\), titre fenêtre : '$\\($p.MainWindowTitle\\)'\" ; Stop-Process -Id $p.Id -Confirm:$false } else { \"Processus non trouvé\" })"
     ]
   }
 }

@@ -1,9 +1,65 @@
 @import 'tailwindcss';
 
+/*
+ * Design tokens de Meriz. Gris neutres légèrement chauds pour
+ * l'habillage, zone de dessin très claire, un seul accent : l'indigo
+ * profond (indigo-700 = #4338CA). La mono est la voix des données :
+ * types, cardinalités, dictionnaire, et plus tard le SQL.
+ */
+@theme {
+  --color-shell: #f7f7f5;
+  --color-surface: #ffffff;
+  --color-canvas: #fbfbfa;
+  --color-ink: #1c1c1e;
+  --color-line: #e4e4e7;
+
+  --font-sans:
+    system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:
+    ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Consolas, 'Roboto Mono', Menlo, monospace;
+}
+
 /* Focus visible sur tous les éléments interactifs : exigence WCAG 2.1 AA */
 @layer base {
   :focus-visible {
-    outline: 2px solid var(--color-blue-700);
+    outline: 2px solid var(--color-indigo-700);
     outline-offset: 2px;
+  }
+}
+
+/* Zone de sélection du canvas : contour tireté à l'accent, voile léger. */
+.react-flow__selection {
+  background: color-mix(in srgb, var(--color-indigo-700) 6%, transparent);
+  border: 1.5px dashed var(--color-indigo-700);
+  border-radius: 4px;
+}
+
+/*
+ * Points de liaison du MCD : ronds accent bien visibles, qui gonflent
+ * au survol pour faciliter la visée, avec un curseur crayon (le geste
+ * « dessiner une patte »).
+ */
+.react-flow__handle.meriz-handle {
+  width: 12px;
+  height: 12px;
+  background: var(--color-indigo-700);
+  border: 2px solid var(--color-surface);
+  transition:
+    width 0.15s ease,
+    height 0.15s ease,
+    background 0.15s ease;
+  cursor:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24'%3E%3Cpath fill='%234338ca' stroke='white' stroke-width='1.5' d='M3 21l1.2-4.2L16.5 4.5a2.12 2.12 0 0 1 3 3L7.2 19.8 3 21z'/%3E%3C/svg%3E")
+      2 16,
+    crosshair;
+}
+.react-flow__handle.meriz-handle:hover {
+  width: 19px;
+  height: 19px;
+  background: var(--color-indigo-500);
+}
+@media (prefers-reduced-motion: reduce) {
+  .react-flow__handle.meriz-handle {
+    transition: none;
   }
 }

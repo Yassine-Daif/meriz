@@ -1,0 +1,203 @@
+{
+  "format": "meriz-mcd",
+  "version": 2,
+  "mcd": {
+    "properties": [
+      { "id": "prop-num-etudiant", "name": "numeroEtudiant", "type": "entier" },
+      { "id": "prop-nom-etudiant", "name": "nomEtudiant", "type": "texte", "size": 50 },
+      { "id": "prop-prenom-etudiant", "name": "prenomEtudiant", "type": "texte", "size": 50 },
+      { "id": "prop-date-naissance", "name": "dateNaissance", "type": "date" },
+      { "id": "prop-boursier", "name": "boursier", "type": "booleen" },
+      { "id": "prop-code-cours", "name": "codeCours", "type": "texte", "size": 10 },
+      { "id": "prop-intitule-cours", "name": "intituleCours", "type": "texte", "size": 100 },
+      { "id": "prop-coefficient", "name": "coefficient", "type": "decimal" },
+      { "id": "prop-num-enseignant", "name": "numeroEnseignant", "type": "entier" },
+      { "id": "prop-nom-enseignant", "name": "nomEnseignant", "type": "texte", "size": 50 },
+      { "id": "prop-email-enseignant", "name": "emailEnseignant", "type": "texte", "size": 100 },
+      { "id": "prop-num-salle", "name": "numeroSalle", "type": "texte", "size": 10 },
+      { "id": "prop-capacite", "name": "capacite", "type": "entier" },
+      { "id": "prop-num-seance", "name": "numeroSeance", "type": "entier" },
+      { "id": "prop-debut-seance", "name": "debutSeance", "type": "datetime" },
+      { "id": "prop-duree-seance", "name": "dureeSeance", "type": "heure" },
+      { "id": "prop-code-diplome", "name": "codeDiplome", "type": "texte", "size": 10 },
+      { "id": "prop-libelle-diplome", "name": "libelleDiplome", "type": "texte", "size": 100 },
+      { "id": "prop-note-finale", "name": "noteFinale", "type": "decimal" }
+    ],
+    "entities": [
+      {
+        "id": "ent-etudiant",
+        "name": "Etudiant",
+        "attributes": [
+          { "propertyId": "prop-num-etudiant", "isIdentifier": true },
+          { "propertyId": "prop-nom-etudiant", "isIdentifier": false },
+          { "propertyId": "prop-prenom-etudiant", "isIdentifier": false },
+          { "propertyId": "prop-date-naissance", "isIdentifier": false },
+          { "propertyId": "prop-boursier", "isIdentifier": false }
+        ]
+      },
+      {
+        "id": "ent-cours",
+        "name": "Cours",
+        "attributes": [
+          { "propertyId": "prop-code-cours", "isIdentifier": true },
+          { "propertyId": "prop-intitule-cours", "isIdentifier": false },
+          { "propertyId": "prop-coefficient", "isIdentifier": false }
+        ]
+      },
+      {
+        "id": "ent-enseignant",
+        "name": "Enseignant",
+        "attributes": [
+          { "propertyId": "prop-num-enseignant", "isIdentifier": true },
+          { "propertyId": "prop-nom-enseignant", "isIdentifier": false },
+          { "propertyId": "prop-email-enseignant", "isIdentifier": false }
+        ]
+      },
+      {
+        "id": "ent-salle",
+        "name": "Salle",
+        "attributes": [
+          { "propertyId": "prop-num-salle", "isIdentifier": true },
+          { "propertyId": "prop-capacite", "isIdentifier": false }
+        ]
+      },
+      {
+        "id": "ent-seance",
+        "name": "Seance",
+        "attributes": [
+          { "propertyId": "prop-num-seance", "isIdentifier": true },
+          { "propertyId": "prop-debut-seance", "isIdentifier": false },
+          { "propertyId": "prop-duree-seance", "isIdentifier": false }
+        ]
+      },
+      {
+        "id": "ent-diplome",
+        "name": "Diplome",
+        "attributes": [
+          { "propertyId": "prop-code-diplome", "isIdentifier": true },
+          { "propertyId": "prop-libelle-diplome", "isIdentifier": false }
+        ]
+      }
+    ],
+    "associations": [
+      {
+        "id": "asso-inscrire",
+        "name": "inscrire",
+        "attributes": [{ "propertyId": "prop-note-finale", "isIdentifier": false }],
+        "legs": [
+          {
+            "id": "leg-inscrire-etudiant",
+            "entityId": "ent-etudiant",
+            "cardinality": { "min": 0, "max": "n" }
+          },
+          {
+            "id": "leg-inscrire-cours",
+            "entityId": "ent-cours",
+            "cardinality": { "min": 0, "max": "n" }
+          }
+        ]
+      },
+      {
+        "id": "asso-enseigner",
+        "name": "enseigner",
+        "attributes": [],
+        "legs": [
+          {
+            "id": "leg-enseigner-enseignant",
+            "entityId": "ent-enseignant",
+            "cardinality": { "min": 1, "max": "n" }
+          },
+          {
+            "id": "leg-enseigner-cours",
+            "entityId": "ent-cours",
+            "cardinality": { "min": 1, "max": "n" }
+          }
+        ]
+      },
+      {
+        "id": "asso-concerner",
+        "name": "concerner",
+        "attributes": [],
+        "legs": [
+          {
+            "id": "leg-concerner-seance",
+            "entityId": "ent-seance",
+            "cardinality": { "min": 1, "max": 1 }
+          },
+          {
+            "id": "leg-concerner-cours",
+            "entityId": "ent-cours",
+            "cardinality": { "min": 0, "max": "n" }
+          }
+        ]
+      },
+      {
+        "id": "asso-avoir-lieu",
+        "name": "avoirLieu",
+        "attributes": [],
+        "legs": [
+          {
+            "id": "leg-avoir-lieu-seance",
+            "entityId": "ent-seance",
+            "cardinality": { "min": 1, "max": 1 }
+          },
+          {
+            "id": "leg-avoir-lieu-salle",
+            "entityId": "ent-salle",
+            "cardinality": { "min": 0, "max": "n" }
+          }
+        ]
+      },
+      {
+        "id": "asso-preparer",
+        "name": "preparer",
+        "attributes": [],
+        "legs": [
+          {
+            "id": "leg-preparer-etudiant",
+            "entityId": "ent-etudiant",
+            "cardinality": { "min": 1, "max": 1 }
+          },
+          {
+            "id": "leg-preparer-diplome",
+            "entityId": "ent-diplome",
+            "cardinality": { "min": 0, "max": "n" }
+          }
+        ]
+      },
+      {
+        "id": "asso-tutorer",
+        "name": "tutorer",
+        "attributes": [],
+        "legs": [
+          {
+            "id": "leg-tutorer-tuteur",
+            "entityId": "ent-etudiant",
+            "cardinality": { "min": 0, "max": "n" },
+            "role": "tuteur"
+          },
+          {
+            "id": "leg-tutorer-tutore",
+            "entityId": "ent-etudiant",
+            "cardinality": { "min": 0, "max": 1 },
+            "role": "tutore"
+          }
+        ]
+      }
+    ]
+  },
+  "layout": {
+    "ent-etudiant": { "x": 0, "y": 220 },
+    "ent-cours": { "x": 620, "y": 220 },
+    "ent-enseignant": { "x": 1240, "y": 220 },
+    "ent-salle": { "x": 1240, "y": 620 },
+    "ent-seance": { "x": 620, "y": 620 },
+    "ent-diplome": { "x": 0, "y": 620 },
+    "asso-inscrire": { "x": 340, "y": 120 },
+    "asso-enseigner": { "x": 960, "y": 120 },
+    "asso-concerner": { "x": 700, "y": 460 },
+    "asso-avoir-lieu": { "x": 960, "y": 680 },
+    "asso-preparer": { "x": 180, "y": 470 },
+    "asso-tutorer": { "x": 40, "y": 20 }
+  }
+}

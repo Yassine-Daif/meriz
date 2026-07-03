@@ -1,0 +1,44 @@
+# Déploie la version web sur le VPS à chaque push sur main :
+# construit dist sur GitHub, puis l'envoie en rsync par SSH.
+# Secrets requis (Settings > Secrets and variables > Actions) :
+#   VPS_HOST     adresse du serveur (IP ou domaine)
+#   VPS_USER     utilisateur SSH
+#   VPS_SSH_KEY  clé privée SSH dédiée (la publique dans authorized_keys)
+#   VPS_PATH     dossier servi par nginx, ex. /var/www/meriz
+name: Deploy web
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Construire
+        run: npm run build
+
+      - name: Préparer la clé SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Envoyer dist sur le VPS
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/id_deploy" \
+            dist/ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/"

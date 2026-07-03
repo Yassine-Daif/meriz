@@ -25,3 +25,10 @@ dist-ssr
 
 # Réglages Claude Code locaux (permissions propres à la machine)
 .claude/settings.local.json
+
+# Build Rust de Tauri
+src-tauri/target
+
+# Variables locales
+.env
+.env.local
