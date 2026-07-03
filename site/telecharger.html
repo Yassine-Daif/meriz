@@ -59,10 +59,12 @@
             <li><a data-suffix="-setup.exe" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noreferrer noopener">Installateur (.exe)</a> <span class="dl-size"></span> <span class="badge-reco">conseillé</span></li>
             <li><a data-suffix=".msi" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noreferrer noopener">Paquet MSI (.msi)</a> <span class="dl-size"></span></li>
           </ul>
-          <details>
-            <summary>Premier lancement</summary>
-            <p>Windows peut afficher « Windows a protégé votre ordinateur » (logiciel non signé, normal pour un projet open source). Cliquez « Informations complémentaires » puis « Exécuter quand même ».</p>
-          </details>
+          <p class="dl-warn">
+            <strong>À savoir :</strong> au premier lancement, Windows affichera
+            « Windows a protégé votre ordinateur ». C'est normal : le logiciel est
+            open source et non signé, il n'y a rien de dangereux. Cliquez
+            « Informations complémentaires » puis « Exécuter quand même ».
+          </p>
         </article>
 
         <article class="os-card" id="card-mac" aria-labelledby="os-mac">
@@ -71,10 +73,11 @@
             <li><a data-suffix="_aarch64.dmg" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noreferrer noopener">Mac Apple Silicon (.dmg)</a> <span class="dl-size"></span> <span class="badge-reco">M1 et plus récents</span></li>
             <li><a data-suffix="_x64.dmg" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noreferrer noopener">Mac Intel (.dmg)</a> <span class="dl-size"></span></li>
           </ul>
-          <details>
-            <summary>Premier lancement</summary>
-            <p>macOS peut bloquer l'ouverture (application non signée). Faites un clic droit sur Meriz puis « Ouvrir », une seule fois suffit.</p>
-          </details>
+          <p class="dl-warn">
+            <strong>À savoir :</strong> au premier lancement, macOS bloquera
+            l'ouverture (application non signée, rien de dangereux). Faites un
+            clic droit sur Meriz puis « Ouvrir » : une seule fois suffit.
+          </p>
         </article>
 
         <article class="os-card" id="card-linux" aria-labelledby="os-linux">
@@ -84,10 +87,12 @@
             <li><a data-suffix=".AppImage" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noreferrer noopener">Toutes distributions (.AppImage)</a> <span class="dl-size"></span></li>
             <li><a data-suffix=".rpm" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noreferrer noopener">Fedora, openSUSE (.rpm)</a> <span class="dl-size"></span></li>
           </ul>
-          <details>
-            <summary>Premier lancement</summary>
-            <p>Pour l'AppImage : rendez le fichier exécutable (clic droit, Propriétés, ou <span class="mono">chmod +x</span>) puis lancez-le.</p>
-          </details>
+          <p class="dl-warn">
+            <strong>À savoir :</strong> pour l'AppImage, rendez le fichier
+            exécutable avant de le lancer (clic droit, Propriétés, ou
+            <span class="mono">chmod +x</span>). Les paquets .deb et .rpm
+            s'installent sans étape particulière.
+          </p>
         </article>
       </div>
 

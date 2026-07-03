@@ -437,3 +437,15 @@ footer {
 @media (max-width: 860px) {
   .os-cards { grid-template-columns: 1fr; }
 }
+
+/* Avertissement de premier lancement : visible d'emblée, ton
+   rassurant, jamais caché dans un menu dépliable. */
+.dl-warn {
+  margin: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.dl-warn strong { color: var(--ink); }
