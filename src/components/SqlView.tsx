@@ -6,7 +6,7 @@ import { saveFileAs } from '../lib/download'
 import { EmptyGeneration, ErrorsBanner } from './GenerationNotices'
 
 interface SqlViewProps {
-  tables: MpdTable[] | null
+  tables: MpdTable[]
   dialect: SqlDialect
   hasErrors: boolean
 }
@@ -37,11 +37,11 @@ export function SqlView({ tables, dialect, hasErrors }: SqlViewProps) {
   const dropsId = useId()
 
   const sql = useMemo(
-    () => (tables ? mpdToSql(tables, dialect, { includeDrops }) : ''),
+    () => mpdToSql(tables, dialect, { includeDrops }),
     [tables, dialect, includeDrops],
   )
 
-  if (!tables) {
+  if (tables.length === 0) {
     return <EmptyGeneration viewName="SQL" />
   }
 

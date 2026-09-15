@@ -4,17 +4,16 @@ import { relationalLine } from '../model/mld'
 import { EmptyGeneration, ErrorsBanner } from './GenerationNotices'
 
 interface MldViewProps {
-  tables: MldTable[] | null
+  tables: MldTable[]
   hasErrors: boolean
-  generatedAt: Date | null
 }
 
-/** En-tête daté du MLDR, au format d'AnalyseSI. */
-function mldrHeader(generatedAt: Date | null): string {
-  const date = generatedAt
-    ? generatedAt.toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'medium' })
-    : ''
-  return `# Modèle créé le : ${date}`
+/**
+ * En-tête daté du MLDR, au format d'AnalyseSI. Le MLD dérive en direct
+ * du MCD : la date est celle de l'affichage ou de la copie.
+ */
+function mldrHeader(date: Date): string {
+  return `# Modèle créé le : ${date.toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'medium' })}`
 }
 
 /**
@@ -22,15 +21,15 @@ function mldrHeader(generatedAt: Date | null): string {
  * nomme MLDR). Types conceptuels : le passage aux types SQL est
  * affiché au MPD.
  */
-export function MldView({ tables, hasErrors, generatedAt }: MldViewProps) {
+export function MldView({ tables, hasErrors }: MldViewProps) {
   const [copyStatus, setCopyStatus] = useState('')
 
-  if (!tables) {
+  if (tables.length === 0) {
     return <EmptyGeneration viewName="MLD (modèle logique de données)" />
   }
 
   const handleCopy = async () => {
-    const text = [mldrHeader(generatedAt), ...tables.map(relationalLine)].join('\n')
+    const text = [mldrHeader(new Date()), ...tables.map(relationalLine)].join('\n')
     try {
       await navigator.clipboard.writeText(text)
       setCopyStatus('Notation copiée dans le presse-papiers.')
@@ -99,7 +98,7 @@ export function MldView({ tables, hasErrors, generatedAt }: MldViewProps) {
         <div className="w-full rounded-lg border border-line bg-surface p-4 shadow-sm">
           <h2 className="text-sm font-semibold tracking-tight">Notation relationnelle (MLDR)</h2>
           <div className="mt-2 font-mono text-[13px] leading-7">
-            <p className="text-zinc-500">{mldrHeader(generatedAt)}</p>
+            <p className="text-zinc-500">{mldrHeader(new Date())}</p>
             <ul>
               {tables.map((table) => (
                 <li key={table.id}>

@@ -9,7 +9,7 @@ import type { Position } from '../model/layout'
 interface McdToolbarProps {
   dispatch: Dispatch<McdAction>
   problems: ValidationProblem[]
-  /** Génère MLD, MPD et SQL depuis le MCD courant (App). */
+  /** Ouvre les résultats (MLD, MPD, SQL), toujours dérivés du MCD courant. */
   onGenerate: () => void
 }
 
@@ -72,7 +72,7 @@ export function McdToolbar({ dispatch, problems, onGenerate }: McdToolbarProps) 
     }
   }
 
-  // La coche verte d'AnalyseSI : génération MLD, MPD et SQL.
+  // La coche verte d'AnalyseSI : vérification puis accès aux résultats.
   // Seules les erreurs bloquent, les avertissements informent.
   const handleGenerate = () => {
     if (errors.length > 0) {
@@ -83,7 +83,7 @@ export function McdToolbar({ dispatch, problems, onGenerate }: McdToolbarProps) 
       return
     }
     onGenerate()
-    setStatus({ kind: 'info', text: 'MLD, MPD et SQL générés depuis le MCD.' })
+    setStatus({ kind: 'info', text: 'MCD vérifié : MLD, MPD et SQL à jour.' })
   }
 
   return (

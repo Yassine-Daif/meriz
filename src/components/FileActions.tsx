@@ -2,6 +2,8 @@ import { useRef, useState } from 'react'
 import type { ChangeEvent, Dispatch } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import type { McdAction, McdEditorState } from '../model/mcdReducer'
+import { DEFAULT_MPD_SETTINGS } from '../model/mpd'
+import type { MpdSettings } from '../model/mpd'
 import { parseModelFile, serializeModel } from '../lib/persistence'
 import { exportToPng } from '../lib/exportImage'
 import { saveFileAs } from '../lib/download'
@@ -12,6 +14,10 @@ interface FileActionsProps {
   dispatch: Dispatch<McdAction>
   /** Appelé après Nouveau ou Ouvrir, pour réinitialiser la sélection. */
   onModelReplaced: () => void
+  /** Réglages MPD (dialecte, surcharges de types), enregistrés avec le modèle. */
+  mpdSettings: MpdSettings
+  /** Appelé à l'ouverture d'un fichier : ses réglages MPD, ou ceux par défaut. */
+  onMpdSettingsReplaced: (settings: MpdSettings) => void
   /** L'export PNG capture le DOM du canvas : il faut la vue MCD affichée. */
   mcdVisible: boolean
 }
@@ -43,7 +49,14 @@ const GUARD_TEXTS: Record<GuardedAction, { title: string; message: string; confi
   },
 }
 
-export function FileActions({ state, dispatch, onModelReplaced, mcdVisible }: FileActionsProps) {
+export function FileActions({
+  state,
+  dispatch,
+  onModelReplaced,
+  mpdSettings,
+  onMpdSettingsReplaced,
+  mcdVisible,
+}: FileActionsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [status, setStatus] = useState<StatusMessage | null>(null)
   const [pendingAction, setPendingAction] = useState<GuardedAction | null>(null)
@@ -76,7 +89,7 @@ export function FileActions({ state, dispatch, onModelReplaced, mcdVisible }: Fi
   }
 
   const handleSave = async () => {
-    const blob = new Blob([serializeModel(state)], { type: 'application/json' })
+    const blob = new Blob([serializeModel(state, mpdSettings)], { type: 'application/json' })
     const result = await saveFileAs('modele.meriz.json', blob, 'Modèle Meriz', {
       'application/json': ['.json'],
     })
@@ -120,6 +133,8 @@ export function FileActions({ state, dispatch, onModelReplaced, mcdVisible }: Fi
       return
     }
     dispatch({ type: 'LOAD_MODEL', mcd: result.state.mcd, layout: result.state.layout })
+    // Le fichier fait foi : sans réglages MPD, retour aux réglages par défaut.
+    onMpdSettingsReplaced(result.mpdSettings ?? DEFAULT_MPD_SETTINGS)
     onModelReplaced()
     setStatus({ kind: 'info', text: `Modèle « ${file.name} » chargé.` })
     // Cadre la vue une fois les nœuds resynchronisés et mesurés.

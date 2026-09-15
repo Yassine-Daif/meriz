@@ -11,11 +11,16 @@ import { EmptyGeneration, ErrorsBanner } from './GenerationNotices'
 const nodeTypes = { table: TableNode }
 
 interface MpdViewProps {
-  tables: MpdTable[] | null
+  tables: MpdTable[]
   hasErrors: boolean
   settings: MpdSettings
   onDialectChange: (dialect: SqlDialect) => void
   onOverrideChange: (columnId: string, value: string) => void
+  /**
+   * Comme la vue MCD, la vue reste montée quand elle est inactive,
+   * simplement masquée : les positions du diagramme survivent.
+   */
+  isActive: boolean
 }
 
 /**
@@ -24,15 +29,27 @@ interface MpdViewProps {
  * par colonne et mémorisé. La structure reste dérivée du MCD, seuls
  * le dialecte et les surcharges de types sont mémorisés.
  */
-export function MpdView({ tables, hasErrors, settings, onDialectChange, onOverrideChange }: MpdViewProps) {
+export function MpdView({
+  tables,
+  hasErrors,
+  settings,
+  onDialectChange,
+  onOverrideChange,
+  isActive,
+}: MpdViewProps) {
   const dialectSelectId = useId()
   const mappingPanelId = useId()
   const [mappingOpen, setMappingOpen] = useState(true)
-  if (!tables) {
-    return <EmptyGeneration viewName="MPD (modèle physique de données)" />
+  const visibilityClass = isActive ? 'flex min-h-0 flex-1 flex-col' : 'hidden'
+  if (tables.length === 0) {
+    return (
+      <div className={visibilityClass}>
+        <EmptyGeneration viewName="MPD (modèle physique de données)" />
+      </div>
+    )
   }
   return (
-    <section aria-label="Vue MPD" className="flex min-h-0 flex-1 flex-col">
+    <section aria-label="Vue MPD" className={visibilityClass}>
       <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2">
         <label htmlFor={dialectSelectId} className="text-xs font-medium text-zinc-600">
           Dialecte SQL

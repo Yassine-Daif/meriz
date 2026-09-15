@@ -8,7 +8,7 @@ Nom du projet : Meriz. Paquet npm et dépôt : `meriz`.
 
 On construit une alternative web moderne à AnalyseSI, le vieux logiciel Java de modélisation de bases de données par la méthode Merise. Le nom Meriz vient de Merise.
 
-Objectif : un outil de modélisation clair, beau, ouvert, qui marche partout. D'abord dans le navigateur, plus tard en application native via Tauri.
+Objectif : un outil de modélisation clair, beau, ouvert, qui marche partout, dans le navigateur comme en application native via Tauri.
 
 Public visé : étudiants, professeurs, professionnels et autodidactes. On vise large, donc l'outil doit rester simple pour un débutant tout en restant utile pour un expert.
 
@@ -25,7 +25,7 @@ Public visé : étudiants, professeurs, professionnels et autodidactes. On vise 
 - Vite pour le build et le serveur de dev
 - Tailwind CSS pour le style
 - React Flow, paquet `@xyflow/react` (version 12), pour la zone de dessin du schéma
-- Plus tard : Tauri pour l'application native, et possiblement un backend Laravel
+- Tauri pour l'application native, en place. Prochaine phase, un backend Laravel pour les comptes et l'espace prof et élève
 
 ## Architecture
 
@@ -52,7 +52,7 @@ Utilise toujours ces termes, en français, dans le code et les commentaires.
 - Association : lien entre entités, peut porter des attributs.
 - Patte : connexion entre une association et une entité, porte une cardinalité.
 - Cardinalité : couple (min, max). Valeurs valides : (0,1), (1,1), (0,n), (1,n).
-- MCD, MLD, MPD : les trois niveaux du modèle. Pour l'instant on ne traite que le MCD.
+- MCD, MLD, MPD : les trois niveaux du modèle. Les trois sont traités, ainsi que la génération du SQL.
 
 ## Types de données, règle conceptuel et physique
 
@@ -93,5 +93,6 @@ Pour le README, les commentaires longs et toute doc destinée aux utilisateurs :
 
 ## Hors périmètre pour l'instant
 
-- Pas de génération MLD, MPD ni SQL tant que le modèle et le canvas ne sont pas solides.
-- Pas d'héritage ni de spécialisation Merise dans le MVP. Ce sera une extension de phase 2.
+- Pas d'héritage ni de spécialisation Merise pour l'instant. Extension possible plus tard.
+
+Déjà livré, à ne plus traiter comme à venir : la génération MLD, MPD et SQL, et l'application native Tauri.

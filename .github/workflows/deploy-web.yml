@@ -1,21 +1,56 @@
 # Déploie la version web sur le VPS à chaque push sur main :
-# construit dist sur GitHub, puis l'envoie en rsync par SSH.
+# tests et build sur GitHub, puis envoi rsync par SSH.
+#   dist/  -> $VPS_PATH/app/   (application, anciens fichiers purgés)
+#   site/  -> $VPS_PATH/       (vitrine, rien n'est supprimé)
+#
 # Secrets requis (Settings > Secrets and variables > Actions) :
-#   VPS_HOST     adresse du serveur (IP ou domaine)
-#   VPS_USER     utilisateur SSH
-#   VPS_SSH_KEY  clé privée SSH dédiée (la publique dans authorized_keys)
-#   VPS_PATH     dossier servi par nginx, ex. /var/www/meriz
+#   VPS_HOST         adresse du serveur (nom de domaine ou IP)
+#   VPS_USER         compte SSH qui possède le dossier servi
+#   VPS_SSH_KEY      clé privée SSH dédiée au déploiement
+#   VPS_PATH         dossier servi par Apache (DocumentRoot), sans / final
+#   VPS_KNOWN_HOSTS  empreinte d'hôte du serveur (sortie de ssh-keyscan)
+# Secret facultatif :
+#   VPS_PORT         port SSH, 22 par défaut
+#
+# Mise en place pas à pas : deploy/DEPLOIEMENT.md
 name: Deploy web
 
 on:
   push:
     branches:
       - main
+  # Relance manuelle depuis l'onglet Actions.
+  workflow_dispatch:
+
+# Un déploiement à la fois : le suivant attend la fin du précédent.
+concurrency:
+  group: deploy-web
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Vérifier les secrets
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_PATH: ${{ secrets.VPS_PATH }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          missing=0
+          for name in VPS_HOST VPS_USER VPS_SSH_KEY VPS_PATH VPS_KNOWN_HOSTS; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Secret manquant : $name (voir deploy/DEPLOIEMENT.md)"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
       - uses: actions/checkout@v4
 
       - name: Installer Node
@@ -30,23 +65,60 @@ jobs:
           npm install -g npm@11
           npm ci
 
+      - name: Tester
+        run: npm test
+
       - name: Construire
-        run: npm run build
-
-      - name: Préparer la clé SSH
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_deploy
-          chmod 600 ~/.ssh/id_deploy
-          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+          npm run build
+          test -f dist/index.html
 
-      - name: Envoyer la vitrine (racine) et l'application (app/)
-        # Deux rsync ciblés : la vitrine à la racine du site, l'app
-        # sous app/. --delete par dossier, l'un n'efface pas l'autre.
+      - name: Préparer la connexion SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+          VPS_PATH: ${{ secrets.VPS_PATH }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
         run: |
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/id_deploy" \
-            dist/ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/app/"
-          rsync -avz \
-            -e "ssh -i ~/.ssh/id_deploy" \
-            site/ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/"
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+          # tr retire les retours chariot d'un secret collé depuis Windows.
+          printf '%s\n' "$VPS_SSH_KEY" | tr -d '\r' > "$HOME/.ssh/id_deploy"
+          chmod 600 "$HOME/.ssh/id_deploy"
+          # Empreinte vérifiée à la main, jamais la première clé reçue.
+          printf '%s\n' "$VPS_KNOWN_HOSTS" | tr -d '\r' > "$HOME/.ssh/known_hosts"
+          chmod 644 "$HOME/.ssh/known_hosts"
+          # Échoue tout de suite si la clé, l'empreinte ou les droits
+          # du dossier cible ne vont pas.
+          ssh -i "$HOME/.ssh/id_deploy" -p "$VPS_PORT" \
+            -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$VPS_USER@$VPS_HOST" \
+            "test -d \"$VPS_PATH\" && test -w \"$VPS_PATH\"" \
+            || { echo "::error::Connexion SSH refusée ou dossier $VPS_PATH non accessible en écriture"; exit 1; }
+
+      - name: Envoyer l'application (app/)
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+          VPS_PATH: ${{ secrets.VPS_PATH }}
+        # --delete : les anciens assets empreints disparaissent.
+        # --chmod : droits lisibles par Apache, quels que soient ceux du runner.
+        run: |
+          rsync -rltz --delete --chmod=D755,F644 \
+            -e "ssh -i $HOME/.ssh/id_deploy -p $VPS_PORT -o BatchMode=yes -o StrictHostKeyChecking=yes" \
+            dist/ "$VPS_USER@$VPS_HOST:$VPS_PATH/app/"
+
+      - name: Envoyer la vitrine (racine)
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+          VPS_PATH: ${{ secrets.VPS_PATH }}
+        # Sans --delete : ni app/ ni un fichier posé à la main ne sont effacés.
+        run: |
+          rsync -rltz --chmod=D755,F644 \
+            -e "ssh -i $HOME/.ssh/id_deploy -p $VPS_PORT -o BatchMode=yes -o StrictHostKeyChecking=yes" \
+            site/ "$VPS_USER@$VPS_HOST:$VPS_PATH/"

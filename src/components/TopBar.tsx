@@ -1,5 +1,6 @@
 import type { Dispatch } from 'react'
 import type { McdAction, McdEditorState } from '../model/mcdReducer'
+import type { MpdSettings } from '../model/mpd'
 import { FileActions } from './FileActions'
 import { UiScaleControl } from './UiScaleControl'
 import { Logo } from './Logo'
@@ -8,6 +9,8 @@ interface TopBarProps {
   state: McdEditorState
   dispatch: Dispatch<McdAction>
   onModelReplaced: () => void
+  mpdSettings: MpdSettings
+  onMpdSettingsReplaced: (settings: MpdSettings) => void
   mcdVisible: boolean
   canUndo: boolean
   canRedo: boolean
@@ -35,6 +38,8 @@ export function TopBar({
   state,
   dispatch,
   onModelReplaced,
+  mpdSettings,
+  onMpdSettingsReplaced,
   mcdVisible,
   canUndo,
   canRedo,
@@ -81,6 +86,8 @@ export function TopBar({
         state={state}
         dispatch={dispatch}
         onModelReplaced={onModelReplaced}
+        mpdSettings={mpdSettings}
+        onMpdSettingsReplaced={onMpdSettingsReplaced}
         mcdVisible={mcdVisible}
       />
       <div className="ml-auto">

@@ -1,13 +1,12 @@
-/** Invite affichée tant que rien n'a été généré depuis le MCD. */
+/** Invite affichée tant que le MCD ne contient aucune entité. */
 export function EmptyGeneration({ viewName }: { viewName: string }) {
   return (
     <section aria-label={viewName} className="flex flex-1 items-center justify-center p-8">
       <div className="max-w-md rounded-lg border border-line bg-surface p-6 text-center shadow-sm">
         <h2 className="text-lg font-semibold tracking-tight">{viewName}</h2>
         <p className="mt-2 text-sm text-zinc-600">
-          Rien à afficher pour l'instant. Ouvrez la vue MCD et utilisez le bouton
-          « Générer » (la coche) : il produit le MLD, le MPD et le SQL à partir
-          d'un MCD sans erreur. Ensuite, ces vues suivent le MCD automatiquement.
+          Le MCD est vide : ajoutez une entité dans la vue MCD. Le MLD, le MPD
+          et le SQL suivent le modèle en direct, sans rien avoir à relancer.
         </p>
       </div>
     </section>

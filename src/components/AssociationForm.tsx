@@ -4,6 +4,7 @@ import type { Association, Mcd } from '../model/mcd'
 import type { McdAction } from '../model/mcdReducer'
 import { resolveAttributes, unplacedProperties } from '../model/queries'
 import { AttributesEditor } from './AttributesEditor'
+import { LegConnector } from './LegConnector'
 
 interface AssociationFormProps {
   mcd: Mcd
@@ -34,6 +35,8 @@ export function AssociationForm({ mcd, association, dispatch }: AssociationFormP
           className="mt-0.5 w-full rounded border border-zinc-300 px-2 py-1 text-sm"
         />
       </div>
+      {/* key : liste et annonce repartent à zéro d'une association à l'autre. */}
+      <LegConnector key={association.id} mcd={mcd} association={association} dispatch={dispatch} />
       <AttributesEditor
         attributes={resolveAttributes(mcd, association.attributes)}
         unplaced={unplacedProperties(mcd)}

@@ -7,7 +7,8 @@ import { mcdToMld } from './model/mld'
 import { buildMpd, DEFAULT_MPD_SETTINGS } from './model/mpd'
 import type { MpdSettings, SqlDialect } from './model/mpd'
 import { findAssociation, findEntity, findLeg } from './model/queries'
-import { loadAutosave, loadMpdSettings, saveAutosave, saveMpdSettings } from './lib/persistence'
+import { loadAutosave, loadLegacyMpdSettings, saveAutosave } from './lib/persistence'
+import { isEditableTarget } from './lib/keyboard'
 import { EMPTY_SELECTION } from './canvas/selection'
 import type { CanvasSelection } from './canvas/selection'
 import type { ViewId } from './components/views'
@@ -28,42 +29,35 @@ const initialState: McdEditorState = {
   layout: {},
 }
 
+// Lue une seule fois au chargement du module, pour le modèle et les réglages MPD.
+const autosave = loadAutosave()
+
 export function App() {
   const [history, dispatch] = useReducer(historyReducer, null, () =>
-    createHistory(loadAutosave() ?? initialState),
+    createHistory(autosave?.state ?? initialState),
   )
   const state = history.present
   const [selection, setSelection] = useState<CanvasSelection>(EMPTY_SELECTION)
   // La vue active est un état d'interface, jamais une donnée du modèle.
   const [activeView, setActiveView] = useState<ViewId>('accueil')
-  // Date du dernier « Générer ». Une fois généré, MLD/MPD/SQL dérivent
-  // en continu du MCD courant : dérivation pure, jamais de divergence.
-  const [generatedAt, setGeneratedAt] = useState<Date | null>(null)
-  // Réglages MPD mémorisés : dialecte + surcharges de types par colonne.
+  // Réglages MPD, seule partie éditable du MPD : dialecte + surcharges
+  // de types par colonne. Sauvegardés avec le modèle.
   const [mpdSettings, setMpdSettings] = useState<MpdSettings>(
-    () => loadMpdSettings() ?? DEFAULT_MPD_SETTINGS,
+    () => autosave?.mpdSettings ?? loadLegacyMpdSettings() ?? DEFAULT_MPD_SETTINGS,
   )
 
   const problems = useMemo(() => validate(state.mcd), [state.mcd])
-  const errorCount = validationErrors(problems).length
+  const hasErrors = validationErrors(problems).length > 0
 
-  const mldTables = useMemo(
-    () => (generatedAt ? mcdToMld(state.mcd) : null),
-    [generatedAt, state.mcd],
-  )
-  const mpdTables = useMemo(
-    () => (mldTables ? buildMpd(mldTables, mpdSettings) : null),
-    [mldTables, mpdSettings],
-  )
-  const generationHasErrors = generatedAt !== null && errorCount > 0
+  // MLD, MPD et SQL dérivent toujours du MCD courant : dérivation pure,
+  // recalculée à chaque changement, jamais un état à mémoriser.
+  const mldTables = useMemo(() => mcdToMld(state.mcd), [state.mcd])
+  const mpdTables = useMemo(() => buildMpd(mldTables, mpdSettings), [mldTables, mpdSettings])
 
-  // Sauvegardes automatiques locales.
+  // Sauvegarde automatique locale : modèle, positions et réglages MPD.
   useEffect(() => {
-    saveAutosave(state)
-  }, [state])
-  useEffect(() => {
-    saveMpdSettings(mpdSettings)
-  }, [mpdSettings])
+    saveAutosave(state, mpdSettings)
+  }, [state, mpdSettings])
 
   // Fermeture de la page avec un modèle non vide : confirmation native
   // du navigateur (imposée par la plateforme, pas de boîte personnalisée
@@ -89,17 +83,7 @@ export function App() {
       if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'a') {
         return
       }
-      if (activeView !== 'mcd') {
-        return
-      }
-      const target = event.target as HTMLElement | null
-      if (
-        target &&
-        (target.nodeName === 'INPUT' ||
-          target.nodeName === 'TEXTAREA' ||
-          target.nodeName === 'SELECT' ||
-          target.isContentEditable)
-      ) {
+      if (activeView !== 'mcd' || isEditableTarget(event.target)) {
         return
       }
       event.preventDefault()
@@ -115,10 +99,11 @@ export function App() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [activeView, state.mcd])
 
-  // Annuler/rétablir au clavier, partout dans l'application.
+  // Annuler/rétablir au clavier, partout dans l'application, sauf dans
+  // un champ de saisie : la frappe s'y annule nativement.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!event.ctrlKey && !event.metaKey) {
+      if ((!event.ctrlKey && !event.metaKey) || isEditableTarget(event.target)) {
         return
       }
       const key = event.key.toLowerCase()
@@ -134,8 +119,8 @@ export function App() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
+  // Générer : le MCD est vérifié par la barre d'outils, on ouvre le résultat.
   const handleGenerate = useCallback(() => {
-    setGeneratedAt(new Date())
     setActiveView('mld')
   }, [])
 
@@ -184,6 +169,8 @@ export function App() {
           state={state}
           dispatch={dispatch}
           onModelReplaced={clearSelection}
+          mpdSettings={mpdSettings}
+          onMpdSettingsReplaced={setMpdSettings}
           mcdVisible={activeView === 'mcd'}
           canUndo={history.past.length > 0}
           canRedo={history.future.length > 0}
@@ -212,28 +199,21 @@ export function App() {
               isActive={activeView === 'mcd'}
             />
 
-            {activeView === 'mld' && (
-              <MldView
-                tables={mldTables}
-                hasErrors={generationHasErrors}
-                generatedAt={generatedAt}
-              />
-            )}
-            {activeView === 'mpd' && (
-              <MpdView
-                tables={mpdTables}
-                hasErrors={generationHasErrors}
-                settings={mpdSettings}
-                onDialectChange={setDialect}
-                onOverrideChange={setTypeOverride}
-              />
-            )}
+            {activeView === 'mld' && <MldView tables={mldTables} hasErrors={hasErrors} />}
+
+            {/* Comme le MCD, le MPD reste monté quand il est masqué : les
+                positions de son diagramme survivent au changement de vue. */}
+            <MpdView
+              tables={mpdTables}
+              hasErrors={hasErrors}
+              settings={mpdSettings}
+              onDialectChange={setDialect}
+              onOverrideChange={setTypeOverride}
+              isActive={activeView === 'mpd'}
+            />
+
             {activeView === 'sql' && (
-              <SqlView
-                tables={mpdTables}
-                dialect={mpdSettings.dialect}
-                hasErrors={generationHasErrors}
-              />
+              <SqlView tables={mpdTables} dialect={mpdSettings.dialect} hasErrors={hasErrors} />
             )}
 
             {activeView === 'apprendre' && <LearnView onSelectView={setActiveView} />}

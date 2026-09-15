@@ -6,7 +6,8 @@ import type { TableFlowNode } from './TableNode'
 /**
  * Dérivation du diagramme MPD : les tables du MLD deviennent des
  * nœuds, chaque clé étrangère une flèche vers la table référencée.
- * Les positions sont un état de vue local (non persisté).
+ * Les positions sont un état de vue local, non enregistré au fichier,
+ * conservé tant que l'application est ouverte (la vue reste montée).
  */
 
 /** Disposition initiale en grille, trois tables par rangée. */

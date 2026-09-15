@@ -10,6 +10,7 @@ import type {
 import { ATTRIBUTE_TYPES } from '../model/mcd'
 import type { McdLayout, Position } from '../model/layout'
 import type { McdEditorState } from '../model/mcdReducer'
+import type { MpdSettings } from '../model/mpd'
 
 /**
  * Format de fichier Meriz : le modèle et ses positions, plus un champ
@@ -17,7 +18,9 @@ import type { McdEditorState } from '../model/mcdReducer'
  * l'ouverture et les évolutions futures.
  *
  * Version 2 : dictionnaire central des propriétés (`properties`),
- * les entités et associations portent des références.
+ * les entités et associations portent des références. Champ optionnel
+ * `mpd` : la seule partie éditable du MPD (dialecte et surcharges de
+ * types), la structure restant dérivée du MCD.
  * Version 1 (attributs définis en ligne) : encore ouvrable, migrée
  * automatiquement à la lecture.
  */
@@ -29,25 +32,44 @@ export interface MerizFile {
   version: typeof MERIZ_VERSION
   mcd: Mcd
   layout: McdLayout
+  mpd?: MpdSettings
 }
 
+/** Réglages MPD absents ou mal formés : null, sans faire échouer l'ouverture. */
 export type ParseResult =
-  | { ok: true; state: McdEditorState }
+  | { ok: true; state: McdEditorState; mpdSettings: MpdSettings | null }
   | { ok: false; error: string }
 
-/** Sérialise l'état complet (modèle + positions) en JSON indenté. */
-export function serializeModel(state: McdEditorState): string {
+/** Sérialise l'état complet (modèle, positions, réglages MPD) en JSON indenté. */
+export function serializeModel(state: McdEditorState, mpdSettings: MpdSettings): string {
   const file: MerizFile = {
     format: MERIZ_FORMAT,
     version: MERIZ_VERSION,
     mcd: state.mcd,
     layout: state.layout,
+    mpd: mpdSettings,
   }
   return JSON.stringify(file, null, 2)
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+/** Contrôle de forme des réglages MPD : dialecte connu, surcharges texte. */
+export function parseMpdSettings(raw: unknown): MpdSettings | null {
+  if (!isRecord(raw) || (raw.dialect !== 'mysql' && raw.dialect !== 'postgresql')) {
+    return null
+  }
+  const overrides: Record<string, string> = {}
+  if (isRecord(raw.overrides)) {
+    for (const [key, value] of Object.entries(raw.overrides)) {
+      if (typeof value === 'string') {
+        overrides[key] = value
+      }
+    }
+  }
+  return { dialect: raw.dialect, overrides }
 }
 
 function isAttributeType(value: unknown): boolean {
@@ -274,7 +296,11 @@ export function parseModelFile(text: string): ParseResult {
       }
       associations.push(value)
     }
-    return { ok: true, state: { mcd: migrateV1(entities, associations), layout: raw.layout } }
+    return {
+      ok: true,
+      state: { mcd: migrateV1(entities, associations), layout: raw.layout },
+      mpdSettings: null,
+    }
   }
 
   if (raw.version !== MERIZ_VERSION) {
@@ -315,7 +341,11 @@ export function parseModelFile(text: string): ParseResult {
     associations.push(value)
   }
 
-  return { ok: true, state: { mcd: { properties, entities, associations }, layout: raw.layout } }
+  return {
+    ok: true,
+    state: { mcd: { properties, entities, associations }, layout: raw.layout },
+    mpdSettings: parseMpdSettings(raw.mpd),
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -323,10 +353,13 @@ export function parseModelFile(text: string): ParseResult {
 
 const AUTOSAVE_KEY = 'meriz-autosave'
 
-/** Écrit l'état courant dans le navigateur. Silencieux en cas d'échec. */
-export function saveAutosave(state: McdEditorState): void {
+/**
+ * Écrit l'état courant et les réglages MPD dans le navigateur, au même
+ * format qu'un fichier. Silencieux en cas d'échec.
+ */
+export function saveAutosave(state: McdEditorState, mpdSettings: MpdSettings): void {
   try {
-    localStorage.setItem(AUTOSAVE_KEY, serializeModel(state))
+    localStorage.setItem(AUTOSAVE_KEY, serializeModel(state, mpdSettings))
   } catch {
     // Stockage plein ou indisponible : la sauvegarde fichier reste possible.
   }
@@ -335,53 +368,35 @@ export function saveAutosave(state: McdEditorState): void {
 /**
  * Relit la sauvegarde automatique au démarrage. Réutilise le contrôle
  * de forme du format de fichier (migration v1 comprise). Retourne null
- * si absente ou illisible : l'appelant repart de l'exemple.
+ * si absente ou illisible : l'appelant repart d'un modèle vide.
  */
-export function loadAutosave(): McdEditorState | null {
+export function loadAutosave(): { state: McdEditorState; mpdSettings: MpdSettings | null } | null {
   try {
     const text = localStorage.getItem(AUTOSAVE_KEY)
     if (text === null) {
       return null
     }
     const result = parseModelFile(text)
-    return result.ok ? result.state : null
+    return result.ok ? { state: result.state, mpdSettings: result.mpdSettings } : null
   } catch {
     return null
   }
 }
 
 /* ------------------------------------------------------------------ */
-/* Réglages MPD (dialecte + surcharges de types), mémorisés localement */
+/* Ancienne clé des réglages MPD, relue seulement en repli             */
 
-const MPD_SETTINGS_KEY = 'meriz-mpd-settings'
+const LEGACY_MPD_SETTINGS_KEY = 'meriz-mpd-settings'
 
-export function saveMpdSettings(settings: import('../model/mpd').MpdSettings): void {
+/**
+ * Les réglages MPD vivaient sous une clé à part avant de rejoindre
+ * l'autosauvegarde. Relus une fois si l'autosauvegarde n'en porte pas,
+ * pour ne pas perdre les surcharges existantes. Plus jamais écrits.
+ */
+export function loadLegacyMpdSettings(): MpdSettings | null {
   try {
-    localStorage.setItem(MPD_SETTINGS_KEY, JSON.stringify(settings))
-  } catch {
-    // Stockage indisponible : les réglages ne survivront pas au rechargement.
-  }
-}
-
-export function loadMpdSettings(): import('../model/mpd').MpdSettings | null {
-  try {
-    const text = localStorage.getItem(MPD_SETTINGS_KEY)
-    if (text === null) {
-      return null
-    }
-    const raw: unknown = JSON.parse(text)
-    if (!isRecord(raw) || (raw.dialect !== 'mysql' && raw.dialect !== 'postgresql')) {
-      return null
-    }
-    const overrides: Record<string, string> = {}
-    if (isRecord(raw.overrides)) {
-      for (const [key, value] of Object.entries(raw.overrides)) {
-        if (typeof value === 'string') {
-          overrides[key] = value
-        }
-      }
-    }
-    return { dialect: raw.dialect, overrides }
+    const text = localStorage.getItem(LEGACY_MPD_SETTINGS_KEY)
+    return text === null ? null : parseMpdSettings(JSON.parse(text))
   } catch {
     return null
   }
