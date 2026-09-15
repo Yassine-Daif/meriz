@@ -20,7 +20,8 @@ import type { MpdSettings } from '../model/mpd'
  * Version 2 : dictionnaire central des propriétés (`properties`),
  * les entités et associations portent des références. Champ optionnel
  * `mpd` : la seule partie éditable du MPD (dialecte et surcharges de
- * types), la structure restant dérivée du MCD.
+ * types), la structure restant dérivée du MCD. Champ optionnel `name` :
+ * le nom du document, conservé d'un export à une réimportation.
  * Version 1 (attributs définis en ligne) : encore ouvrable, migrée
  * automatiquement à la lecture.
  */
@@ -30,26 +31,56 @@ export const MERIZ_VERSION = 2
 export interface MerizFile {
   format: typeof MERIZ_FORMAT
   version: typeof MERIZ_VERSION
+  name?: string
   mcd: Mcd
   layout: McdLayout
   mpd?: MpdSettings
 }
 
-/** Réglages MPD absents ou mal formés : null, sans faire échouer l'ouverture. */
+/**
+ * Réglages MPD absents ou mal formés : null, sans faire échouer
+ * l'ouverture. Nom absent ou vide : null.
+ */
 export type ParseResult =
-  | { ok: true; state: McdEditorState; mpdSettings: MpdSettings | null }
+  | { ok: true; state: McdEditorState; mpdSettings: MpdSettings | null; name: string | null }
   | { ok: false; error: string }
 
-/** Sérialise l'état complet (modèle, positions, réglages MPD) en JSON indenté. */
-export function serializeModel(state: McdEditorState, mpdSettings: MpdSettings): string {
+/** Sérialise l'état complet (nom, modèle, positions, réglages MPD) en JSON indenté. */
+export function serializeModel(
+  state: McdEditorState,
+  mpdSettings: MpdSettings,
+  name?: string,
+): string {
   const file: MerizFile = {
     format: MERIZ_FORMAT,
     version: MERIZ_VERSION,
+    name,
     mcd: state.mcd,
     layout: state.layout,
     mpd: mpdSettings,
   }
   return JSON.stringify(file, null, 2)
+}
+
+const MERIZ_EXTENSION = '.meriz.json'
+
+/**
+ * Nom de fichier proposé à l'export : le nom du document, sans les
+ * caractères interdits par les systèmes de fichiers.
+ */
+export function fileNameFor(name: string): string {
+  const safe = name.replace(/[\\/:*?"<>|]/g, '-').trim()
+  return `${safe === '' ? 'modele' : safe}${MERIZ_EXTENSION}`
+}
+
+/** Nom de document déduit d'un nom de fichier importé. */
+export function nameFromFileName(fileName: string): string {
+  const base = fileName.replace(/\.meriz\.json$/i, '').replace(/\.json$/i, '').trim()
+  return base === '' ? 'Document importé' : base
+}
+
+function parseName(raw: unknown): string | null {
+  return typeof raw === 'string' && raw.trim() !== '' ? raw.trim() : null
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -300,6 +331,7 @@ export function parseModelFile(text: string): ParseResult {
       ok: true,
       state: { mcd: migrateV1(entities, associations), layout: raw.layout },
       mpdSettings: null,
+      name: null,
     }
   }
 
@@ -345,59 +377,6 @@ export function parseModelFile(text: string): ParseResult {
     ok: true,
     state: { mcd: { properties, entities, associations }, layout: raw.layout },
     mpdSettings: parseMpdSettings(raw.mpd),
-  }
-}
-
-/* ------------------------------------------------------------------ */
-/* Sauvegarde automatique locale                                       */
-
-const AUTOSAVE_KEY = 'meriz-autosave'
-
-/**
- * Écrit l'état courant et les réglages MPD dans le navigateur, au même
- * format qu'un fichier. Silencieux en cas d'échec.
- */
-export function saveAutosave(state: McdEditorState, mpdSettings: MpdSettings): void {
-  try {
-    localStorage.setItem(AUTOSAVE_KEY, serializeModel(state, mpdSettings))
-  } catch {
-    // Stockage plein ou indisponible : la sauvegarde fichier reste possible.
-  }
-}
-
-/**
- * Relit la sauvegarde automatique au démarrage. Réutilise le contrôle
- * de forme du format de fichier (migration v1 comprise). Retourne null
- * si absente ou illisible : l'appelant repart d'un modèle vide.
- */
-export function loadAutosave(): { state: McdEditorState; mpdSettings: MpdSettings | null } | null {
-  try {
-    const text = localStorage.getItem(AUTOSAVE_KEY)
-    if (text === null) {
-      return null
-    }
-    const result = parseModelFile(text)
-    return result.ok ? { state: result.state, mpdSettings: result.mpdSettings } : null
-  } catch {
-    return null
-  }
-}
-
-/* ------------------------------------------------------------------ */
-/* Ancienne clé des réglages MPD, relue seulement en repli             */
-
-const LEGACY_MPD_SETTINGS_KEY = 'meriz-mpd-settings'
-
-/**
- * Les réglages MPD vivaient sous une clé à part avant de rejoindre
- * l'autosauvegarde. Relus une fois si l'autosauvegarde n'en porte pas,
- * pour ne pas perdre les surcharges existantes. Plus jamais écrits.
- */
-export function loadLegacyMpdSettings(): MpdSettings | null {
-  try {
-    const text = localStorage.getItem(LEGACY_MPD_SETTINGS_KEY)
-    return text === null ? null : parseMpdSettings(JSON.parse(text))
-  } catch {
-    return null
+    name: parseName(raw.name),
   }
 }

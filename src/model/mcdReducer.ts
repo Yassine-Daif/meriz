@@ -51,8 +51,6 @@ export type McdAction =
   | { type: 'SET_ATTRIBUTE_IDENTIFIER'; entityId: string; propertyId: string; isIdentifier: boolean }
   | { type: 'SET_LEG_CARDINALITY'; legId: string; cardinality: Cardinality }
   | { type: 'SET_LEG_ROLE'; legId: string; role: string | undefined }
-  | { type: 'LOAD_MODEL'; mcd: Mcd; layout: McdLayout }
-  | { type: 'NEW_MODEL' }
 
 /** Premier nom « base N » non encore utilisé. */
 function nextName(base: string, usedNames: string[]): string {
@@ -372,16 +370,6 @@ export function mcdReducer(state: McdEditorState, action: McdAction): McdEditorS
 
     case 'SET_LEG_ROLE': {
       return withLeg(state, action.legId, (l) => ({ ...l, role: action.role }))
-    }
-
-    case 'LOAD_MODEL': {
-      // Remplacement complet de l'état, après contrôle de forme
-      // effectué en amont (persistence.ts).
-      return { mcd: action.mcd, layout: action.layout }
-    }
-
-    case 'NEW_MODEL': {
-      return { mcd: { properties: [], entities: [], associations: [] }, layout: {} }
     }
   }
 }

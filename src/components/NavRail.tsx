@@ -20,13 +20,6 @@ const iconProps = {
 
 // Icônes dessinées en SVG en ligne : aucune dépendance.
 const icons: Record<ViewId, ReactNode> = {
-  accueil: (
-    <svg {...iconProps}>
-      <path d="m3 11.5 9-8 9 8" />
-      <path d="M5.5 9.5V20h13V9.5" />
-      <path d="M10 20v-6h4v6" />
-    </svg>
-  ),
   dictionnaire: (
     <svg {...iconProps}>
       <path d="M4 5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-2Z" />

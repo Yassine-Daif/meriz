@@ -11,14 +11,15 @@ Vous dessinez le modèle conceptuel (MCD). Meriz le vérifie, puis en tire le mo
 
 ## Ce que fait Meriz
 
+- **Documents.** Plusieurs documents nommés, à créer, ouvrir, renommer, dupliquer et supprimer depuis l'accueil. Chacun est sauvegardé automatiquement dans le navigateur.
 - **Dictionnaire des propriétés.** Chaque donnée est définie une seule fois, puis placée dans une entité ou une association.
 - **Éditeur de MCD.** Entités, associations, pattes et cardinalités, à la souris comme au clavier.
 - **Vérification.** Les erreurs bloquantes et les avertissements s'affichent en direct. Un clic mène à l'élément concerné.
 - **MLD, MPD et SQL.** Ils suivent le MCD en direct, selon les règles de passage Merise. Le script SQL cible MySQL ou PostgreSQL, et les types restent modifiables colonne par colonne.
 - **Apprendre.** Une page explique la méthode, les cardinalités et le passage au SQL.
-- **Fichiers.** Enregistrement et ouverture au format `.meriz.json`, export du schéma en PNG, sauvegarde automatique dans le navigateur.
+- **Fichiers.** Export et import au format `.meriz.json`, nom du document compris, et export du schéma en PNG.
 
-Un modèle complet sert d'exemple : [examples/universite.meriz.json](examples/universite.meriz.json). Ouvrez-le depuis le bouton Ouvrir.
+Pour démarrer, le bouton « Découvrir avec l'exemple » de l'accueil ouvre le modèle Client passe Commande. Un modèle plus complet est fourni dans [examples/universite.meriz.json](examples/universite.meriz.json) : importez-le avec « Ouvrir un fichier ».
 
 ## Lancer le projet
 

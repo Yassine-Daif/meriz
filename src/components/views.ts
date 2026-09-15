@@ -1,11 +1,10 @@
 /**
- * Les vues de l'application, dans l'ordre pédagogique du rail :
+ * Les vues de l'éditeur, dans l'ordre pédagogique du rail :
  * dictionnaire des données, puis les trois niveaux Merise et le SQL.
  * La vue active est un simple état d'interface, jamais une donnée
- * du modèle.
+ * du modèle. L'accueil (liste des documents) est hors de l'éditeur.
  */
 export type ViewId =
-  | 'accueil'
   | 'dictionnaire'
   | 'mcd'
   | 'mld'
@@ -20,7 +19,6 @@ export interface ViewInfo {
 }
 
 export const VIEWS: readonly ViewInfo[] = [
-  { id: 'accueil', label: 'Accueil' },
   { id: 'dictionnaire', label: 'Dictionnaire' },
   { id: 'mcd', label: 'MCD' },
   { id: 'mld', label: 'MLD' },

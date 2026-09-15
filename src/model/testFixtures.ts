@@ -1,4 +1,5 @@
 import type { Mcd } from './mcd'
+import { exampleMcd } from './example'
 
 /**
  * MCD de référence pour les tests des règles de passage. Écrits à la
@@ -11,44 +12,9 @@ import type { Mcd } from './mcd'
 /**
  * Client (0,n) passer Commande (1,1) : un client passe zéro ou
  * plusieurs commandes, une commande est passée par exactement un client.
+ * C'est l'exemple de l'application, testé tel qu'il est proposé.
  */
-export const clientCommande = {
-  properties: [
-    { id: 'prop-num-client', name: 'numeroClient', type: 'entier' },
-    { id: 'prop-nom-client', name: 'nom', type: 'texte' },
-    { id: 'prop-num-commande', name: 'numeroCommande', type: 'entier' },
-    { id: 'prop-date-commande', name: 'dateCommande', type: 'date' },
-  ],
-  entities: [
-    {
-      id: 'ent-client',
-      name: 'Client',
-      attributes: [
-        { propertyId: 'prop-num-client', isIdentifier: true },
-        { propertyId: 'prop-nom-client', isIdentifier: false },
-      ],
-    },
-    {
-      id: 'ent-commande',
-      name: 'Commande',
-      attributes: [
-        { propertyId: 'prop-num-commande', isIdentifier: true },
-        { propertyId: 'prop-date-commande', isIdentifier: false },
-      ],
-    },
-  ],
-  associations: [
-    {
-      id: 'asso-passer',
-      name: 'passer',
-      attributes: [],
-      legs: [
-        { id: 'leg-passer-client', entityId: 'ent-client', cardinality: { min: 0, max: 'n' } },
-        { id: 'leg-passer-commande', entityId: 'ent-commande', cardinality: { min: 1, max: 1 } },
-      ],
-    },
-  ],
-} satisfies Mcd
+export const clientCommande = exampleMcd
 
 /** Même cas, mais une commande peut n'avoir aucun client : Commande (0,1). */
 export const clientCommandeOptionnel = {

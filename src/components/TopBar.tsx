@@ -1,16 +1,20 @@
-import type { Dispatch } from 'react'
-import type { McdAction, McdEditorState } from '../model/mcdReducer'
+import type { McdEditorState } from '../model/mcdReducer'
 import type { MpdSettings } from '../model/mpd'
 import { FileActions } from './FileActions'
+import { DocumentNameField } from './DocumentNameField'
 import { UiScaleControl } from './UiScaleControl'
 import { Logo } from './Logo'
 
 interface TopBarProps {
   state: McdEditorState
-  dispatch: Dispatch<McdAction>
-  onModelReplaced: () => void
   mpdSettings: MpdSettings
-  onMpdSettingsReplaced: (settings: MpdSettings) => void
+  documentName: string
+  onRename: (name: string) => void
+  onBackToDocuments: () => void
+  onNewDocument: () => void
+  onImportFile: (file: File) => Promise<string | null>
+  /** La dernière sauvegarde locale du document a échoué. */
+  saveFailed: boolean
   mcdVisible: boolean
   canUndo: boolean
   canRedo: boolean
@@ -33,13 +37,19 @@ const iconProps = {
 const undoButtonClass =
   'rounded-md border border-line bg-surface p-1.5 hover:bg-shell disabled:cursor-not-allowed disabled:opacity-40'
 
-/** Barre supérieure : marque, annuler/rétablir, actions fichier, validation. */
+/**
+ * Barre supérieure de l'éditeur : marque, retour aux documents, nom du
+ * document courant, annuler/rétablir, actions fichier.
+ */
 export function TopBar({
   state,
-  dispatch,
-  onModelReplaced,
   mpdSettings,
-  onMpdSettingsReplaced,
+  documentName,
+  onRename,
+  onBackToDocuments,
+  onNewDocument,
+  onImportFile,
+  saveFailed,
   mcdVisible,
   canUndo,
   canRedo,
@@ -52,6 +62,19 @@ export function TopBar({
         <Logo />
         Meriz
       </h1>
+      <div className="flex min-w-0 items-center gap-2">
+        <button
+          type="button"
+          onClick={onBackToDocuments}
+          className="flex items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell"
+        >
+          <svg {...iconProps}>
+            <path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2Z" />
+          </svg>
+          Mes documents
+        </button>
+        <DocumentNameField name={documentName} onRename={onRename} />
+      </div>
       <div role="group" aria-label="Historique" className="flex gap-1">
         <button
           type="button"
@@ -84,12 +107,20 @@ export function TopBar({
       </div>
       <FileActions
         state={state}
-        dispatch={dispatch}
-        onModelReplaced={onModelReplaced}
         mpdSettings={mpdSettings}
-        onMpdSettingsReplaced={onMpdSettingsReplaced}
+        documentName={documentName}
         mcdVisible={mcdVisible}
+        onNewDocument={onNewDocument}
+        onImportFile={onImportFile}
       />
+      <p role="status" aria-live="polite" className="text-xs">
+        {saveFailed && (
+          <span className="inline-flex items-center gap-1 rounded border border-amber-400 bg-amber-50 px-2 py-1 text-zinc-800">
+            <span aria-hidden="true">⚠</span>
+            Sauvegarde locale impossible (stockage plein ?). Enregistrez le document en fichier.
+          </span>
+        )}
+      </p>
       <div className="ml-auto">
         <UiScaleControl />
       </div>
