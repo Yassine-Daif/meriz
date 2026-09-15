@@ -24,6 +24,7 @@ dist-ssr
 *.sw?
 
 # Réglages Claude Code locaux (permissions propres à la machine)
+.claude/settings.json
 .claude/settings.local.json
 
 # Build Rust de Tauri

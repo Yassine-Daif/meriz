@@ -1,29 +1,24 @@
 # État du projet Meriz
 
-Audit en lecture seule du code réel, effectué le 9 septembre 2026.
-Dernier commit analysé : `c72ea2b`.
+Audit initial en lecture seule du code réel, effectué le 9 septembre 2026 sur le commit `c72ea2b`.
+Mis à jour le 15 septembre 2026 après la stabilisation, commit `7e7b345`.
 
 Ce rapport décrit ce qui existe dans le dépôt, pas ce qui était prévu.
-Quand le code s'écarte de CLAUDE.md ou du plan, l'écart est signalé.
+Les points réglés depuis l'audit sont marqués **Réglé**, avec ce qui a été fait.
 
 ---
 
 ## 1. Vue d'ensemble
 
-Meriz est une application web complète de modélisation Merise, déjà
-fonctionnelle du début à la fin de la chaîne. On dessine un MCD dans un
-canvas, l'outil valide le modèle, puis génère le MLD, le MPD et un script
-SQL exécutable en MySQL ou PostgreSQL.
+Meriz est une application web complète de modélisation Merise, fonctionnelle du début à la fin de la chaîne. On dessine un MCD dans un canvas, l'outil valide le modèle, puis dérive en direct le MLD, le MPD et un script SQL exécutable en MySQL ou PostgreSQL.
 
 L'application existe sous trois formes :
 
-- version web, déployée sur `https://meriz.mmi25b06.mmi-troyes.fr/app/`
+- version web, sur `https://meriz.mmi25b06.mmi-troyes.fr/app/`
 - logiciel de bureau Windows, macOS et Linux via Tauri, release `v0.1.0` publiée
 - site vitrine statique à la racine du même domaine, avec une page de téléchargement
 
-Le projet n'est plus un prototype. Les treize étapes prévues sont livrées.
-Ce qui manque relève de la finition et de l'exploitation : aucun test
-automatisé, un README vide, et le déploiement web automatique en échec.
+Les treize étapes prévues sont livrées. La stabilisation a réglé les quatre défauts relevés par l'audit, écrit le README, retiré le code mort, ajouté des tests sur les règles de passage et réparé le workflow de déploiement. Un seul point bloque encore l'automatisation complète : les secrets du VPS restent à créer à la main.
 
 ---
 
@@ -34,77 +29,36 @@ automatisé, un README vide, et le déploiement web automatique en échec.
 | Modèle de données | Fait | `src/model/mcd.ts`, structure pure, sérialisable, aucune coordonnée de dessin. |
 | Dictionnaire central | Fait | Propriétés définies une fois, placées au plus une fois, règle vérifiée par la validation. |
 | Canvas MCD | Fait | React Flow contrôlé, glisser fluide, sélection multiple, suppression protégée. |
-| Édition et inspecteur | Fait | Formulaires entité, association et patte, avec réserve sur le champ Taille (voir plus bas). |
+| Édition et inspecteur | Fait | Formulaires entité, association et patte. Création de patte au clavier ajoutée. |
 | Validation | Fait | Deux niveaux, dix-sept invariants documentés, problèmes cliquables. |
-| Vue MLD | Fait | Cartes de tables plus notation relationnelle MLDR datée, copiable. |
-| Vue MPD | Fait | Diagramme de tables typées et mappage de types éditable, avec réserve sur les positions. |
-| Vue SQL | Fait | Script complet, coloration, copie, export `.sql`, DROP optionnels. |
-| Page Apprendre | Fait | Neuf sections plus un glossaire, sommaire ancré, environ 500 lignes. |
-| Sauvegarde et export | Fait | Format v2 avec migration v1, sélecteur de fichier natif, PNG, autosauvegarde. |
+| Vue MLD | Fait | Dérivée en direct du MCD, jamais vide après rechargement. |
+| Vue MPD | Fait | Dérivée en direct, positions du diagramme conservées au changement de vue. |
+| Vue SQL | Fait | Dérivée en direct, coloration, copie, export `.sql`, DROP optionnels. |
+| Page Apprendre | Fait | Neuf sections plus un glossaire, sommaire ancré. |
+| Sauvegarde et export | Fait | Format v2 avec migration v1, réglages MPD désormais enregistrés avec le modèle. |
 | Coquille et navigation | Fait | Rail de vues, barre supérieure, réglage de taille d'interface. |
-| Version PC (Tauri) | Fait | Configuration complète, icônes, workflow de release, `v0.1.0` publiée avec neuf fichiers. |
-| Version web (déploiement) | Partiel | Le site tourne, mais le déploiement automatique échoue à chaque push. |
-| Tests automatisés | Absent | Aucun test, aucun lanceur de test dans les dépendances. |
-| README | Page d'attente | Contient une seule ligne : `# meriz`. |
+| Version PC (Tauri) | Fait | Configuration complète, workflow de release, `v0.1.0` publiée avec neuf fichiers. |
+| Version web (déploiement) | Partiel | Workflow réparé et poussé. Il attend les secrets du VPS, à créer à la main. |
+| Tests automatisés | Fait | 22 tests Vitest sur `mcdToMld`, `buildMpd` et `mpdToSql`. |
+| README et licence | Fait | README complet, licence MIT déjà présente et confirmée. |
 
 ### Détail par domaine
 
-**Modèle de données.** `Mcd` porte trois listes : `properties`, `entities`,
-`associations`. Les positions vivent à part dans `McdLayout`, un simple
-`Record<string, Position>`. La séparation modèle / affichage exigée par
-CLAUDE.md est réellement respectée : aucun fichier de `src/model` n'importe
-React Flow. Les sept types conceptuels sont un tuple `as const` dont le type
-dérive, donc la liste d'exécution et le type restent synchronisés. Aucun type
-SQL ne remonte au niveau conceptuel.
+**Modèle de données.** `Mcd` porte trois listes : `properties`, `entities`, `associations`. Les positions vivent à part dans `McdLayout`, un simple `Record<string, Position>`. Aucun fichier de `src/model` n'importe React Flow. Les sept types conceptuels sont un tuple `as const` dont le type dérive. Aucun type SQL ne remonte au niveau conceptuel.
 
-**Dictionnaire central.** La règle d'unicité Merise est appliquée à deux
-endroits : le reducer refuse silencieusement un `PLACE_PROPERTY` sur une
-propriété déjà placée, et `validate` signale en erreur tout placement
-multiple. `DictionaryView` liste nom, type, taille, utilisation et
-placement, avec tri par colonne et suppression protégée par confirmation
-quand la propriété est utilisée.
+**Dictionnaire central.** La règle d'unicité Merise est appliquée à deux endroits : le reducer refuse silencieusement un `PLACE_PROPERTY` sur une propriété déjà placée, et `validate` signale en erreur tout placement multiple. `DictionaryView` liste nom, type, taille, utilisation et placement, avec tri et suppression protégée.
 
-**Canvas MCD.** Le problème de clignotement est résolu proprement :
-`McdCanvas` tient un état local de vue, React Flow met à jour ce state
-image par image pendant le glisser, et la position n'entre dans le layout
-qu'au `onNodeDragStop`, en une seule action `MOVE_NODES` (donc une seule
-étape d'annulation, même en glisser groupé). Les entités n'exposent que des
-handles `target` et les associations des handles `source`, ce qui empêche
-par construction de créer une patte dans le mauvais sens. Le côté d'accroche
-est choisi selon l'axe dominant entre les deux nœuds.
+**Canvas MCD.** `McdCanvas` tient un état local de vue pendant le glisser, et la position n'entre dans le layout qu'au `onNodeDragStop`, en une seule action `MOVE_NODES`. Les entités n'exposent que des handles `target` et les associations des handles `source` : une patte ne peut pas être créée dans le mauvais sens.
 
-**Édition et inspecteur.** L'inspecteur n'édite que lorsqu'un seul élément
-est sélectionné, et affiche un message clair sinon. Les formulaires couvrent
-le nom, les attributs, l'identifiant (jamais proposé côté association,
-conformément à l'invariant 14), la cardinalité par boutons radio limités aux
-quatre valeurs valides, et le rôle de patte.
+**Édition et inspecteur.** L'inspecteur édite un seul élément sélectionné. Le formulaire d'association contient désormais un bloc « Relier à une entité » (`LegConnector.tsx`) : liste des entités, bouton Relier, annonce accessible, focus rendu à la liste. Le sens association vers entité est garanti par l'action `ADD_LEG`.
 
-**Validation.** `validate.ts` produit erreurs et avertissements en français.
-Les erreurs couvrent les invariants 1 à 16. Les avertissements ajoutent
-l'entité isolée, les mots réservés SQL (une liste d'environ 65 mots), la
-convention du un à un, l'information sur les ternaires, et la collision de
-colonne après migration de clé. Chaque problème porte un `elementId` qui le
-rend cliquable vers l'élément fautif.
+**Validation.** `validate.ts` produit erreurs et avertissements en français. Chaque problème porte un `elementId` qui le rend cliquable vers l'élément fautif.
 
-**MLD, MPD et SQL.** Les trois règles de passage sont implémentées et
-commentées dans `mld.ts`. La direction des clés étrangères suit bien la
-lecture depuis l'entité. Les associations réflexives préfixent les colonnes
-par le rôle. Le MPD ajoute la couche de types SQL, seule couche éditable, et
-mémorise dialecte et surcharges. `mpdToSql` trie les tables
-topologiquement, sort les clés étrangères en `ALTER TABLE ADD CONSTRAINT`
-avec des noms déterministes, et propose `AUTO_INCREMENT` ou `SERIAL` selon
-le dialecte.
+**MLD, MPD et SQL.** Les trois règles de passage sont implémentées dans `mld.ts` et désormais verrouillées par des tests. Les trois vues dérivent en permanence du MCD courant. Elles affichent un message seulement quand le MCD n'a aucune entité, et un bandeau quand il contient des erreurs.
 
-**Sauvegarde et export.** Format `meriz-mcd` version 2, avec contrôle de
-forme complet à l'ouverture et migration automatique des fichiers version 1.
-Le contrôle revérifie les cardinalités à l'exécution. L'autosauvegarde écrit
-dans `localStorage` à chaque changement d'état. `saveFileAs` utilise le
-sélecteur de fichier natif quand le navigateur le propose, et retombe sur un
-téléchargement sinon.
+**Sauvegarde et export.** Format `meriz-mcd` version 2, avec un nouveau champ facultatif `mpd` qui porte le dialecte et les surcharges de types. Les anciens fichiers s'ouvrent toujours. L'autosauvegarde écrit modèle, positions et réglages MPD sous une seule clé. L'ancienne clé `meriz-mpd-settings` n'est plus que relue en repli.
 
-**Version web.** Le site vitrine et l'application sont en ligne et
-fonctionnent, mais ils ont été posés à la main sur le VPS. Le workflow
-`deploy-web.yml` échoue à chaque push depuis sa création (voir la section 5).
+**Version web.** Le site et l'application tournent sur le VPS, posés à la main jusqu'ici. Le workflow corrigé est poussé. Son premier lancement, sur `7e7b345`, s'arrête comme prévu à l'étape « Vérifier les secrets ». Dès que les secrets existent, chaque push sur `main` déploiera tout seul.
 
 ---
 
@@ -114,19 +68,16 @@ fonctionnent, mais ils ont été posés à la main sur le VPS. Le workflow
 
 ```
 src/
-  model/        source de vérité : types, reducers, validation, dérivations
+  model/        source de vérité : types, reducers, validation, dérivations, tests
   canvas/       rendu React Flow : nœuds, liens, transformations vers Flow
   components/   interface : vues, formulaires, panneaux
-  lib/          utilitaires : identifiants, persistance, téléchargement, PNG
+  lib/          utilitaires : identifiants, persistance, téléchargement, PNG, clavier
 site/           vitrine statique (HTML et CSS vanille, zéro dépendance)
 src-tauri/      application de bureau (Rust, icônes, configuration)
-deploy/         gabarits de VirtualHost Apache et de serveur nginx
+deploy/         gabarits Apache et nginx, guide DEPLOIEMENT.md
 examples/       universite.meriz.json, modèle de démonstration
 .github/        workflows release.yml et deploy-web.yml
 ```
-
-Le découpage exigé par CLAUDE.md est respecté à la lettre. Aucun fichier de
-`src/model` n'importe React ni React Flow.
 
 ### Modules clés
 
@@ -139,9 +90,14 @@ Le découpage exigé par CLAUDE.md est respecté à la lettre. Aucun fichier de
 | `src/model/validate.ts` | 291 | Erreurs et avertissements. |
 | `src/model/mld.ts` | 197 | Règles de passage MCD vers MLD. |
 | `src/model/mpd.ts` | 206 | Types SQL, tri topologique, génération du script. |
-| `src/lib/persistence.ts` | 347 | Format de fichier, migration v1, autosauvegarde. |
+| `src/model/mld.test.ts`, `mpd.test.ts` | 95 + 92 | Tests des règles de passage et du SQL. |
+| `src/model/testFixtures.ts` | 187 | MCD de référence des tests. |
+| `src/lib/persistence.ts` | 362 | Format de fichier, migration v1, réglages MPD, autosauvegarde. |
+| `src/lib/keyboard.ts` | 16 | Garde des raccourcis globaux dans les champs de saisie. |
 | `src/canvas/McdCanvas.tsx` | 231 | Le canvas et son état de vue local. |
-| `src/components/LearnView.tsx` | 504 | La page pédagogique. |
+| `src/components/LegConnector.tsx` | 75 | Création de patte au clavier. |
+
+Comptes de lignes non vides.
 
 ### Forme du modèle
 
@@ -158,139 +114,97 @@ Association  { id, name, attributes: PropertyRef[], legs: Leg[] }
 Mcd          { properties: Property[], entities: Entity[], associations: Association[] }
 
 McdLayout    Record<string, { x, y }>   positions des nœuds ET des étiquettes de pattes
+MpdSettings  { dialect: 'mysql' | 'postgresql', overrides: Record<string, string> }
 ```
-
-Le type `Cardinality` interdit à la compilation toute autre valeur que
-(0,1), (1,1), (0,n) et (1,n).
 
 ### Gestion d'état
 
-Un seul `useReducer` dans `App.tsx`, sur `historyReducer`, qui enveloppe
-`mcdReducer`. L'état historisé est exactement `{ mcd, layout }`. La
-sélection, la vue active et les réglages MPD sont des `useState` séparés,
-volontairement hors de l'historique.
+Un seul `useReducer` dans `App.tsx`, sur `historyReducer`, qui enveloppe `mcdReducer`. L'état historisé est exactement `{ mcd, layout }`. La sélection, la vue active et les réglages MPD sont des `useState` séparés, hors de l'historique. Les réglages MPD sont sauvegardés avec le modèle.
 
-`historyReducer` fusionne les actions continues grâce à une signature
-`type:cibleId` : huit frappes dans un champ de nom ne font qu'une seule
-étape d'annulation. La pile est plafonnée à 100 étapes. Un refus silencieux
-du reducer (même référence retournée) n'entre pas dans l'historique.
+`historyReducer` fusionne les actions continues grâce à une signature `type:cibleId`, et plafonne la pile à 100 étapes.
 
-Les vues MLD, MPD et SQL ne sont pas un état stocké : ce sont des `useMemo`
-purs qui dérivent du MCD courant dès que `generatedAt` est renseigné. Il ne
-peut donc pas y avoir de divergence entre le MCD et ce qui est affiché.
-Quand le modèle contient des erreurs, une bannière le signale au lieu de
-figer un résultat périmé.
+Les tables MLD et MPD sont des `useMemo` purs recalculés à chaque changement du MCD ou des réglages. Il n'existe plus d'état « généré » : le bouton Générer vérifie le modèle puis ouvre la vue MLD.
+
+Les vues MCD et MPD restent montées quand elles sont masquées. C'est ce qui conserve le zoom du canvas MCD et les positions du diagramme MPD.
 
 ---
 
 ## 4. Ce qui a été fait par rapport au plan
 
-Déduit du code, pas des intentions.
-
 | Étape | Réalisée | Preuve dans le code |
 |---|---|---|
-| 00 Squelette Vite, React, TS, Tailwind, React Flow | Oui | `vite.config.ts`, `package.json`, Tailwind v4 via `@tailwindcss/vite`. |
+| 00 Squelette Vite, React, TS, Tailwind, React Flow | Oui | `vite.config.ts`, `package.json`. |
 | 01 Modèle MCD et invariants | Oui | `mcd.ts` et `invariants.md`. |
 | 02 Canvas et reducer | Oui | `McdCanvas.tsx`, `mcdReducer.ts`, `mcdToFlow.ts`. |
 | 03 Inspecteur et validation | Oui | `Inspector.tsx`, `validate.ts`, `ProblemsPanel.tsx`. |
 | 04 Fichiers et export PNG | Oui | `persistence.ts`, `exportImage.ts`, `FileActions.tsx`. |
 | 05 Coquille applicative | Oui | `NavRail.tsx`, `TopBar.tsx`, `views.ts`. |
 | 06 à 08 MLD, MPD, SQL | Oui | `mld.ts`, `mpd.ts`, et les trois vues. |
-| 09 Page Apprendre | Oui | `LearnView.tsx`, neuf sections plus glossaire. |
-| 10 À propos et licence | Oui | `AboutView.tsx` avec le texte MIT complet. |
-| 11 Application Tauri | Oui | `src-tauri/`, `release.yml`, release `v0.1.0` publiée. |
-| 12 Déploiement web | Partiel | Le site tourne, mais le workflow automatique échoue. |
-| 13 Site vitrine | Oui | `site/index.html`, `site/telecharger.html`, `site/style.css`. |
+| 09 Page Apprendre | Oui | `LearnView.tsx`. |
+| 10 À propos et licence | Oui | `AboutView.tsx`, `LICENSE`. |
+| 11 Application Tauri | Oui | `src-tauri/`, `release.yml`, release `v0.1.0`. |
+| 12 Déploiement web | Partiel | Workflow réparé. Secrets du VPS à créer (étape manuelle). |
+| 13 Site vitrine | Oui | `site/index.html`, `site/telecharger.html`. |
+| Stabilisation A : correctifs | Oui | `keyboard.ts`, `LegConnector.tsx`, `App.tsx`, `MpdView.tsx`. |
+| Stabilisation B : ménage et tests | Oui | `README.md`, `mld.test.ts`, `mpd.test.ts`, `example.ts` supprimé. |
+| Stabilisation C : déploiement | Oui côté dépôt | `deploy-web.yml`, `deploy/DEPLOIEMENT.md`. |
 
-Écarts entre le code et CLAUDE.md, à corriger un jour dans CLAUDE.md
-lui-même :
-
-1. CLAUDE.md dit encore, en « Hors périmètre pour l'instant », qu'il n'y a
-   « pas de génération MLD, MPD ni SQL ». Cette limite a été levée en cours
-   de route et les trois niveaux sont livrés. La section est périmée.
-2. CLAUDE.md annonce Tauri comme « plus tard ». C'est fait.
-3. L'héritage et la spécialisation Merise restent bien hors périmètre, et
-   rien dans le code ne les amorce. Cet écart-là n'existe pas.
+**Réglé.** Les écarts entre CLAUDE.md et le code sont corrigés dans CLAUDE.md : la génération MLD, MPD et SQL et l'application Tauri y sont désormais marquées comme livrées.
 
 ---
 
 ## 5. Bugs connus et points en suspens
 
-Classés du plus gênant au plus anodin.
+### Réglés pendant la stabilisation
 
-**1. Le déploiement web automatique échoue à chaque push.** Les huit
-derniers lancements du workflow `Deploy web` sont en échec, y compris sur le
-dernier commit `c72ea2b`. Cause : les secrets `VPS_HOST`, `VPS_USER`,
-`VPS_SSH_KEY` et `VPS_PATH` n'ont jamais été créés dans les réglages du
-dépôt. Conséquence pratique : toute modification du site ou de l'application
-demande une mise à jour manuelle sur le VPS, par exemple
-`cd /home/mmi25b06/meriz && git pull && cp -r site/. /var/www/meriz/`.
-Le workflow `Release` fonctionne, lui.
+**1. Déploiement web automatique.** **Réglé côté dépôt, en attente de vos secrets.** Voici ce qui a changé dans le workflow :
+- une étape nomme les secrets manquants ;
+- la clé passe par `env:` ;
+- l'empreinte d'hôte est vérifiée par le secret `VPS_KNOWN_HOSTS` ;
+- la connexion et le droit d'écriture sont testés avant l'envoi ;
+- `npm test` passe avant le build ;
+- les droits des fichiers sont forcés pour Apache ;
+- relance manuelle et un seul déploiement à la fois.
 
-**2. Ctrl+Z écrase l'annulation native dans les champs de saisie.** Dans
-`App.tsx`, le gestionnaire d'annulation écoute la fenêtre entière sans
-vérifier la cible, contrairement au Ctrl+A juste au-dessus qui, lui, ignore
-les `input`, `textarea` et `select`. Taper un nom d'entité puis faire Ctrl+Z
-annule donc l'action de modèle au lieu de la frappe. C'est en partie masqué
-par la fusion des actions continues, mais le comportement reste surprenant.
+La marche à suivre est dans `deploy/DEPLOIEMENT.md`. Tant que les secrets manquent, chaque push échoue à la première étape, avec la liste des secrets absents.
 
-**3. L'état « généré » ne survit pas au rechargement.** `generatedAt` est un
-`useState` initialisé à `null` et jamais mémorisé, alors que le modèle,
-lui, est restauré par l'autosauvegarde. Après un rechargement de page, les
-vues MLD, MPD et SQL réaffichent donc l'écran « rien à afficher » tant qu'on
-n'a pas recliqué sur Générer, alors que le MCD est bien revenu.
+**2. Ctrl+Z dans les champs de saisie.** **Réglé.** Ctrl+Z, Ctrl+Y et Ctrl+Maj+Z ignorent désormais les champs de saisie, les listes et les zones éditables. Ils passent par la même garde que Ctrl+A, `isEditableTarget`. Dans un champ, le navigateur annule la frappe.
 
-**4. Les positions du diagramme MPD sont perdues à chaque changement de
-vue.** `MpdView` est monté conditionnellement dans `App.tsx`, donc démonté
-dès qu'on quitte la vue. Les positions des tables vivent dans un `useState`
-local à `MpdDiagram`, jamais dans le layout ni dans le fichier. Ranger le
-diagramme puis aller voir le SQL suffit à tout remettre en grille. La vue
-MCD, elle, est masquée et non démontée, et ne souffre pas du problème.
+**3. Vues générées vides après rechargement.** **Réglé.** L'état `generatedAt` est supprimé. MLD, MPD et SQL dérivent toujours du MCD. Les réglages MPD sont enregistrés dans l'autosauvegarde et dans les fichiers.
 
-**5. Création de patte impossible au clavier.** Relier une association à une
-entité passe uniquement par un glisser de handle à la souris. Aucun
-formulaire ne propose « relier à une entité ». Le déplacement des étiquettes
-de cardinalité est également réservé à la souris. C'est un écart réel avec
-l'exigence forte d'accessibilité de CLAUDE.md, qui demande que tout soit
-utilisable au clavier. Le reste de l'application tient l'objectif : le
-déplacement des nœuds aux flèches fonctionne, les focus sont visibles,
-l'information ne repose jamais sur la couleur seule.
+**4. Positions du diagramme MPD perdues.** **Réglé.** La vue MPD reste montée et masquée, comme la vue MCD.
 
-**6. La taille d'une propriété ne s'édite que dans le Dictionnaire.**
-`AttributesEditor` propose le nom, le type, la case clé et le retrait, mais
-pas le champ Taille. Pour dimensionner un `VARCHAR`, il faut passer par la
-vue Dictionnaire. Cohérent avec l'idée de dictionnaire maître, mais peu
-évident quand on travaille dans l'inspecteur.
+**5. Création de patte impossible au clavier.** **Réglé.** Le bloc « Relier à une entité » dans l'inspecteur d'association rend le parcours possible au seul clavier, avec une annonce accessible.
 
-**7. `src/model/example.ts` est du code mort.** Ses exports `exampleMcd` et
-`exampleLayout` ne sont importés nulle part, depuis que l'application démarre
-sur un modèle vide. Soixante-dix lignes qui ne servent plus. Ni `tsc` ni
-`oxlint` ne le signalent, puisque les symboles sont exportés.
+**6. Code mort `src/model/example.ts`.** **Réglé.** Fichier supprimé. Son cas Client passe Commande sert désormais de fixture de test.
 
-**8. L'exemple n'est pas chargeable depuis l'application.** `HomeView`
-indique le chemin `examples/universite.meriz.json` en texte, mais aucun
-bouton ne l'ouvre. L'utilisateur doit trouver le fichier dans le dépôt.
+**7. README vide.** **Réglé.** README complet : présentation, commandes, application de bureau, structure, licence.
 
-**9. Le README est vide.** Il contient une seule ligne, `# meriz`, alors que
-CLAUDE.md consacre une section entière au style à tenir dedans. Pour un
-projet qui se présente comme open source et accueillant aux contributions,
-c'est le manque le plus visible de l'extérieur.
+**8. Aucun test automatisé.** **Réglé.** 22 tests Vitest couvrent les règles suivantes :
+- clé étrangère du bon côté ;
+- table de jonction à clé composée ;
+- rôle en préfixe pour le réflexif ;
+- identifiant composé ;
+- ordre du SQL ;
+- dialectes et surcharges de types.
 
-**10. Aucun test automatisé.** Pas de Vitest, pas de fichier `.test.ts`, pas
-de lanceur dans les dépendances. Les règles de passage Merise, qui sont le
-cœur de valeur du projet, ne sont protégées par rien contre une régression.
-Elles ont été vérifiées à la main, y compris pendant cet audit, mais rien ne
-rejouera cette vérification automatiquement.
+### Restent ouverts
 
-**11. Numéros de version incohérents.** `package.json` déclare `0.0.0`,
-`src-tauri/tauri.conf.json` déclare `0.1.0`, et la release publiée est
-`v0.1.0`. Sans conséquence fonctionnelle, mais à aligner.
+**9. Secrets du VPS à créer.** Étape manuelle, décrite pas à pas dans `deploy/DEPLOIEMENT.md`. C'est le seul point qui empêche encore le déploiement automatique.
 
-**12. Un fichier non commité.** `.claude/settings.json` a dix lignes de
-permissions ajoutées, non commitées. Sans effet sur l'application.
+**10. Contrôle manuel des correctifs dans le navigateur.** Les correctifs sont vérifiés par types, build, tests et scripts, mais pas encore à la main dans l'interface. À faire en priorité : le cadrage du diagramme MPD au premier affichage, puisque la vue est montée masquée.
 
-Rien dans le code n'est marqué `TODO` ou `FIXME`. Aucune partie n'est cassée
-au sens strict : tout ce qui est branché fonctionne.
+**11. La taille d'une propriété ne s'édite que dans le Dictionnaire.** L'inspecteur propose nom, type, clé et retrait, mais pas la taille.
+
+**12. L'exemple n'est pas chargeable depuis l'application.** `HomeView` cite le chemin `examples/universite.meriz.json`, sans bouton pour l'ouvrir.
+
+**13. Numéros de version incohérents.** `package.json` déclare `0.0.0`, Tauri déclare `0.1.0`, et la release est `v0.1.0`.
+
+**14. Deux failles signalées par `npm audit`.** `nanoid` et `postcss`, niveau high, présentes avant la stabilisation. Ce sont des outils de build, absents du code livré. Leur correction ferait monter d'autres versions, elle est à mener à part.
+
+**15. Lock npm fragile.** Une installation incrémentale retire du lock les paquets WebAssembly optionnels `@emnapi`, et casse `npm ci`. Après tout ajout de dépendance, lancez `npm ci` avant de pousser.
+
+**16. `.claude/settings.json`.** **Réglé.** Il contient des permissions d'outils accumulées, dont certaines larges. Il est désormais ignoré par Git et retiré du dépôt. La copie locale reste en place. Il figure encore dans l'historique des commits passés, sans secret.
 
 ---
 
@@ -304,94 +218,45 @@ npm run dev          # serveur de développement, http://localhost:5173
 npm run build        # tsc -b puis vite build, sortie dans dist/
 npm run preview      # servir le build de production
 npm run lint         # oxlint
+npm test             # tests Vitest
 npm run tauri dev    # application de bureau en développement
 npm run tauri build  # installateurs de bureau
 ```
 
-### Résultats réels, exécutés pendant cet audit
+### Résultats réels, derniers lancements avant le commit `7e7b345`
 
-**Types (`npx tsc -b --force`) : succès, code 0.** Aucune erreur. TypeScript
-6.0 en mode `strict`, avec en plus `noUnusedLocals`, `noUnusedParameters`,
-`erasableSyntaxOnly` et `noFallthroughCasesInSwitch`.
+- **Tests (`npm test`) : succès.** 2 fichiers, 22 tests passés.
+- **Types et build (`npm run build`) : succès.** `tsc -b` sans erreur. Sortie : `index-tia1Pmc2.js` 485,79 ko (gzip 150,13 ko), `index-CXLBZfaF.css` 39,48 ko.
+- **Lint (`npx oxlint`) : succès.** Aucun avertissement.
+- **Lock (`npm ci`) : succès.** `npm ls` sans paquet invalide ni manquant.
+- **Workflow de déploiement :** YAML validé par un parseur, chaque script `run` passe `bash -n`, étape de vérification des secrets testée sans secret, avec un secret manquant et avec tous.
 
-**Lint (`npx oxlint`) : succès, code 0.** Aucun avertissement.
-
-**Build (`npm run build`) : succès, code 0, en 2,10 secondes.**
-
-```
-dist/index.html                   1,05 ko  (gzip  0,54 ko)
-dist/assets/index-CXLBZfaF.css   39,48 ko  (gzip  7,94 ko)
-dist/assets/index-kE0rD9Qh.js   484,06 ko  (gzip 149,85 ko)
-```
-
-**Chaîne complète, vérifiée sur `examples/universite.meriz.json`** au moyen
-d'un script jetable exécuté hors du dépôt :
-
-```
-PARSE OK
-ERREURS = 0 | AVERTISSEMENTS = 0
-TABLES = 8
-    Etudiant (numeroEtudiant, nomEtudiant, prenomEtudiant, dateNaissance,
-              boursier, #codeDiplome, #tuteur_numeroEtudiant)
-    Cours (codeCours, intituleCours, coefficient)
-    Enseignant (numeroEnseignant, nomEnseignant, emailEnseignant)
-    Salle (numeroSalle, capacite)
-    Seance (numeroSeance, debutSeance, dureeSeance, #codeCours, #numeroSalle)
-    Diplome (codeDiplome, libelleDiplome)
-    inscrire (#numeroEtudiant, #codeCours, noteFinale)
-    enseigner (#numeroEnseignant, #codeCours)
-SQL LIGNES = 82
-```
-
-Les trois règles de passage se vérifient sur ce résultat : la clé étrangère
-part bien du côté à maximum 1 (`Etudiant` reçoit `codeDiplome`), le réflexif
-préfixe la colonne par le rôle (`tuteur_numeroEtudiant`), et les
-associations sans côté à maximum 1 deviennent des tables de jonction à clé
-composée (`inscrire`, `enseigner`).
+La stabilisation B n'a pas changé l'application : ses fichiers JS et CSS gardent exactement la même empreinte avant et après.
 
 ### Qualité de code observée
 
-Aucun `any` dans `src`, aucun `@ts-ignore`, aucune désactivation de règle de
-lint. Sept assertions non nulles `!` au total, toutes dans `mld.ts`,
-`mpd.ts` et `validate.ts`, sur des accès garantis par une vérification
-juste au-dessus. Les commentaires sont en français et expliquent des règles
-Merise, comme demandé. Aucun tiret long dans le code ni dans l'interface.
+Aucun `any` dans `src`, aucun `@ts-ignore`, aucune désactivation de règle de lint. Les commentaires sont en français et expliquent des règles Merise. Aucun tiret long dans le code, l'interface ni la documentation.
 
 ---
 
 ## 7. État Git
 
 - Branche courante : `main`
-- Dernier commit : `c72ea2b`, « Page Télécharger : avertissements de premier lancement visibles d'emblée »
-- Synchronisation avec `origin/main` : à jour, zéro commit d'avance, zéro de retard
-- Modifications non commitées : un seul fichier, `.claude/settings.json`, dix lignes de permissions ajoutées. Aucun fichier de l'application n'est modifié.
-- Historique : treize commits, du squelette initial jusqu'à la page de téléchargement.
+- Dernier commit : `7e7b345`, « Stabilisation : correctifs, ménage, tests et déploiement »
+- Synchronisation avec `origin/main` : poussé, à jour
+- Modifications non commitées : aucune. `.claude/settings.json` est ignoré par Git (voir point 16).
+- Historique : quinze commits, le dernier ajoutant ce rapport à jour et la règle d'ignore.
 
 ---
 
 ## 8. Prochaines étapes possibles
 
-Aucune n'est démarrée. Ordre suggéré, du plus utile au plus confortable.
+Aucune n'est démarrée. Ordre suggéré.
 
-1. **Écrire le README.** C'est la première chose que voit un visiteur du
-   dépôt, et le seul livrable annoncé dans CLAUDE.md qui manque encore.
-2. **Créer les quatre secrets GitHub** pour débloquer `deploy-web.yml`, et
-   ne plus déployer à la main.
-3. **Ajouter Vitest et couvrir `mld.ts`, `mpd.ts` et `validate.ts`.** Les
-   règles de passage Merise sont le cœur du projet et rien ne les protège.
-4. **Corriger le Ctrl+Z dans les champs de saisie**, avec le même garde que
-   celui déjà écrit pour Ctrl+A quelques lignes plus haut.
-5. **Mémoriser l'état « généré »** dans l'autosauvegarde, pour que les vues
-   MLD, MPD et SQL survivent à un rechargement.
-6. **Conserver les positions du diagramme MPD**, soit en gardant la vue
-   montée comme le MCD, soit en les rangeant dans le layout.
-7. **Ouvrir une voie clavier pour créer une patte**, par exemple un champ
-   « relier à » dans le formulaire d'association. C'est le dernier vrai trou
-   dans l'objectif d'accessibilité.
-8. **Ajouter un bouton « Ouvrir l'exemple »** sur la page d'accueil, et
-   supprimer `src/model/example.ts` s'il reste inutile, ou le rebrancher
-   pour alimenter ce bouton.
-9. **Aligner les numéros de version** entre `package.json`, Tauri et les
-   tags Git.
-10. **Mettre à jour la section « Hors périmètre » de CLAUDE.md**, devenue
-    fausse sur la génération MLD, MPD, SQL et sur Tauri.
+1. **Créer les secrets du VPS** en suivant `deploy/DEPLOIEMENT.md`, puis relancer le workflow depuis l'onglet Actions pour valider un premier déploiement automatique.
+2. **Tester les correctifs à la main** dans `npm run dev` : Ctrl+Z dans un champ, rechargement, positions MPD, patte au clavier.
+3. **Aligner les numéros de version** entre `package.json`, Tauri et les tags Git.
+4. **Ajouter un bouton « Ouvrir l'exemple »** sur la page d'accueil.
+5. **Rendre la taille éditable dans l'inspecteur**, pour ne plus devoir passer par le Dictionnaire.
+6. **Traiter les deux failles `npm audit`**, puis vérifier que `npm ci`, les tests et le build restent verts.
+7. **Ajouter `npm test` au workflow de release**, pour qu'aucun installateur ne soit publié avec une règle de passage cassée.
