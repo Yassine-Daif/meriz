@@ -1,11 +1,13 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { DocumentMeta } from '../model/document'
 import type { DocumentStore } from '../lib/documentStore'
+import { AccountStatus } from './AccountStatus'
 import { ConfirmDialog } from './ConfirmDialog'
 import { DocumentRow } from './DocumentRow'
 import { ImportFileButton } from './ImportFileButton'
 import { Logo } from './Logo'
 import { UiScaleControl } from './UiScaleControl'
+import { primaryButtonClass, secondaryButtonClass } from './buttonStyles'
 
 interface DocumentsHomeProps {
   store: DocumentStore
@@ -15,6 +17,10 @@ interface DocumentsHomeProps {
   onOpenExample: () => boolean
   /** Importe un fichier comme nouveau document : message d'erreur, ou null. */
   onImportFile: (file: File) => Promise<string | null>
+  onShowSignIn: () => void
+  onShowSignUp: () => void
+  /** Message à annoncer à l'arrivée (ex. connexion réussie). */
+  announcement: string | null
 }
 
 interface StatusMessage {
@@ -48,11 +54,6 @@ const steps: { title: string; text: string }[] = [
   },
 ]
 
-const secondaryButtonClass =
-  'rounded-md border border-line bg-surface px-4 py-2 text-sm font-medium text-ink hover:bg-shell'
-const primaryButtonClass =
-  'rounded-md border border-indigo-700 bg-indigo-700 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-800 hover:text-white'
-
 function Kbd({ children }: { children: string }) {
   return (
     <kbd className="rounded border border-line bg-shell px-1 font-mono text-[11px]">{children}</kbd>
@@ -70,11 +71,21 @@ export function DocumentsHome({
   onNewDocument,
   onOpenExample,
   onImportFile,
+  onShowSignIn,
+  onShowSignUp,
+  announcement,
 }: DocumentsHomeProps) {
   const [documents, setDocuments] = useState<DocumentMeta[]>(() => store.listDocuments())
   const [status, setStatus] = useState<StatusMessage | null>(null)
   const [pendingDelete, setPendingDelete] = useState<DocumentMeta | null>(null)
   const listHeadingRef = useRef<HTMLHeadingElement>(null)
+
+  // Posé après le montage : une zone live n'annonce que ce qui change.
+  useEffect(() => {
+    if (announcement) {
+      setStatus({ kind: 'info', text: announcement })
+    }
+  }, [announcement])
 
   const refresh = () => setDocuments(store.listDocuments())
 
@@ -153,10 +164,11 @@ export function DocumentsHome({
         Aller au contenu
       </a>
 
-      <header className="flex items-center gap-2 border-b border-line bg-surface px-4 py-2">
+      <header className="flex flex-wrap items-center gap-x-2 gap-y-2 border-b border-line bg-surface px-4 py-2">
         <Logo />
         <span className="text-base font-semibold tracking-tight">Meriz</span>
-        <div className="ml-auto">
+        <div className="ml-auto flex flex-wrap items-center gap-3">
+          <AccountStatus onShowSignIn={onShowSignIn} onShowSignUp={onShowSignUp} />
           <UiScaleControl />
         </div>
       </header>

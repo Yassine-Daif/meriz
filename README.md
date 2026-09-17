@@ -18,6 +18,7 @@ Vous dessinez le modèle conceptuel (MCD). Meriz le vérifie, puis en tire le mo
 - **MLD, MPD et SQL.** Ils suivent le MCD en direct, selon les règles de passage Merise. Le script SQL cible MySQL ou PostgreSQL, et les types restent modifiables colonne par colonne.
 - **Apprendre.** Une page explique la méthode, les cardinalités et le passage au SQL.
 - **Fichiers.** Export et import au format `.meriz.json`, nom du document compris, et export du schéma en PNG.
+- **Compte, en option.** Inscription, connexion et déconnexion depuis l'accueil. Les documents restent dans le navigateur pour l'instant, et Meriz marche aussi sans compte.
 
 Pour démarrer, le bouton « Découvrir avec l'exemple » de l'accueil ouvre le modèle Client passe Commande. Un modèle plus complet est fourni dans [examples/universite.meriz.json](examples/universite.meriz.json) : importez-le avec « Ouvrir un fichier ».
 
@@ -33,6 +34,16 @@ npm run preview    # sert le build de production
 npm run lint       # analyse le code avec oxlint
 npm test           # lance les tests avec Vitest
 ```
+
+## Comptes et serveur
+
+Les comptes passent par [Meriz API](https://github.com/Yassine-Daif/meriz-api), un serveur Laravel séparé. L'application lui parle par un jeton, avec une adresse réglée par la variable `VITE_API_URL` : l'origine du serveur, sans `/api`.
+
+- En développement, `.env.development` pointe vers `http://127.0.0.1:8000`. Lancez le serveur avec `php artisan serve` dans son dépôt.
+- Pour un build en ligne, créez `.env.production.local` avec l'adresse réelle. Voir `.env.example`.
+- Sans adresse, les comptes sont désactivés et l'accueil affiche « Comptes indisponibles ». Tout le reste fonctionne.
+
+Tous les appels réseau passent par `src/lib/apiClient.ts`.
 
 ## Application de bureau
 
@@ -51,7 +62,7 @@ Les installateurs des trois systèmes sont construits par GitHub Actions à chaq
 src/model        le modèle MCD, sa validation et les transformations MLD, MPD et SQL
 src/canvas       la zone de dessin React Flow, ses nœuds et ses liens
 src/components   les vues et composants de l'interface
-src/lib          les utilitaires : fichiers, sauvegarde, export d'image
+src/lib          les utilitaires : fichiers, stockage, export d'image, accès au serveur
 site/            le site vitrine, en HTML et CSS sans dépendance
 src-tauri/       le logiciel de bureau
 examples/        des modèles d'exemple

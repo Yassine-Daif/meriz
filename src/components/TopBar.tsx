@@ -1,5 +1,6 @@
 import type { McdEditorState } from '../model/mcdReducer'
 import type { MpdSettings } from '../model/mpd'
+import { AccountStatus } from './AccountStatus'
 import { FileActions } from './FileActions'
 import { DocumentNameField } from './DocumentNameField'
 import { UiScaleControl } from './UiScaleControl'
@@ -121,7 +122,8 @@ export function TopBar({
           </span>
         )}
       </p>
-      <div className="ml-auto">
+      <div className="ml-auto flex flex-wrap items-center gap-3">
+        <AccountStatus compact />
         <UiScaleControl />
       </div>
     </header>

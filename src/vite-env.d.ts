@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
-// Variables d'environnement du projet. VITE_API_URL est réservée au
-// futur serveur d'API : personne ne la lit encore, l'app est statique.
+// Variables d'environnement du projet. VITE_API_URL : origine du
+// serveur Meriz API (sans /api), lue uniquement par src/lib/apiConfig.ts.
 interface ImportMetaEnv {
   readonly VITE_API_URL?: string
 }

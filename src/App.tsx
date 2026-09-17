@@ -7,10 +7,13 @@ import { browserDocumentStore } from './lib/documentStore'
 import { importModelFile } from './lib/importFile'
 import { DocumentsHome } from './components/DocumentsHome'
 import { Editor } from './components/Editor'
+import { AuthPage } from './components/AuthPage'
+import type { AuthMode } from './components/AuthPage'
 
 /**
  * Racine de Meriz : l'accueil (liste des documents) tant qu'aucun
  * document n'est ouvert, sinon l'éditeur sur le document courant.
+ * Les écrans de compte s'ouvrent depuis l'accueil.
  */
 export function App() {
   // Stockage ouvert une fois ; l'ancien plan de travail unique devient
@@ -21,11 +24,16 @@ export function App() {
     return documentStore
   })
   const [openedDocument, setOpenedDocument] = useState<OpenedDocument | null>(null)
+  // Écran affiché quand aucun document n'est ouvert.
+  const [authMode, setAuthMode] = useState<AuthMode | null>(null)
+  // Message annoncé à l'arrivée sur l'accueil (connexion réussie).
+  const [homeAnnouncement, setHomeAnnouncement] = useState<string | null>(null)
 
   const openDocument = useCallback(
     (id: string): boolean => {
       const loaded = store.loadDocument(id)
       if (loaded) {
+        setHomeAnnouncement(null)
         setOpenedDocument(loaded)
       }
       return loaded !== null
@@ -85,6 +93,25 @@ export function App() {
     [store, currentId],
   )
 
+  const showAuth = useCallback((mode: AuthMode) => {
+    setHomeAnnouncement(null)
+    setAuthMode(mode)
+  }, [])
+
+  if (!openedDocument && authMode) {
+    return (
+      <AuthPage
+        mode={authMode}
+        onModeChange={setAuthMode}
+        onBack={() => setAuthMode(null)}
+        onAuthenticated={(message) => {
+          setHomeAnnouncement(message)
+          setAuthMode(null)
+        }}
+      />
+    )
+  }
+
   if (!openedDocument) {
     return (
       <DocumentsHome
@@ -93,6 +120,9 @@ export function App() {
         onNewDocument={newDocument}
         onOpenExample={openExample}
         onImportFile={importFile}
+        onShowSignIn={() => showAuth('sign-in')}
+        onShowSignUp={() => showAuth('sign-up')}
+        announcement={homeAnnouncement}
       />
     )
   }
