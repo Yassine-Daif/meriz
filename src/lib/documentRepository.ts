@@ -73,6 +73,8 @@ export interface DocumentRepository {
   pendingCount: () => number
   /** Envoie les modifications en attente (cloud). */
   syncPending: () => Promise<void>
+  /** Avant une déconnexion : tente d'envoyer tout ce qui attend, dans un délai borné. */
+  flushAll: (timeoutMs: number) => Promise<void>
   /** Reprend la boîte d'envoi du compte, déjà vérifié par le serveur. */
   adoptOutbox: (entries: OutboxEntry[]) => void
   dispose: () => void
@@ -200,6 +202,7 @@ export function createLocalRepository(store: DocumentStore): DocumentRepository 
     nextNewDocumentName: () => store.nextNewDocumentName(),
     pendingCount: () => 0,
     syncPending: async () => {},
+    flushAll: async () => {},
     adoptOutbox: () => {},
     dispose: () => {},
   }
@@ -267,7 +270,13 @@ interface CloudRepositoryOptions {
 
 export function createCloudRepository({ client, cache, userId }: CloudRepositoryOptions): DocumentRepository {
   let alive = true
-  const savers = new Set<{ retry: () => void; dispose: () => void; id: string; rename: (name: string) => void }>()
+  const savers = new Set<{
+    id: string
+    retry: () => void
+    flush: () => Promise<boolean>
+    rename: (name: string) => void
+    dispose: () => void
+  }>()
   const inFlight = new Set<string>()
   /** Documents disparus du serveur pendant qu'ils sont ouverts : récupérés à la fermeture. */
   const detached = new Set<string>()
@@ -579,6 +588,20 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
     pendingCount,
 
     syncPending,
+
+    flushAll: async (timeoutMs) => {
+      if (!isCurrent()) return
+      let timer: ReturnType<typeof setTimeout> | undefined
+      const deadline = new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, timeoutMs)
+      })
+      const work = (async () => {
+        await Promise.all([...savers].map((saver) => saver.flush()))
+        await syncPending()
+      })()
+      await Promise.race([work, deadline])
+      clearTimeout(timer)
+    },
 
     adoptOutbox: (entries) => {
       if (!isCurrent()) return

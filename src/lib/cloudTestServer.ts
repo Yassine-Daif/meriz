@@ -108,6 +108,10 @@ export function createCloudTestServer() {
       tokens.set(token, userId)
       return token
     },
+    /** Révoque un jeton : ses requêtes suivantes reçoivent 401. */
+    revoke: (token: string) => {
+      tokens.delete(token)
+    },
     setOnline: (value: boolean) => {
       online = value
     },
