@@ -2,7 +2,8 @@ import { useId, useState } from 'react'
 
 interface DocumentNameFieldProps {
   name: string
-  onRename: (name: string) => void
+  /** false : refus (serveur injoignable, stockage plein), le nom revient. */
+  onRename: (name: string) => Promise<boolean>
 }
 
 /**
@@ -24,9 +25,16 @@ export function DocumentNameField({ name, onRename }: DocumentNameFieldProps) {
     const trimmed = draft.trim()
     if (trimmed === '') {
       setDraft(name)
-    } else if (trimmed !== name) {
-      onRename(trimmed)
+      return
     }
+    if (trimmed === name) {
+      return
+    }
+    void onRename(trimmed).then((renamed) => {
+      if (!renamed) {
+        setDraft(name)
+      }
+    })
   }
 
   return (

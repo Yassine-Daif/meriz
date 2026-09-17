@@ -21,9 +21,13 @@ export function AccountStatus({ compact = false, onShowSignIn, onShowSignUp }: A
 
   const handleSignOut = async () => {
     setPending(true)
-    await signOut()
+    const stashed = await signOut()
     setPending(false)
-    setAnnouncement('Vous êtes déconnecté. Vos documents restent dans ce navigateur.')
+    setAnnouncement(
+      stashed === 0
+        ? 'Vous êtes déconnecté. Vos documents de ce compte sont enregistrés.'
+        : `Vous êtes déconnecté. ${stashed} document${stashed > 1 ? 's ont' : ' a'} des modifications gardées pour votre prochaine connexion.`,
+    )
   }
 
   let content = null
@@ -46,7 +50,7 @@ export function AccountStatus({ compact = false, onShowSignIn, onShowSignUp }: A
             disabled={pending}
             className={`${smallButtonClass} disabled:cursor-not-allowed disabled:opacity-60`}
           >
-            {pending ? 'Déconnexion…' : 'Se déconnecter'}
+            {pending ? 'Envoi et déconnexion…' : 'Se déconnecter'}
           </button>
         </>
       )

@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { DocumentMeta } from '../model/document'
-import type { DocumentStore } from '../lib/documentStore'
+import type { ApiError } from '../lib/apiClient'
+import type { DocumentRepository } from '../lib/documentRepository'
 import { AccountStatus } from './AccountStatus'
 import { ConfirmDialog } from './ConfirmDialog'
 import { DocumentRow } from './DocumentRow'
@@ -10,26 +11,30 @@ import { UiScaleControl } from './UiScaleControl'
 import { primaryButtonClass, secondaryButtonClass } from './buttonStyles'
 
 interface DocumentsHomeProps {
-  store: DocumentStore
-  /** Chaque action d'ouverture renvoie false si le document n'a pas pu être ouvert. */
-  onOpenDocument: (id: string) => boolean
-  onNewDocument: () => boolean
-  onOpenExample: () => boolean
+  /** Espace courant : documents du compte (cloud) ou de cet appareil. */
+  repository: DocumentRepository
+  cloud: boolean
+  /** Le navigateur refuse le stockage : rien ne survivra à la fermeture. */
+  storageWarning: boolean
+  /** Ouvre un document : l'erreur est affichée, sinon l'éditeur s'ouvre. */
+  onOpenDocument: (id: string) => Promise<ApiError | null>
+  onNewDocument: () => Promise<ApiError | null>
+  onOpenExample: () => Promise<ApiError | null>
   /** Importe un fichier comme nouveau document : message d'erreur, ou null. */
   onImportFile: (file: File) => Promise<string | null>
   onShowSignIn: () => void
   onShowSignUp: () => void
   /** Message à annoncer à l'arrivée (ex. connexion réussie). */
   announcement: string | null
+  /** Avis persistant (session expirée, travail mis de côté). */
+  notice: string | null
+  onClearNotice: () => void
 }
 
 interface StatusMessage {
   kind: 'info' | 'error'
   text: string
 }
-
-const STORAGE_ERROR =
-  "Le document n'a pas pu être enregistré dans ce navigateur (stockage plein ou indisponible)."
 
 const steps: { title: string; text: string }[] = [
   {
@@ -62,11 +67,13 @@ function Kbd({ children }: { children: string }) {
 
 /**
  * Accueil de Meriz : bienvenue, création et import de documents, liste
- * des documents du navigateur avec leurs actions. Tout est utilisable
- * au clavier et chaque action est annoncée.
+ * de l'espace courant (compte connecté, ou cet appareil). Tout est
+ * utilisable au clavier et chaque action est annoncée.
  */
 export function DocumentsHome({
-  store,
+  repository,
+  cloud,
+  storageWarning,
   onOpenDocument,
   onNewDocument,
   onOpenExample,
@@ -74,9 +81,16 @@ export function DocumentsHome({
   onShowSignIn,
   onShowSignUp,
   announcement,
+  notice,
+  onClearNotice,
 }: DocumentsHomeProps) {
-  const [documents, setDocuments] = useState<DocumentMeta[]>(() => store.listDocuments())
+  const [documents, setDocuments] = useState<DocumentMeta[]>(() => repository.cachedList())
+  const [loading, setLoading] = useState(cloud)
+  const [offline, setOffline] = useState<ApiError | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [pendingCount, setPendingCount] = useState(() => repository.pendingCount())
   const [status, setStatus] = useState<StatusMessage | null>(null)
+  const [busy, setBusy] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<DocumentMeta | null>(null)
   const listHeadingRef = useRef<HTMLHeadingElement>(null)
 
@@ -87,73 +101,80 @@ export function DocumentsHome({
     }
   }, [announcement])
 
-  const refresh = () => setDocuments(store.listDocuments())
-
-  const handleNew = () => {
-    if (!onNewDocument()) {
-      setStatus({ kind: 'error', text: STORAGE_ERROR })
+  const load = useCallback(async () => {
+    setLoading(true)
+    const result = await repository.list()
+    setLoading(false)
+    if (result.ok) {
+      setDocuments(result.value.documents)
+      setOffline(result.value.offline)
+      setPendingCount(result.value.pendingCount)
+      setLoadError(null)
+    } else {
+      setDocuments(repository.cachedList())
+      setLoadError(result.error.message)
     }
+  }, [repository])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  const refresh = () => {
+    setDocuments(repository.cachedList())
+    setPendingCount(repository.pendingCount())
   }
 
-  const handleExample = () => {
-    if (!onOpenExample()) {
-      setStatus({ kind: 'error', text: STORAGE_ERROR })
+  /** Enchaîne une action, en bloquant les doubles clics. */
+  const run = async (action: () => Promise<ApiError | null>, success?: string) => {
+    if (busy) return
+    setBusy(true)
+    const error = await action()
+    setBusy(false)
+    refresh()
+    if (error) {
+      setStatus({ kind: 'error', text: error.message })
+    } else if (success) {
+      setStatus({ kind: 'info', text: success })
     }
   }
 
   const handleImport = async (file: File) => {
+    if (busy) return
+    setBusy(true)
     const error = await onImportFile(file)
+    setBusy(false)
     if (error) {
       setStatus({ kind: 'error', text: `Import de « ${file.name} » impossible : ${error}` })
     }
   }
 
-  const handleOpen = (meta: DocumentMeta) => {
-    if (!onOpenDocument(meta.id)) {
-      setStatus({
-        kind: 'error',
-        text: `Le document « ${meta.name} » est illisible et n'a pas pu être ouvert. Il reste conservé dans le navigateur.`,
-      })
-    }
-  }
+  const handleRename = (meta: DocumentMeta, name: string) =>
+    run(async () => {
+      const result = await repository.rename(meta.id, name)
+      return result.ok ? null : result.error
+    }, `Document « ${meta.name} » renommé.`)
 
-  const handleRename = (meta: DocumentMeta, name: string) => {
-    const renamed = store.renameDocument(meta.id, name)
-    refresh()
-    setStatus(
-      renamed
-        ? { kind: 'info', text: `Document « ${meta.name} » renommé en « ${renamed.name} ».` }
-        : { kind: 'error', text: `Le document « ${meta.name} » n'a pas pu être renommé.` },
-    )
-  }
-
-  const handleDuplicate = (meta: DocumentMeta) => {
-    const copy = store.duplicateDocument(meta.id)
-    refresh()
-    setStatus(
-      copy
-        ? { kind: 'info', text: `Document « ${meta.name} » dupliqué en « ${copy.name} ».` }
-        : { kind: 'error', text: `Le document « ${meta.name} » n'a pas pu être dupliqué.` },
-    )
-  }
+  const handleDuplicate = (meta: DocumentMeta) =>
+    run(async () => {
+      const result = await repository.duplicate(meta.id)
+      return result.ok ? null : result.error
+    }, `Document « ${meta.name} » dupliqué.`)
 
   const confirmDelete = () => {
     const meta = pendingDelete
     setPendingDelete(null)
-    if (!meta) {
-      return
-    }
-    const deleted = store.deleteDocument(meta.id)
-    refresh()
-    setStatus(
-      deleted
-        ? { kind: 'info', text: `Document « ${meta.name} » supprimé.` }
-        : { kind: 'error', text: `Le document « ${meta.name} » n'a pas pu être supprimé.` },
-    )
-    // La ligne supprimée emportait le focus : on le pose sur la liste,
-    // une fois la boîte de dialogue refermée.
-    window.setTimeout(() => listHeadingRef.current?.focus(), 0)
+    if (!meta) return
+    void run(async () => {
+      const result = await repository.remove(meta.id)
+      return result.ok ? null : result.error
+    }, `Document « ${meta.name} » supprimé.`).then(() => {
+      // La ligne supprimée emportait le focus : on le pose sur la liste.
+      window.setTimeout(() => listHeadingRef.current?.focus(), 0)
+    })
   }
+
+  const spaceLabel = cloud ? 'Documents de votre compte' : 'Documents de cet appareil'
 
   return (
     <div className="h-dvh overflow-y-auto bg-shell font-sans text-ink">
@@ -180,21 +201,49 @@ export function DocumentsHome({
           </h1>
           <p className="mt-1.5 max-w-2xl text-sm leading-6 text-zinc-600">
             La modélisation Merise dans le navigateur : dessinez votre MCD, l'outil vérifie sa
-            cohérence puis en tire le modèle logique, le schéma physique et le SQL. Chaque
-            document est sauvegardé automatiquement dans ce navigateur.
+            cohérence puis en tire le modèle logique, le schéma physique et le SQL.{' '}
+            {cloud
+              ? 'Vos documents sont enregistrés dans votre compte et vous suivent partout.'
+              : 'Vos documents sont enregistrés dans ce navigateur.'}
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
-            <button type="button" onClick={handleNew} className={primaryButtonClass}>
+            <button
+              type="button"
+              onClick={() => void run(onNewDocument)}
+              disabled={busy}
+              className={`${primaryButtonClass} disabled:cursor-not-allowed disabled:opacity-60`}
+            >
               Nouveau document
             </button>
             <ImportFileButton className={secondaryButtonClass} onFile={(file) => void handleImport(file)}>
               Ouvrir un fichier
             </ImportFileButton>
-            <button type="button" onClick={handleExample} className={secondaryButtonClass}>
+            <button
+              type="button"
+              onClick={() => void run(onOpenExample)}
+              disabled={busy}
+              className={`${secondaryButtonClass} disabled:cursor-not-allowed disabled:opacity-60`}
+            >
               Découvrir avec l'exemple
             </button>
           </div>
         </section>
+
+        {notice && (
+          <div className="mt-4 flex flex-wrap items-center gap-3 rounded border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-zinc-800">
+            <p role="status" className="min-w-0 flex-1">
+              <span aria-hidden="true">⚠ </span>
+              {notice}
+            </p>
+            <button
+              type="button"
+              onClick={onClearNotice}
+              className="rounded border border-zinc-300 bg-surface px-2 py-1 text-xs text-ink hover:bg-zinc-100"
+            >
+              Compris
+            </button>
+          </div>
+        )}
 
         <p role="status" aria-live="polite" className="mt-4 min-h-6 text-sm">
           {status && (
@@ -209,7 +258,7 @@ export function DocumentsHome({
           )}
         </p>
 
-        {!store.isPersistent && (
+        {storageWarning && (
           <p className="mt-2 rounded border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-zinc-800">
             <span aria-hidden="true">⚠ </span>
             Ce navigateur refuse le stockage local : vos documents seront perdus à la fermeture de
@@ -219,17 +268,46 @@ export function DocumentsHome({
 
         <div className="mt-6 grid gap-8 lg:grid-cols-3">
           <section aria-labelledby="documents-titre" className="lg:col-span-2">
-            <h2
-              id="documents-titre"
-              ref={listHeadingRef}
-              tabIndex={-1}
-              className="text-xs font-semibold uppercase tracking-wide text-zinc-600"
-            >
-              Mes documents
-              {documents.length > 0 && ` (${documents.length})`}
-            </h2>
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <h2
+                id="documents-titre"
+                ref={listHeadingRef}
+                tabIndex={-1}
+                className="text-xs font-semibold uppercase tracking-wide text-zinc-600"
+              >
+                {spaceLabel}
+                {documents.length > 0 && ` (${documents.length})`}
+              </h2>
+              {pendingCount > 0 && (
+                <span className="text-xs text-zinc-600">
+                  {pendingCount === 1
+                    ? '1 document en attente d’envoi'
+                    : `${pendingCount} documents en attente d’envoi`}
+                </span>
+              )}
+            </div>
 
-            {documents.length === 0 ? (
+            {(offline || loadError) && (
+              <p className="mt-2 flex flex-wrap items-center gap-2 rounded border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-zinc-800">
+                <span aria-hidden="true">⚠</span>
+                {offline
+                  ? 'Serveur injoignable : voici les documents gardés sur cet appareil. Votre travail est conservé.'
+                  : loadError}
+                <button
+                  type="button"
+                  onClick={() => void load()}
+                  className="rounded border border-zinc-300 bg-surface px-2 py-1 text-xs text-ink hover:bg-zinc-100"
+                >
+                  Réessayer
+                </button>
+              </p>
+            )}
+
+            {loading && documents.length === 0 ? (
+              <p role="status" className="mt-3 rounded-lg border border-line bg-surface p-8 text-center text-sm text-zinc-600">
+                Chargement de vos documents…
+              </p>
+            ) : documents.length === 0 ? (
               <div className="mt-3 rounded-lg border border-dashed border-zinc-300 bg-surface p-8 text-center">
                 <p className="text-lg font-semibold tracking-tight">Aucun document pour l'instant</p>
                 <p className="mx-auto mt-1.5 max-w-md text-sm leading-6 text-zinc-600">
@@ -237,10 +315,20 @@ export function DocumentsHome({
                   voir Meriz à l'œuvre en quelques secondes.
                 </p>
                 <div className="mt-5 flex flex-wrap justify-center gap-2">
-                  <button type="button" onClick={handleNew} className={primaryButtonClass}>
+                  <button
+                    type="button"
+                    onClick={() => void run(onNewDocument)}
+                    disabled={busy}
+                    className={`${primaryButtonClass} disabled:cursor-not-allowed disabled:opacity-60`}
+                  >
                     Créer mon premier document
                   </button>
-                  <button type="button" onClick={handleExample} className={secondaryButtonClass}>
+                  <button
+                    type="button"
+                    onClick={() => void run(onOpenExample)}
+                    disabled={busy}
+                    className={`${secondaryButtonClass} disabled:cursor-not-allowed disabled:opacity-60`}
+                  >
                     Découvrir avec l'exemple
                   </button>
                 </div>
@@ -251,9 +339,9 @@ export function DocumentsHome({
                   <DocumentRow
                     key={meta.id}
                     meta={meta}
-                    onOpen={() => handleOpen(meta)}
-                    onRename={(name) => handleRename(meta, name)}
-                    onDuplicate={() => handleDuplicate(meta)}
+                    onOpen={() => void run(() => onOpenDocument(meta.id))}
+                    onRename={(name) => void handleRename(meta, name)}
+                    onDuplicate={() => void handleDuplicate(meta)}
                     onRequestDelete={() => setPendingDelete(meta)}
                   />
                 ))}
@@ -315,7 +403,9 @@ export function DocumentsHome({
       <ConfirmDialog
         open={pendingDelete !== null}
         title="Supprimer le document"
-        message={`Supprimer « ${pendingDelete?.name ?? ''} » ? Cette action est définitive : le document disparaît de ce navigateur.`}
+        message={`Supprimer « ${pendingDelete?.name ?? ''} » ? Cette action est définitive${
+          cloud ? ' : le document disparaît de votre compte.' : ' : le document disparaît de ce navigateur.'
+        }`}
         confirmLabel="Supprimer"
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}

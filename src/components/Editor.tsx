@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
-import type { McdEditorState } from '../model/mcdReducer'
 import type { OpenedDocument } from '../model/document'
 import { createHistory, historyReducer } from '../model/historyReducer'
 import { validate, validationErrors } from '../model/validate'
@@ -8,7 +7,7 @@ import { mcdToMld } from '../model/mld'
 import { buildMpd } from '../model/mpd'
 import type { MpdSettings, SqlDialect } from '../model/mpd'
 import { findAssociation, findEntity, findLeg } from '../model/queries'
-import { serializeModel } from '../lib/persistence'
+import type { DocumentSaver, SaveStatus } from '../lib/documentRepository'
 import { isEditableTarget } from '../lib/keyboard'
 import { EMPTY_SELECTION } from '../canvas/selection'
 import type { CanvasSelection } from '../canvas/selection'
@@ -29,9 +28,12 @@ interface EditorProps {
    * l'éditeur est remonté (clé) à chaque changement de document.
    */
   openedDocument: OpenedDocument
-  /** Sauvegarde locale du contenu : false si le stockage a refusé. */
-  onContentChange: (state: McdEditorState, mpdSettings: MpdSettings) => boolean
-  onRename: (name: string) => void
+  /** Sauvegarde automatique du document : local ou cloud selon l'espace. */
+  saver: DocumentSaver
+  /** Espace cloud : l'état d'envoi est affiché dans la barre. */
+  cloud: boolean
+  /** Renomme le document. false si le serveur ou le stockage a refusé. */
+  onRename: (name: string) => Promise<boolean>
   onBackToDocuments: () => void
   onNewDocument: () => void
   onImportFile: (file: File) => Promise<string | null>
@@ -43,7 +45,8 @@ interface EditorProps {
  */
 export function Editor({
   openedDocument,
-  onContentChange,
+  saver,
+  cloud,
   onRename,
   onBackToDocuments,
   onNewDocument,
@@ -57,7 +60,7 @@ export function Editor({
   // Réglages MPD, seule partie éditable du MPD : dialecte + surcharges
   // de types par colonne. Sauvegardés avec le document.
   const [mpdSettings, setMpdSettings] = useState<MpdSettings>(openedDocument.mpdSettings)
-  const [saveFailed, setSaveFailed] = useState(false)
+  const [syncStatus, setSyncStatus] = useState<SaveStatus>(() => saver.getStatus())
 
   const problems = useMemo(() => validate(state.mcd), [state.mcd])
   const hasErrors = validationErrors(problems).length > 0
@@ -67,24 +70,16 @@ export function Editor({
   const mldTables = useMemo(() => mcdToMld(state.mcd), [state.mcd])
   const mpdTables = useMemo(() => buildMpd(mldTables, mpdSettings), [mldTables, mpdSettings])
 
-  // Sauvegarde automatique du document, seulement si le contenu a
-  // réellement changé : ouvrir un document sans y toucher ne modifie
-  // pas sa date.
-  const [initialContent] = useState(() =>
-    serializeModel(openedDocument.state, openedDocument.mpdSettings),
-  )
-  const lastSavedContent = useRef(initialContent)
+  // Sauvegarde automatique : le saver ignore les états identiques, donc
+  // ouvrir un document sans y toucher ne modifie pas sa date.
   useEffect(() => {
-    const content = serializeModel(state, mpdSettings)
-    if (content === lastSavedContent.current) {
-      return
-    }
-    const saved = onContentChange(state, mpdSettings)
-    if (saved) {
-      lastSavedContent.current = content
-    }
-    setSaveFailed(!saved)
-  }, [state, mpdSettings, onContentChange])
+    saver.save(state, mpdSettings)
+  }, [state, mpdSettings, saver])
+
+  useEffect(() => {
+    setSyncStatus(saver.getStatus())
+    return saver.subscribe(setSyncStatus)
+  }, [saver])
 
   // Fermeture de la page avec un modèle non vide : confirmation native
   // du navigateur (imposée par la plateforme, pas de boîte personnalisée
@@ -197,7 +192,9 @@ export function Editor({
           onBackToDocuments={onBackToDocuments}
           onNewDocument={onNewDocument}
           onImportFile={onImportFile}
-          saveFailed={saveFailed}
+          syncStatus={syncStatus}
+          onRetrySync={saver.retry}
+          cloud={cloud}
           mcdVisible={activeView === 'mcd'}
           canUndo={history.past.length > 0}
           canRedo={history.future.length > 0}

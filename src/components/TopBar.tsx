@@ -1,8 +1,10 @@
 import type { McdEditorState } from '../model/mcdReducer'
 import type { MpdSettings } from '../model/mpd'
+import type { SaveStatus } from '../lib/documentRepository'
 import { AccountStatus } from './AccountStatus'
 import { FileActions } from './FileActions'
 import { DocumentNameField } from './DocumentNameField'
+import { SyncStatus } from './SyncStatus'
 import { UiScaleControl } from './UiScaleControl'
 import { Logo } from './Logo'
 
@@ -10,12 +12,15 @@ interface TopBarProps {
   state: McdEditorState
   mpdSettings: MpdSettings
   documentName: string
-  onRename: (name: string) => void
+  onRename: (name: string) => Promise<boolean>
   onBackToDocuments: () => void
   onNewDocument: () => void
   onImportFile: (file: File) => Promise<string | null>
-  /** La dernière sauvegarde locale du document a échoué. */
-  saveFailed: boolean
+  /** État de la sauvegarde automatique du document. */
+  syncStatus: SaveStatus
+  onRetrySync: () => void
+  /** Espace cloud : l'état d'envoi est affiché. */
+  cloud: boolean
   mcdVisible: boolean
   canUndo: boolean
   canRedo: boolean
@@ -50,7 +55,9 @@ export function TopBar({
   onBackToDocuments,
   onNewDocument,
   onImportFile,
-  saveFailed,
+  syncStatus,
+  onRetrySync,
+  cloud,
   mcdVisible,
   canUndo,
   canRedo,
@@ -114,14 +121,7 @@ export function TopBar({
         onNewDocument={onNewDocument}
         onImportFile={onImportFile}
       />
-      <p role="status" aria-live="polite" className="text-xs">
-        {saveFailed && (
-          <span className="inline-flex items-center gap-1 rounded border border-amber-400 bg-amber-50 px-2 py-1 text-zinc-800">
-            <span aria-hidden="true">⚠</span>
-            Sauvegarde locale impossible (stockage plein ?). Enregistrez le document en fichier.
-          </span>
-        )}
-      </p>
+      <SyncStatus status={syncStatus} onRetry={onRetrySync} cloud={cloud} />
       <div className="ml-auto flex flex-wrap items-center gap-3">
         <AccountStatus compact />
         <UiScaleControl />

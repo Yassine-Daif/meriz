@@ -11,14 +11,14 @@ Vous dessinez le modèle conceptuel (MCD). Meriz le vérifie, puis en tire le mo
 
 ## Ce que fait Meriz
 
-- **Documents.** Plusieurs documents nommés, à créer, ouvrir, renommer, dupliquer et supprimer depuis l'accueil. Chacun est sauvegardé automatiquement dans le navigateur.
+- **Documents.** Plusieurs documents nommés, à créer, ouvrir, renommer, dupliquer et supprimer depuis l'accueil. Sans compte, ils vivent dans ce navigateur. Connecté, ils vivent dans votre compte et vous suivent d'un appareil à l'autre.
 - **Dictionnaire des propriétés.** Chaque donnée est définie une seule fois, puis placée dans une entité ou une association.
 - **Éditeur de MCD.** Entités, associations, pattes et cardinalités, à la souris comme au clavier.
 - **Vérification.** Les erreurs bloquantes et les avertissements s'affichent en direct. Un clic mène à l'élément concerné.
 - **MLD, MPD et SQL.** Ils suivent le MCD en direct, selon les règles de passage Merise. Le script SQL cible MySQL ou PostgreSQL, et les types restent modifiables colonne par colonne.
 - **Apprendre.** Une page explique la méthode, les cardinalités et le passage au SQL.
 - **Fichiers.** Export et import au format `.meriz.json`, nom du document compris, et export du schéma en PNG.
-- **Compte, en option.** Inscription, connexion et déconnexion depuis l'accueil. Les documents restent dans le navigateur pour l'instant, et Meriz marche aussi sans compte.
+- **Compte, en option.** Inscription, connexion et déconnexion depuis l'accueil. Meriz marche aussi bien sans compte.
 
 Pour démarrer, le bouton « Découvrir avec l'exemple » de l'accueil ouvre le modèle Client passe Commande. Un modèle plus complet est fourni dans [examples/universite.meriz.json](examples/universite.meriz.json) : importez-le avec « Ouvrir un fichier ».
 
@@ -44,6 +44,13 @@ Les comptes passent par [Meriz API](https://github.com/Yassine-Daif/meriz-api), 
 - Sans adresse, les comptes sont désactivés et l'accueil affiche « Comptes indisponibles ». Tout le reste fonctionne.
 
 Tous les appels réseau passent par `src/lib/apiClient.ts`.
+
+Une fois connecté, le compte fait foi pour les documents. Le navigateur n'en garde qu'un cache de travail, pour aller vite et tenir une courte coupure réseau.
+
+- Hors ligne, vos modifications sont gardées sur l'appareil et envoyées dès le retour du serveur.
+- À chaque connexion et à chaque déconnexion, ce cache est vidé puis rechargé : les documents d'un compte n'apparaissent jamais sous un autre.
+- Les modifications pas encore envoyées au moment d'une déconnexion sont mises de côté pour ce compte, et reprises à sa prochaine connexion.
+- À votre première connexion, Meriz propose une fois de copier dans le compte les documents créés sur cet appareil. Les originaux locaux ne sont jamais supprimés.
 
 ## Application de bureau
 
