@@ -19,13 +19,13 @@ describe('restauration de la session au démarrage', () => {
   })
 
   it('efface un jeton refusé ou une réponse incompréhensible', () => {
-    for (const kind of ['unauthorized', 'forbidden', 'validation', 'unexpected'] as const) {
+    for (const kind of ['unauthorized', 'forbidden', 'not_found', 'validation', 'unexpected'] as const) {
       expect(failure(kind)).toEqual({ state: { status: 'signed-out' }, clearToken: true })
     }
   })
 
   it('garde le jeton quand le serveur est injoignable ou débordé', () => {
-    for (const kind of ['network', 'server', 'rate_limited'] as const) {
+    for (const kind of ['network', 'server', 'rate_limited', 'storage'] as const) {
       expect(failure(kind)).toEqual({ state: { status: 'offline' }, clearToken: false })
     }
   })

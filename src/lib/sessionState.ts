@@ -31,11 +31,13 @@ export function sessionAfterRestore(outcome: Outcome<ApiUser>): {
     case 'network':
     case 'server':
     case 'rate_limited':
+    case 'storage':
       return { state: { status: 'offline' }, clearToken: false }
     case 'not_configured':
       return { state: { status: 'unavailable' }, clearToken: false }
     case 'unauthorized':
     case 'forbidden':
+    case 'not_found':
     case 'validation':
     case 'unexpected':
       return { state: { status: 'signed-out' }, clearToken: true }

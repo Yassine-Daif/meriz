@@ -12,10 +12,13 @@ export type ApiErrorKind =
   | 'network'
   | 'unauthorized'
   | 'forbidden'
+  | 'not_found'
   | 'validation'
   | 'rate_limited'
   | 'server'
   | 'unexpected'
+  /** Stockage du navigateur plein ou indisponible (hors réseau). */
+  | 'storage'
 
 export interface ApiError {
   kind: ApiErrorKind
@@ -28,8 +31,13 @@ export interface ApiError {
   retryAfter?: number
 }
 
-/** Réponse brute : le contenu n'est pas typé tant qu'il n'est pas vérifié. */
-export type ApiResult = { ok: true; status: number; data: unknown } | { ok: false; error: ApiError }
+/**
+ * Réponse brute : le contenu n'est pas typé tant qu'il n'est pas vérifié.
+ * `data` est la réponse déballée, `body` la réponse entière (pagination).
+ */
+export type ApiResult =
+  | { ok: true; status: number; data: unknown; body: unknown }
+  | { ok: false; error: ApiError }
 
 /** Résultat vérifié d'un appel métier. */
 export type Outcome<T> = { ok: true; value: T } | { ok: false; error: ApiError }
@@ -58,6 +66,7 @@ const MESSAGES = {
   network: 'Serveur injoignable. Vérifiez votre connexion internet, puis réessayez.',
   unauthorized: 'Votre session a expiré. Reconnectez-vous.',
   forbidden: "Cette action n'est pas autorisée.",
+  notFound: 'Document introuvable. Il a peut-être été supprimé.',
   validation: 'Vérifiez les informations saisies.',
   server: 'Le serveur a rencontré une erreur. Réessayez dans quelques instants.',
   unexpected: 'Réponse inattendue du serveur. Réessayez plus tard.',
@@ -150,7 +159,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     if (response.ok) {
       // Les ressources Laravel enveloppent la réponse dans « data ».
       const data = isRecord(payload) && 'data' in payload ? payload.data : payload
-      return { ok: true, status, data }
+      return { ok: true, status, data, body: payload }
     }
 
     const serverMessage =
@@ -164,6 +173,10 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     }
     if (status === 403) {
       return { ok: false, error: apiError('forbidden', status, serverMessage ?? MESSAGES.forbidden) }
+    }
+    if (status === 404) {
+      // Le serveur ne distingue pas « inexistant » de « appartient à un autre ».
+      return { ok: false, error: apiError('not_found', status, MESSAGES.notFound) }
     }
     if (status === 422) {
       const fieldErrors = readFieldErrors(payload)

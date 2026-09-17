@@ -34,7 +34,7 @@ const serverUser = {
 
 describe('authApi, envois', () => {
   it("inscrit sans rôle, avec le nom de l'appareil", async () => {
-    const { client, sent } = fakeClient({ ok: true, status: 201, data: { user: serverUser, token: '1|abc', token_type: 'Bearer' } })
+    const { client, sent } = fakeClient({ ok: true, status: 201, data: { user: serverUser, token: '1|abc', token_type: 'Bearer' }, body: null })
 
     await register(client, { name: 'Ada', email: 'ada@etu.univ.fr', password: 'secret123' })
 
@@ -48,7 +48,7 @@ describe('authApi, envois', () => {
   })
 
   it('connecte par email et mot de passe', async () => {
-    const { client, sent } = fakeClient({ ok: true, status: 200, data: { user: serverUser, token: '1|abc' } })
+    const { client, sent } = fakeClient({ ok: true, status: 200, data: { user: serverUser, token: '1|abc' }, body: null })
 
     await login(client, { email: 'ada@etu.univ.fr', password: 'secret123' })
 
@@ -60,7 +60,7 @@ describe('authApi, envois', () => {
   })
 
   it('déconnecte en révoquant le jeton (204)', async () => {
-    const { client, sent } = fakeClient({ ok: true, status: 204, data: undefined })
+    const { client, sent } = fakeClient({ ok: true, status: 204, data: undefined, body: null })
 
     expect(await logout(client)).toEqual({ ok: true, value: undefined })
     expect(sent[0]).toMatchObject({ method: 'POST', path: '/auth/logout' })
@@ -69,7 +69,7 @@ describe('authApi, envois', () => {
 
 describe('authApi, réponses', () => {
   it("renvoie l'utilisateur et le jeton vérifiés", async () => {
-    const { client } = fakeClient({ ok: true, status: 200, data: { user: serverUser, token: '1|abc' } })
+    const { client } = fakeClient({ ok: true, status: 200, data: { user: serverUser, token: '1|abc' }, body: null })
 
     expect(await login(client, { email: 'a@b.fr', password: 'x' })).toEqual({
       ok: true,
@@ -81,8 +81,8 @@ describe('authApi, réponses', () => {
   })
 
   it('refuse une réponse sans jeton ou au profil incomplet', async () => {
-    const noToken = fakeClient({ ok: true, status: 200, data: { user: serverUser } })
-    const badRole = fakeClient({ ok: true, status: 200, data: { user: { ...serverUser, role: 'admin' }, token: 't' } })
+    const noToken = fakeClient({ ok: true, status: 200, data: { user: serverUser }, body: null })
+    const badRole = fakeClient({ ok: true, status: 200, data: { user: { ...serverUser, role: 'admin' }, token: 't' }, body: null })
 
     const first = await login(noToken.client, { email: 'a@b.fr', password: 'x' })
     const second = await login(badRole.client, { email: 'a@b.fr', password: 'x' })
@@ -99,7 +99,7 @@ describe('authApi, réponses', () => {
   })
 
   it('lit le profil courant', async () => {
-    const { client, sent } = fakeClient({ ok: true, status: 200, data: serverUser })
+    const { client, sent } = fakeClient({ ok: true, status: 200, data: serverUser, body: null })
 
     const outcome = await fetchCurrentUser(client)
 

@@ -73,7 +73,7 @@ describe('apiClient, réponses réussies', () => {
     const { impl } = fakeFetch(() => jsonResponse(200, { data: { id: 7 } }))
     const client = createApiClient({ baseUrl: BASE, getToken: () => null, fetchImpl: impl })
 
-    expect(await client.request('GET', '/me')).toEqual({ ok: true, status: 200, data: { id: 7 } })
+    expect(await client.request('GET', '/me')).toEqual({ ok: true, status: 200, data: { id: 7 }, body: { data: { id: 7 } } })
   })
 
   it('renvoie la réponse telle quelle sans enveloppe, et undefined pour un 204', async () => {
@@ -83,8 +83,8 @@ describe('apiClient, réponses réussies', () => {
     const plainResult = await createApiClient({ baseUrl: BASE, getToken: () => null, fetchImpl: plain.impl }).request('GET', '/health')
     const emptyResult = await createApiClient({ baseUrl: BASE, getToken: () => 't', fetchImpl: empty.impl }).request('POST', '/auth/logout')
 
-    expect(plainResult).toEqual({ ok: true, status: 200, data: { status: 'ok' } })
-    expect(emptyResult).toEqual({ ok: true, status: 204, data: undefined })
+    expect(plainResult).toEqual({ ok: true, status: 200, data: { status: 'ok' }, body: { status: 'ok' } })
+    expect(emptyResult).toEqual({ ok: true, status: 204, data: undefined, body: undefined })
   })
 
   it('traite un succès au JSON illisible comme une réponse inattendue', async () => {
@@ -181,8 +181,15 @@ describe('apiClient, erreurs', () => {
     expect(result.ok ? null : result.error.kind).toBe('network')
   })
 
+  it("404 : document introuvable, sans distinguer un document d'un autre compte", async () => {
+    const { impl } = fakeFetch(() => jsonResponse(404, { message: 'Ressource introuvable.' }))
+    const result = await createApiClient({ baseUrl: BASE, getToken: () => 't', fetchImpl: impl }).request('GET', '/documents/x')
+
+    expect(result.ok ? null : result.error).toMatchObject({ kind: 'not_found', status: 404 })
+  })
+
   it('statut imprévu : réponse inattendue', async () => {
-    const { impl } = fakeFetch(() => jsonResponse(404, { message: 'Not Found' }))
+    const { impl } = fakeFetch(() => jsonResponse(418, { message: 'Teapot' }))
     const result = await createApiClient({ baseUrl: BASE, getToken: () => null, fetchImpl: impl }).request('GET', '/inconnu')
 
     expect(result.ok ? null : result.error.kind).toBe('unexpected')
