@@ -35,6 +35,19 @@ export async function updateProfile(client: ApiClient, patch: ProfilePatch): Pro
   return user ? { ok: true, value: user } : { ok: false, error: unexpectedResponse(result.status) }
 }
 
+/**
+ * Active le mode prof. C'est le serveur qui décide : réservé aux adresses
+ * scolaires ou universitaires, sinon un refus 403 avec son message.
+ */
+export async function becomeTeacher(client: ApiClient): Promise<Outcome<ApiUser>> {
+  const result = await client.request('POST', '/me/teacher-role')
+  if (!result.ok) {
+    return result
+  }
+  const user = parseApiUser(result.data)
+  return user ? { ok: true, value: user } : { ok: false, error: unexpectedResponse(result.status) }
+}
+
 /** Ce qu'autrui voit de moi, calculé comme le serveur : partagé et rempli. */
 export interface PublicPreview {
   firstName: string | null

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ApiClient, ApiResult, HttpMethod } from './apiClient'
-import { publicPreview, updateProfile } from './profileApi'
+import { becomeTeacher, publicPreview, updateProfile } from './profileApi'
 
 function fakeClient(result: ApiResult) {
   const sent: { method: HttpMethod; path: string; body: unknown }[] = []
@@ -78,5 +78,33 @@ describe('profil, ce que voient les autres', () => {
 
   it('ne montre pas un champ partagé mais vide', () => {
     expect(publicPreview({ ...base, bio: '   ', bioShared: true, contactShared: false }).bio).toBeNull()
+  })
+})
+
+describe('mode prof', () => {
+  it('appelle la route d’activation et renvoie le compte devenu prof', async () => {
+    const { client, sent } = fakeClient({ ok: true, status: 200, data: { ...serverUser, role: 'teacher' }, body: null })
+
+    const outcome = await becomeTeacher(client)
+
+    expect(sent).toEqual([{ method: 'POST', path: '/me/teacher-role', body: undefined }])
+    expect(outcome.ok && outcome.value.role).toBe('teacher')
+  })
+
+  it('transmet le refus du serveur avec son message', async () => {
+    const message = 'Le mode prof est réservé aux adresses email scolaires ou universitaires.'
+    const { client } = fakeClient({ ok: false, error: { kind: 'forbidden', status: 403, message, fieldErrors: {} } })
+
+    const outcome = await becomeTeacher(client)
+
+    expect(outcome.ok ? null : outcome.error).toMatchObject({ kind: 'forbidden', message })
+  })
+
+  it('refuse une réponse mal formée', async () => {
+    const { client } = fakeClient({ ok: true, status: 200, data: { ...serverUser, role: 'directeur' }, body: null })
+
+    const outcome = await becomeTeacher(client)
+
+    expect(outcome.ok ? null : outcome.error.kind).toBe('unexpected')
   })
 })

@@ -9,6 +9,7 @@ import { FormField } from './FormField'
 import { FormAlert } from './FormAlert'
 import { PageShell } from './PageShell'
 import { ToggleSwitch } from './ToggleSwitch'
+import { TeacherModeSection } from './TeacherModeSection'
 import { primaryButtonClass } from './buttonStyles'
 
 interface ProfilePageProps {
@@ -16,6 +17,7 @@ interface ProfilePageProps {
   /** Client lié au compte connecté. */
   client: ApiClient
   onBack: () => void
+  onShowClasses: () => void
 }
 
 type Field = 'firstName' | 'name' | 'bio' | 'contact'
@@ -31,7 +33,7 @@ const SERVER_FIELD: Record<Field, string> = {
  * non. L'email de connexion reste privé ; pour être contacté, on remplit
  * le champ Contact et on active son partage.
  */
-export function ProfilePage({ user, client, onBack }: ProfilePageProps) {
+export function ProfilePage({ user, client, onBack, onShowClasses }: ProfilePageProps) {
   const { updateUser } = useSession()
   const [firstName, setFirstName] = useState(user.firstName ?? '')
   const [name, setName] = useState(user.name)
@@ -205,6 +207,8 @@ export function ProfilePage({ user, client, onBack }: ProfilePageProps) {
           </p>
         </div>
       </form>
+
+      <TeacherModeSection user={user} client={client} onShowClasses={onShowClasses} />
     </PageShell>
   )
 }

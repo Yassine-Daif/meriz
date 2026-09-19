@@ -20,7 +20,8 @@ Vous dessinez le modèle conceptuel (MCD). Meriz le vérifie, puis en tire le mo
 - **Fichiers.** Export et import au format `.meriz.json`, nom du document compris, et export du schéma en PNG.
 - **Compte, en option.** Inscription, connexion et déconnexion depuis l'accueil. Meriz marche aussi bien sans compte.
 - **Profil.** Prénom, nom, une présentation et un contact, chacun partagé ou non avec vos classes. L'email de connexion reste privé.
-- **Classes.** Un élève rejoint une classe avec le code donné par son prof et voit ses camarades. Un prof crée ses classes, partage leur code et gère les membres.
+- **Classes.** Un élève rejoint une classe avec le code donné par son prof et voit ses camarades. Un prof crée ses classes, partage leur code et gère les membres. Le mode prof s'active depuis le profil, pour les adresses email scolaires ou universitaires.
+
 Pour démarrer, le bouton « Découvrir avec l'exemple » de l'accueil ouvre le modèle Client passe Commande. Un modèle plus complet est fourni dans [examples/universite.meriz.json](examples/universite.meriz.json) : importez-le avec « Ouvrir un fichier ».
 
 ## Lancer le projet

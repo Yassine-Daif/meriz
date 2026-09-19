@@ -244,6 +244,7 @@ export function App() {
         user={session.user}
         client={account.client}
         onBack={() => setPage('home')}
+        onShowClasses={() => setPage('classes')}
       />
     ) : (
       <ClassesPage key={account.key} user={session.user} client={account.client} onBack={() => setPage('home')} />
