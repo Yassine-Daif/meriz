@@ -91,11 +91,11 @@ export function ProfilePage({ user, client, onShowClasses }: ProfilePageProps) {
       <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-6">
         <FormAlert message={formError} attempt={attempt} />
 
-        <section aria-labelledby="identite-titre" className="rounded-lg border border-line bg-surface p-5 shadow-sm">
-          <h2 id="identite-titre" className="text-sm font-semibold">
+        <section aria-labelledby="identite-titre" className="rounded-card border border-line bg-surface p-5 shadow-soft sm:p-6">
+          <h2 id="identite-titre" className="text-lg font-semibold tracking-tight text-ink">
             Identité
           </h2>
-          <p className="mt-1 text-xs text-zinc-600">Votre prénom et votre nom sont visibles par les membres de vos classes.</p>
+          <p className="mt-1 text-xs text-ink-soft">Votre prénom et votre nom sont visibles par les membres de vos classes.</p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <FormField
               label="Prénom"
@@ -118,11 +118,11 @@ export function ProfilePage({ user, client, onShowClasses }: ProfilePageProps) {
           </div>
         </section>
 
-        <section aria-labelledby="partage-titre" className="rounded-lg border border-line bg-surface p-5 shadow-sm">
-          <h2 id="partage-titre" className="text-sm font-semibold">
+        <section aria-labelledby="partage-titre" className="rounded-card border border-line bg-surface p-5 shadow-soft sm:p-6">
+          <h2 id="partage-titre" className="text-lg font-semibold tracking-tight text-ink">
             Présentation et contact
           </h2>
-          <p className="mt-1 rounded border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm leading-6 text-zinc-800">
+          <p className="mt-2 rounded-control bg-accent-soft px-4 py-3 text-sm leading-6 text-ink">
             Votre email de connexion (<span className="font-mono">{user.email}</span>) reste privé :
             il n'est jamais montré aux autres. Pour qu'on puisse vous joindre, indiquez une adresse
             dans « Contact » et activez son partage. Rien n'est partagé tant que vous ne l'activez
@@ -169,25 +169,25 @@ export function ProfilePage({ user, client, onShowClasses }: ProfilePageProps) {
           </div>
         </section>
 
-        <section aria-labelledby="apercu-titre" className="rounded-lg border border-dashed border-zinc-300 bg-surface p-5">
-          <h2 id="apercu-titre" className="text-sm font-semibold">
+        <section aria-labelledby="apercu-titre" className="rounded-card border border-dashed border-line-strong bg-surface-soft p-5 sm:p-6">
+          <h2 id="apercu-titre" className="text-lg font-semibold tracking-tight text-ink">
             Ce que voient les autres
           </h2>
           <dl className="mt-2 grid gap-1 text-sm">
             <div className="flex gap-2">
-              <dt className="w-28 shrink-0 text-zinc-600">Nom</dt>
+              <dt className="w-28 shrink-0 text-ink-soft">Nom</dt>
               <dd>{displayName(preview) || '(vide)'}</dd>
             </div>
             <div className="flex gap-2">
-              <dt className="w-28 shrink-0 text-zinc-600">Présentation</dt>
-              <dd>{preview.bio ?? <span className="text-zinc-600">non partagée</span>}</dd>
+              <dt className="w-28 shrink-0 text-ink-soft">Présentation</dt>
+              <dd>{preview.bio ?? <span className="text-ink-soft">non partagée</span>}</dd>
             </div>
             <div className="flex gap-2">
-              <dt className="w-28 shrink-0 text-zinc-600">Contact</dt>
-              <dd>{preview.contact ?? <span className="text-zinc-600">non partagé</span>}</dd>
+              <dt className="w-28 shrink-0 text-ink-soft">Contact</dt>
+              <dd>{preview.contact ?? <span className="text-ink-soft">non partagé</span>}</dd>
             </div>
           </dl>
-          <p className="mt-2 text-xs text-zinc-600">
+          <p className="mt-2 text-xs text-ink-soft">
             Aperçu de vos réglages en cours. Ils s'appliquent une fois enregistrés.
           </p>
         </section>
@@ -196,7 +196,7 @@ export function ProfilePage({ user, client, onShowClasses }: ProfilePageProps) {
           <button type="submit" disabled={pending} className={primaryButtonClass}>
             {pending ? 'Enregistrement…' : 'Enregistrer'}
           </button>
-          <p role="status" aria-live="polite" className="text-sm text-zinc-700">
+          <p role="status" aria-live="polite" className="text-sm text-ink-soft">
             {saved && (
               <>
                 <span aria-hidden="true">✓ </span>

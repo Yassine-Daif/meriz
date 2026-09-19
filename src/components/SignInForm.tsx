@@ -62,12 +62,12 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
       <button type="submit" disabled={pending} className={`${primaryButtonClass} w-full`}>
         {pending ? 'Connexion…' : 'Se connecter'}
       </button>
-      <p className="text-center text-sm text-zinc-600">
+      <p className="text-center text-sm text-ink-soft">
         Pas encore de compte ?{' '}
         <button
           type="button"
           onClick={onSwitchToSignUp}
-          className="font-medium text-indigo-700 underline underline-offset-2 hover:text-indigo-900"
+          className="font-medium text-accent-ink underline underline-offset-2 hover:text-ink"
         >
           Créer un compte
         </button>

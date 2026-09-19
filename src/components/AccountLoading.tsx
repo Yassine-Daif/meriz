@@ -1,6 +1,7 @@
 import { useSession } from './sessionContext'
-import { Logo } from './Logo'
-import { secondaryButtonClass } from './buttonStyles'
+import { Button } from './ui/Button'
+import { Card } from './ui/Card'
+import { Lockup } from './ui/Lockup'
 
 interface AccountLoadingProps {
   kind: 'loading' | 'offline-unknown'
@@ -16,29 +17,28 @@ export function AccountLoading({ kind }: AccountLoadingProps) {
 
   return (
     <div className="flex h-dvh flex-col bg-shell font-sans text-ink">
-      <header className="flex items-center gap-2 border-b border-line bg-surface px-4 py-2">
-        <Logo />
-        <span className="text-base font-semibold tracking-tight">Meriz</span>
+      <header className="flex items-center border-b border-line bg-surface px-4 py-2.5 sm:px-6">
+        <Lockup size={30} label="Meriz" />
       </header>
-      <main id="contenu" className="flex flex-1 items-center justify-center px-6">
-        <div className="max-w-md rounded-lg border border-line bg-surface p-6 text-center shadow-sm">
+      <main id="contenu" className="flex flex-1 items-center justify-center px-4">
+        <Card className="max-w-md text-center">
           {kind === 'loading' ? (
-            <p role="status" className="text-sm text-zinc-700">
+            <p role="status" className="text-base text-ink-soft">
               Vérification de votre compte…
             </p>
           ) : (
             <>
-              <h1 className="text-lg font-semibold tracking-tight">Serveur injoignable</h1>
-              <p role="status" className="mt-2 text-sm leading-6 text-zinc-700">
-                Vos documents sont dans votre compte, et ce navigateur n'en garde aucune copie.
-                Ils réapparaîtront dès que le serveur répondra.
+              <h1 className="text-xl font-semibold tracking-tight text-ink">Serveur injoignable</h1>
+              <p role="status" className="mt-2 text-sm leading-6 text-ink-soft">
+                Vos documents sont dans votre compte, et ce navigateur n'en garde aucune copie. Ils réapparaîtront
+                dès que le serveur répondra.
               </p>
-              <button type="button" onClick={retry} className={`${secondaryButtonClass} mt-5`}>
+              <Button className="mt-5" onClick={retry}>
                 Réessayer
-              </button>
+              </Button>
             </>
           )}
-        </div>
+        </Card>
       </main>
     </div>
   )

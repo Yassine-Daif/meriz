@@ -61,23 +61,23 @@ export function ImportLocalDialog({
         if (phase === 'done') onClose()
         else if (phase === 'ask') onLater()
       }}
-      className="m-auto w-full max-w-md rounded-lg border border-line bg-surface p-0 shadow-xl backdrop:bg-zinc-900/40"
+      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-card border border-line bg-surface p-0 text-ink shadow-lift backdrop:bg-[rgb(var(--c-shadow)/0.45)]"
     >
-      <div className="p-5">
-        <h2 id={titleId} className="text-base font-semibold tracking-tight">
+      <div className="p-6">
+        <h2 id={titleId} className="text-lg font-semibold tracking-tight">
           {phase === 'done' ? 'Import terminé' : 'Importer vos documents de cet appareil ?'}
         </h2>
 
         {phase !== 'done' && (
           <>
-            <p className="mt-2 text-sm leading-6 text-zinc-700">
+            <p className="mt-2 text-sm leading-6 text-ink-soft">
               {documents.length === 1
                 ? 'Un document a été créé sur cet appareil avant votre connexion.'
                 : `${documents.length} documents ont été créés sur cet appareil avant votre connexion.`}{' '}
               Vous pouvez en placer une copie dans votre compte, pour les retrouver partout. Les
               originaux restent sur cet appareil dans tous les cas.
             </p>
-            <ul className="mt-3 max-h-40 overflow-y-auto rounded border border-line bg-shell/60 p-2 text-sm">
+            <ul className="mt-3 max-h-40 overflow-y-auto rounded-control border border-line bg-surface-soft p-2 text-sm text-ink">
               {documents.map((meta) => (
                 <li key={meta.id} className="truncate px-1 py-0.5">
                   {meta.name}
@@ -88,13 +88,13 @@ export function ImportLocalDialog({
         )}
 
         {phase === 'working' && (
-          <p role="status" aria-live="polite" className="mt-3 text-sm text-zinc-700">
+          <p role="status" aria-live="polite" className="mt-3 text-sm text-ink-soft">
             Import {progress} sur {documents.length}…
           </p>
         )}
 
         {phase === 'done' && report && (
-          <div role="status" aria-live="polite" className="mt-2 text-sm leading-6 text-zinc-700">
+          <div role="status" aria-live="polite" className="mt-2 text-sm leading-6 text-ink-soft">
             <p>
               {report.imported === 0
                 ? 'Aucun document importé.'
@@ -111,7 +111,7 @@ export function ImportLocalDialog({
           </div>
         )}
 
-        <div className="mt-5 flex flex-wrap justify-end gap-2">
+        <div className="mt-6 flex flex-wrap justify-end gap-2">
           {phase === 'done' ? (
             <button type="button" onClick={onClose} className={primaryButtonClass}>
               Fermer
@@ -122,7 +122,7 @@ export function ImportLocalDialog({
                 type="button"
                 onClick={onLater}
                 disabled={phase === 'working'}
-                className={`${secondaryButtonClass} disabled:cursor-not-allowed disabled:opacity-60`}
+                className={secondaryButtonClass}
               >
                 Plus tard
               </button>
@@ -130,7 +130,7 @@ export function ImportLocalDialog({
                 type="button"
                 onClick={onKeepLocal}
                 disabled={phase === 'working'}
-                className={`${secondaryButtonClass} disabled:cursor-not-allowed disabled:opacity-60`}
+                className={secondaryButtonClass}
               >
                 Garder en local
               </button>

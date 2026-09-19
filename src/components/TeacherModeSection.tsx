@@ -51,12 +51,14 @@ export function TeacherModeSection({ user, client, onShowClasses }: TeacherModeS
     content = (
       <>
         {activated ? (
-          <p ref={successRef} tabIndex={-1} role="status" className="text-sm text-zinc-800">
-            <span aria-hidden="true">✓ </span>
+          <p ref={successRef} tabIndex={-1} role="status" className="inline-flex items-center gap-1.5 rounded-full bg-sage-soft px-3 py-1 text-sm text-ink">
+            <span aria-hidden="true" className="text-sage">
+              ✓
+            </span>
             Mode prof activé. Vous pouvez maintenant créer des classes.
           </p>
         ) : (
-          <p className="text-sm text-zinc-700">
+          <p className="text-sm text-ink-soft">
             Le mode prof est actif : vous pouvez créer des classes, partager leur code et gérer
             leurs membres.
           </p>
@@ -69,7 +71,7 @@ export function TeacherModeSection({ user, client, onShowClasses }: TeacherModeS
   } else if (user.isAcademic) {
     content = (
       <>
-        <p className="text-sm leading-6 text-zinc-700">
+        <p className="text-sm leading-6 text-ink-soft">
           Le mode prof vous permet de créer des classes, d'obtenir un code à partager avec vos
           élèves et de gérer leurs membres. Vos documents et les classes que vous avez rejointes
           ne changent pas. Le mode prof reste actif ensuite.
@@ -89,7 +91,7 @@ export function TeacherModeSection({ user, client, onShowClasses }: TeacherModeS
     )
   } else {
     content = (
-      <p className="text-sm leading-6 text-zinc-700">
+      <p className="text-sm leading-6 text-ink-soft">
         Le mode prof est réservé aux adresses email scolaires ou universitaires. Votre adresse de
         connexion n'en fait pas partie.
       </p>
@@ -97,8 +99,8 @@ export function TeacherModeSection({ user, client, onShowClasses }: TeacherModeS
   }
 
   return (
-    <section aria-labelledby="mode-prof-titre" className="mt-6 rounded-lg border border-line bg-surface p-5 shadow-sm">
-      <h2 id="mode-prof-titre" className="text-sm font-semibold">
+    <section aria-labelledby="mode-prof-titre" className="mt-6 rounded-card border border-line bg-surface p-5 shadow-soft sm:p-6">
+      <h2 id="mode-prof-titre" className="text-lg font-semibold tracking-tight text-ink">
         {user.role === 'teacher' ? 'Mode prof' : 'Devenir enseignant'}
       </h2>
       <div className="mt-2">{content}</div>

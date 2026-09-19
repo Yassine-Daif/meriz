@@ -46,13 +46,13 @@ function PersonCard({ person, extra }: { person: PublicProfile; extra?: string }
   return (
     <div className="min-w-0">
       <p className="text-sm font-semibold text-ink">{displayName(person)}</p>
-      {person.bio && <p className="mt-0.5 text-sm text-zinc-700">{person.bio}</p>}
+      {person.bio && <p className="mt-0.5 text-sm text-ink-soft">{person.bio}</p>}
       {person.contact && (
-        <p className="mt-0.5 text-xs text-zinc-700">
+        <p className="mt-0.5 text-xs text-ink-soft">
           Contact : <span className="font-mono">{person.contact}</span>
         </p>
       )}
-      {extra && <p className="mt-0.5 text-xs text-zinc-600">{extra}</p>}
+      {extra && <p className="mt-0.5 text-xs text-ink-soft">{extra}</p>}
     </div>
   )
 }
@@ -169,17 +169,17 @@ export function ClassroomView({ client, classroomId, initial, onGone, initialSta
 
   if (!classroom) {
     return (
-      <div className="rounded-lg border border-line bg-surface p-6 text-sm">
+      <div className="rounded-card border border-line bg-surface p-6 text-sm text-ink shadow-soft">
         {loadError ? (
           <p className="flex flex-wrap items-center gap-2">
-            <span aria-hidden="true">⚠</span>
+            <span aria-hidden="true" className="text-warning">⚠</span>
             {loadError}
             <button type="button" onClick={() => void load()} className={smallButtonClass}>
               Réessayer
             </button>
           </p>
         ) : (
-          <p role="status">Chargement de la classe…</p>
+          <p role="status" className="text-ink-soft">Chargement de la classe…</p>
         )}
       </div>
     )
@@ -237,8 +237,8 @@ export function ClassroomView({ client, classroomId, initial, onGone, initialSta
           </form>
         ) : (
           <div className="min-w-0">
-            <h2 className="text-xl font-semibold tracking-tight">{classroom.name}</h2>
-            <p className="text-sm text-zinc-600">
+            <h2 className="text-2xl font-semibold tracking-tight text-ink">{classroom.name}</h2>
+            <p className="text-sm text-ink-soft">
               {isTeacher ? 'Vous êtes le prof de cette classe.' : 'Vous êtes élève dans cette classe.'}
             </p>
           </div>
@@ -261,24 +261,24 @@ export function ClassroomView({ client, classroomId, initial, onGone, initialSta
       <p role="status" aria-live="polite" className="min-h-5 text-sm">
         {status && (
           <span
-            className={`inline-flex items-center gap-1.5 rounded border px-2.5 py-1 text-zinc-800 ${
-              status.kind === 'error' ? 'border-amber-400 bg-amber-50' : 'border-zinc-300 bg-surface'
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-ink ${
+              status.kind === 'error' ? 'bg-warning-soft' : 'bg-sage-soft'
             }`}
           >
-            <span aria-hidden="true">{status.kind === 'error' ? '⚠' : '✓'}</span>
+            <span aria-hidden="true" className={status.kind === 'error' ? 'text-warning' : 'text-sage'}>{status.kind === 'error' ? '⚠' : '✓'}</span>
             {status.text}
           </span>
         )}
       </p>
 
       {isTeacher && classroom.joinCode && (
-        <section aria-labelledby="code-titre" className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+        <section aria-labelledby="code-titre" className="rounded-card bg-accent-soft p-5">
           <h3 id="code-titre" className="text-sm font-semibold text-ink">
             Code pour rejoindre
           </h3>
-          <p className="mt-1 text-xs text-zinc-700">Donnez ce code à vos élèves : ils le saisissent dans « Mes classes ».</p>
+          <p className="mt-1 text-sm text-ink">Donnez ce code à vos élèves : ils le saisissent dans « Mes classes ».</p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <p className="rounded-md border border-indigo-300 bg-surface px-3 py-1.5 font-mono text-2xl font-semibold tracking-widest text-ink">
+            <p className="rounded-control border border-line-strong bg-surface px-4 py-2 font-mono text-2xl font-semibold tracking-widest text-ink">
               {formatJoinCode(classroom.joinCode)}
             </p>
             <button
@@ -300,21 +300,21 @@ export function ClassroomView({ client, classroomId, initial, onGone, initialSta
         </section>
       )}
 
-      <section aria-labelledby="prof-titre" className="rounded-lg border border-line bg-surface p-4 shadow-sm">
-        <h3 id="prof-titre" className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+      <section aria-labelledby="prof-titre" className="rounded-card border border-line bg-surface p-5 shadow-soft">
+        <h3 id="prof-titre" className="text-base font-semibold text-ink">
           Prof
         </h3>
         <div className="mt-2">
-          {classroom.teacher ? <PersonCard person={classroom.teacher} /> : <p className="text-sm">Inconnu</p>}
+          {classroom.teacher ? <PersonCard person={classroom.teacher} /> : <p className="text-sm text-ink-soft">Inconnu</p>}
         </div>
       </section>
 
-      <section aria-labelledby="membres-titre" className="rounded-lg border border-line bg-surface p-4 shadow-sm">
-        <h3 id="membres-titre" className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+      <section aria-labelledby="membres-titre" className="rounded-card border border-line bg-surface p-5 shadow-soft">
+        <h3 id="membres-titre" className="text-base font-semibold text-ink">
           {isTeacher ? 'Membres' : 'Camarades'} ({classroom.members.length})
         </h3>
         {classroom.members.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-600">
+          <p className="mt-2 text-sm text-ink-soft">
             {isTeacher ? 'Personne pour l’instant : partagez le code ci-dessus.' : 'Aucun membre.'}
           </p>
         ) : (
@@ -331,7 +331,7 @@ export function ClassroomView({ client, classroomId, initial, onGone, initialSta
                     onClick={() => setPendingAction({ kind: 'remove', member })}
                     disabled={busy}
                     aria-label={`Retirer ${displayName(member)} de la classe`}
-                    className="rounded-md border border-rose-300 bg-surface px-2.5 py-1.5 text-xs text-rose-700 hover:bg-rose-50"
+                    className="inline-flex min-h-8 items-center rounded-control border border-danger bg-surface px-3 py-1 text-xs font-medium text-danger transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
                   >
                     Retirer
                   </button>
@@ -348,7 +348,7 @@ export function ClassroomView({ client, classroomId, initial, onGone, initialSta
             type="button"
             onClick={() => setPendingAction({ kind: 'delete' })}
             disabled={busy}
-            className="rounded-md border border-rose-300 bg-surface px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
+            className="inline-flex min-h-10 items-center rounded-control border border-danger bg-surface px-4 py-2 text-sm font-medium text-danger transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
           >
             Supprimer la classe
           </button>
@@ -357,7 +357,7 @@ export function ClassroomView({ client, classroomId, initial, onGone, initialSta
             type="button"
             onClick={() => setPendingAction({ kind: 'leave' })}
             disabled={busy}
-            className="rounded-md border border-rose-300 bg-surface px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
+            className="inline-flex min-h-10 items-center rounded-control border border-danger bg-surface px-4 py-2 text-sm font-medium text-danger transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
           >
             Quitter la classe
           </button>
