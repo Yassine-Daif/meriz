@@ -9,6 +9,7 @@ import { ClassroomGrid } from './ClassroomGrid'
 import { CreateClassForm } from './CreateClassForm'
 import { PageShell } from './PageShell'
 import { RecentDocuments } from './RecentDocuments'
+import { Avatar } from './ui/Avatar'
 import { Button } from './ui/Button'
 import { ComingSoon } from './ui/ComingSoon'
 import { LiveAnnouncement } from './ui/LiveAnnouncement'
@@ -63,6 +64,7 @@ export function TeacherHome({
     <PageShell
       eyebrow="Espace prof"
       title={`Bonjour ${user.firstName ?? user.name}`}
+      leading={<Avatar person={user} size="lg" />}
       description="Vos classes, leurs codes à partager, et vos propres documents."
       actions={
         <Button variant="secondary" onClick={() => void createDocument()}>

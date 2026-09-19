@@ -11,6 +11,8 @@ interface PageShellProps {
   actions?: ReactNode
   /** Change quand le contenu change de sujet : le titre reprend le focus. */
   focusKey?: string
+  /** Élément posé à gauche du titre, par exemple une pastille. */
+  leading?: ReactNode
   /** Retour vers un niveau au-dessus (ex. d'une classe à la liste). */
   onBack?: () => void
   backLabel?: string
@@ -28,6 +30,7 @@ export function PageShell({
   description,
   actions,
   focusKey,
+  leading,
   onBack,
   backLabel = 'Retour',
   children,
@@ -52,6 +55,7 @@ export function PageShell({
         description={description}
         actions={actions}
         headingRef={headingRef}
+        leading={leading}
       />
       <div className="mt-6">{children}</div>
     </div>

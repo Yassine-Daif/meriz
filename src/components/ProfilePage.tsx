@@ -4,6 +4,9 @@ import type { ApiClient } from '../lib/apiClient'
 import type { ApiUser } from '../lib/authApi'
 import { displayName } from '../lib/authApi'
 import { publicPreview, updateProfile } from '../lib/profileApi'
+import { contrastRatio, READABLE_CONTRAST } from '../lib/color'
+import { AvatarPicker } from './AvatarPicker'
+import { Avatar } from './ui/Avatar'
 import { useSession } from './sessionContext'
 import { FormField } from './FormField'
 import { FormAlert } from './FormAlert'
@@ -19,12 +22,13 @@ interface ProfilePageProps {
   onShowClasses: () => void
 }
 
-type Field = 'firstName' | 'name' | 'bio' | 'contact'
+type Field = 'firstName' | 'name' | 'bio' | 'contact' | 'avatar'
 const SERVER_FIELD: Record<Field, string> = {
   firstName: 'first_name',
   name: 'name',
   bio: 'bio',
   contact: 'contact',
+  avatar: 'avatar_bg',
 }
 
 /**
@@ -40,6 +44,8 @@ export function ProfilePage({ user, client, onShowClasses }: ProfilePageProps) {
   const [bioShared, setBioShared] = useState(user.bioShared)
   const [contact, setContact] = useState(user.contact ?? '')
   const [contactShared, setContactShared] = useState(user.contactShared)
+  const [avatarBg, setAvatarBg] = useState(user.avatarBg)
+  const [avatarFg, setAvatarFg] = useState(user.avatarFg)
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<Field, string>>>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
@@ -53,11 +59,24 @@ export function ProfilePage({ user, client, onShowClasses }: ProfilePageProps) {
     bioShared,
     contact: contact.trim() === '' ? null : contact.trim(),
     contactShared,
+    avatarBg,
+    avatarFg,
   })
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (pending) return
+    // Garde de lisibilité : une pastille illisible ne part pas au serveur.
+    if (contrastRatio(avatarBg, avatarFg) < READABLE_CONTRAST) {
+      setFieldErrors({
+        avatar: 'Les deux couleurs de la pastille sont trop proches : choisissez une paire plus contrastée.',
+      })
+      setFormError('Vérifiez les champs signalés.')
+      setSaved('')
+      // L'alerte du formulaire prend le focus, comme pour les autres champs.
+      setAttempt((count) => count + 1)
+      return
+    }
     setPending(true)
     setSaved('')
     setFormError(null)
@@ -69,6 +88,8 @@ export function ProfilePage({ user, client, onShowClasses }: ProfilePageProps) {
       bioShared,
       contact: contact.trim() === '' ? null : contact.trim(),
       contactShared,
+      avatarBg,
+      avatarFg,
     })
     setPending(false)
     if (outcome.ok) {
@@ -169,14 +190,36 @@ export function ProfilePage({ user, client, onShowClasses }: ProfilePageProps) {
           </div>
         </section>
 
+        <section aria-labelledby="pastille-titre" className="rounded-card border border-line bg-surface p-5 shadow-soft sm:p-6">
+          <h2 id="pastille-titre" className="text-lg font-semibold tracking-tight text-ink">
+            Pastille
+          </h2>
+          <p className="mt-1 text-xs text-ink-soft">
+            Vos initiales, dans les couleurs de votre choix. Elles vous représentent partout dans Meriz.
+          </p>
+          <div className="mt-4">
+            <AvatarPicker
+              person={{ firstName: preview.firstName, name: preview.name, avatarBg, avatarFg }}
+              onChange={(colors) => {
+                setAvatarBg(colors.avatarBg)
+                setAvatarFg(colors.avatarFg)
+              }}
+              error={fieldErrors.avatar}
+            />
+          </div>
+        </section>
+
         <section aria-labelledby="apercu-titre" className="rounded-card border border-dashed border-line-strong bg-surface-soft p-5 sm:p-6">
           <h2 id="apercu-titre" className="text-lg font-semibold tracking-tight text-ink">
             Ce que voient les autres
           </h2>
-          <dl className="mt-2 grid gap-1 text-sm">
-            <div className="flex gap-2">
+          <dl className="mt-3 grid gap-1 text-sm">
+            <div className="flex items-center gap-2">
               <dt className="w-28 shrink-0 text-ink-soft">Nom</dt>
-              <dd>{displayName(preview) || '(vide)'}</dd>
+              <dd className="flex items-center gap-2">
+                <Avatar person={preview} size="sm" />
+                {displayName(preview) || '(vide)'}
+              </dd>
             </div>
             <div className="flex gap-2">
               <dt className="w-28 shrink-0 text-ink-soft">Présentation</dt>

@@ -15,6 +15,8 @@ const user: ApiUser = {
   bioShared: false,
   contact: null,
   contactShared: false,
+  avatarBg: '#e0e7ff',
+  avatarFg: '#1e1b4b',
 }
 
 function failure(kind: ApiErrorKind) {

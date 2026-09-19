@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { displayName } from '../lib/authApi'
 import { useSession } from './sessionContext'
+import { Avatar } from './ui/Avatar'
 import { smallButtonClass } from './buttonStyles'
 import { buttonClass } from './ui/buttonClass'
 
@@ -48,8 +49,8 @@ export function AccountStatus({
     case 'signed-in':
       content = (
         <>
+          <Avatar person={session.user} size="sm" />
           <span className="min-w-0 truncate text-sm text-ink-soft" title={session.user.email}>
-            <span aria-hidden="true" className="mr-1.5 inline-block h-2 w-2 rounded-full bg-sage" />
             Connecté : <span className="font-semibold text-ink">{displayName(session.user)}</span>
             {compact ? (
               <span className="sr-only"> ({session.user.email})</span>

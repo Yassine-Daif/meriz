@@ -16,6 +16,9 @@ export interface ProfilePatch {
   bioShared?: boolean
   contact?: string | null
   contactShared?: boolean
+  /** Couleurs de la pastille, hexadécimales (« #aabbcc »). */
+  avatarBg?: string
+  avatarFg?: string
 }
 
 export async function updateProfile(client: ApiClient, patch: ProfilePatch): Promise<Outcome<ApiUser>> {
@@ -26,6 +29,8 @@ export async function updateProfile(client: ApiClient, patch: ProfilePatch): Pro
   if (patch.bioShared !== undefined) body.bio_shared = patch.bioShared
   if (patch.contact !== undefined) body.contact = patch.contact
   if (patch.contactShared !== undefined) body.contact_shared = patch.contactShared
+  if (patch.avatarBg !== undefined) body.avatar_bg = patch.avatarBg
+  if (patch.avatarFg !== undefined) body.avatar_fg = patch.avatarFg
 
   const result = await client.request('PATCH', '/me', body)
   if (!result.ok) {
@@ -54,6 +59,8 @@ export interface PublicPreview {
   name: string
   bio: string | null
   contact: string | null
+  avatarBg: string
+  avatarFg: string
 }
 
 export function publicPreview(profile: {
@@ -63,6 +70,8 @@ export function publicPreview(profile: {
   bioShared: boolean
   contact: string | null
   contactShared: boolean
+  avatarBg: string
+  avatarFg: string
 }): PublicPreview {
   const filled = (value: string | null) => (value !== null && value.trim() !== '' ? value : null)
   return {
@@ -70,5 +79,8 @@ export function publicPreview(profile: {
     name: profile.name,
     bio: profile.bioShared ? filled(profile.bio) : null,
     contact: profile.contactShared ? filled(profile.contact) : null,
+    // Les couleurs n'ont pas d'interrupteur : elles sont faites pour être vues.
+    avatarBg: profile.avatarBg,
+    avatarFg: profile.avatarFg,
   }
 }

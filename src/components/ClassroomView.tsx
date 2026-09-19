@@ -13,6 +13,7 @@ import {
 } from '../lib/classroomsApi'
 import type { ClassroomDetail, ClassroomMember, PublicProfile } from '../lib/classroomsApi'
 import { ConfirmDialog } from './ConfirmDialog'
+import { Avatar } from './ui/Avatar'
 import { FormField } from './FormField'
 import { primaryButtonClass, secondaryButtonClass, smallButtonClass } from './buttonStyles'
 
@@ -44,15 +45,18 @@ function formatDate(iso: string | null): string {
 /** Une personne telle qu'autrui la voit : nom, et ce qu'elle partage. */
 function PersonCard({ person, extra }: { person: PublicProfile; extra?: string }) {
   return (
-    <div className="min-w-0">
-      <p className="text-sm font-semibold text-ink">{displayName(person)}</p>
-      {person.bio && <p className="mt-0.5 text-sm text-ink-soft">{person.bio}</p>}
-      {person.contact && (
-        <p className="mt-0.5 text-xs text-ink-soft">
-          Contact : <span className="font-mono">{person.contact}</span>
-        </p>
-      )}
-      {extra && <p className="mt-0.5 text-xs text-ink-soft">{extra}</p>}
+    <div className="flex min-w-0 items-start gap-3">
+      <Avatar person={person} size="md" />
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-ink">{displayName(person)}</p>
+        {person.bio && <p className="mt-0.5 text-sm text-ink-soft">{person.bio}</p>}
+        {person.contact && (
+          <p className="mt-0.5 text-xs text-ink-soft">
+            Contact : <span className="font-mono">{person.contact}</span>
+          </p>
+        )}
+        {extra && <p className="mt-0.5 text-xs text-ink-soft">{extra}</p>}
+      </div>
     </div>
   )
 }

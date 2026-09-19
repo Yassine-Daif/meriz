@@ -86,6 +86,8 @@ describe('authApi, réponses', () => {
           bioShared: false,
           contact: null,
           contactShared: false,
+          avatarBg: '#e0e7ff',
+          avatarFg: '#1e1b4b',
         },
       },
     })
@@ -141,6 +143,18 @@ describe('authApi, profil complet', () => {
 
   it("tolère un ancien compte sans prénom ni champs de profil", () => {
     expect(parseApiUser(serverUser)).toMatchObject({ firstName: null, bio: null, bioShared: false })
+  })
+
+  it('lit les couleurs de la pastille, et retombe sur le défaut si elles manquent', () => {
+    expect(parseApiUser({ ...serverUser, avatar_bg: '#FEE2E2', avatar_fg: '#ABC' })).toMatchObject({
+      avatarBg: '#fee2e2',
+      avatarFg: '#aabbcc',
+    })
+    expect(parseApiUser(serverUser)).toMatchObject({ avatarBg: '#e0e7ff', avatarFg: '#1e1b4b' })
+  })
+
+  it('ne rejette jamais un profil pour une couleur invalide', () => {
+    expect(parseApiUser({ ...serverUser, avatar_bg: 'rouge vif' })).toMatchObject({ avatarBg: '#e0e7ff' })
   })
 
   it('refuse un champ de profil mal typé', () => {

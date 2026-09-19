@@ -88,8 +88,18 @@ describe('classes, lecture des réponses', () => {
     expect(JSON.stringify(classroom)).not.toContain('secret@connexion.fr')
   })
 
-  it('refuse une réponse mal formée', () => {
-    expect(parseClassroomDetail({ ...teacherView, my_role: 'admin' })).toBeNull()
+  it('porte les couleurs de pastille du prof et des membres', () => {
+    const classroom = parseClassroomDetail({
+      ...teacherView,
+      teacher: { ...teacherView.teacher, avatar_bg: '#DCFCE7', avatar_fg: '#14532d' },
+    })
+
+    expect(classroom?.teacher).toMatchObject({ avatarBg: '#dcfce7', avatarFg: '#14532d' })
+    // Membre sans couleurs : les valeurs par défaut, sans rejet.
+    expect(classroom?.members[0]).toMatchObject({ avatarBg: '#e0e7ff', avatarFg: '#1e1b4b' })
+  })
+
+  it('refuse une réponse mal formée', () => {    expect(parseClassroomDetail({ ...teacherView, my_role: 'admin' })).toBeNull()
     expect(parseClassroomDetail({ ...teacherView, members: [{ id: 'x' }] })).toBeNull()
     expect(parseClassroomDetail({ ...teacherView, members: undefined })).toBeNull()
   })

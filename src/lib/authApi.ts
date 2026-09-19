@@ -1,4 +1,5 @@
 import type { ApiClient, Outcome } from './apiClient'
+import { DEFAULT_AVATAR_BG, DEFAULT_AVATAR_FG, parseAvatarColor } from './color'
 import { unexpectedResponse } from './apiClient'
 
 /**
@@ -28,6 +29,9 @@ export interface ApiUser {
   bioShared: boolean
   contact: string | null
   contactShared: boolean
+  /** Couleurs de la pastille d'initiales, hexadécimales. */
+  avatarBg: string
+  avatarFg: string
 }
 
 export interface AuthSuccess {
@@ -102,6 +106,8 @@ export function parseApiUser(raw: unknown): ApiUser | null {
     bioShared,
     contact,
     contactShared,
+    avatarBg: parseAvatarColor(raw.avatar_bg, DEFAULT_AVATAR_BG),
+    avatarFg: parseAvatarColor(raw.avatar_fg, DEFAULT_AVATAR_FG),
   }
 }
 

@@ -48,8 +48,15 @@ describe('profil, enregistrement', () => {
     expect(outcome.ok && outcome.value.firstName).toBe('Ada')
   })
 
-  it('refuse une réponse mal formée', async () => {
-    const { client } = fakeClient({ ok: true, status: 200, data: { ...serverUser, contact_shared: 'non' }, body: null })
+  it('envoie les deux couleurs de la pastille', async () => {
+    const { client, sent } = fakeClient({ ok: true, status: 200, data: serverUser, body: null })
+
+    await updateProfile(client, { avatarBg: '#fee2e2', avatarFg: '#7f1d1d' })
+
+    expect(sent[0]?.body).toEqual({ avatar_bg: '#fee2e2', avatar_fg: '#7f1d1d' })
+  })
+
+  it('refuse une réponse mal formée', async () => {    const { client } = fakeClient({ ok: true, status: 200, data: { ...serverUser, contact_shared: 'non' }, body: null })
 
     const outcome = await updateProfile(client, { name: 'X' })
 
@@ -58,7 +65,15 @@ describe('profil, enregistrement', () => {
 })
 
 describe('profil, ce que voient les autres', () => {
-  const base = { firstName: 'Ada', name: 'Lovelace', bio: 'Bonjour', contact: 'ada@contact.fr' }
+  const base = {
+    firstName: 'Ada',
+    name: 'Lovelace',
+    bio: 'Bonjour',
+    contact: 'ada@contact.fr',
+    avatarBg: '#fee2e2',
+    avatarFg: '#7f1d1d',
+  }
+  const colors = { avatarBg: '#fee2e2', avatarFg: '#7f1d1d' }
 
   it('ne montre rien tant que le partage est coupé (réglage par défaut)', () => {
     expect(publicPreview({ ...base, bioShared: false, contactShared: false })).toEqual({
@@ -66,6 +81,7 @@ describe('profil, ce que voient les autres', () => {
       name: 'Lovelace',
       bio: null,
       contact: null,
+        ...colors,
     })
   })
 
@@ -73,6 +89,7 @@ describe('profil, ce que voient les autres', () => {
     expect(publicPreview({ ...base, bioShared: true, contactShared: true })).toMatchObject({
       bio: 'Bonjour',
       contact: 'ada@contact.fr',
+        ...colors,
     })
   })
 

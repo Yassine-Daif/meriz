@@ -1,6 +1,7 @@
 import type { ApiClient, Outcome } from './apiClient'
 import { unexpectedResponse } from './apiClient'
 import { optionalText } from './authApi'
+import { DEFAULT_AVATAR_BG, DEFAULT_AVATAR_FG, parseAvatarColor } from './color'
 
 /**
  * Classes : rejoindre par code côté élève, créer et gérer côté prof.
@@ -17,6 +18,9 @@ export interface PublicProfile {
   bio: string | null
   /** Contact, seulement si la personne le partage. */
   contact: string | null
+  /** Couleurs de la pastille d'initiales : toujours visibles. */
+  avatarBg: string
+  avatarFg: string
 }
 
 export interface ClassroomMember extends PublicProfile {
@@ -56,7 +60,15 @@ export function parsePublicProfile(raw: unknown): PublicProfile | null {
   if (firstName === undefined || bio === undefined || contact === undefined) {
     return null
   }
-  return { id: raw.id, name: raw.name, firstName, bio, contact }
+  return {
+    id: raw.id,
+    name: raw.name,
+    firstName,
+    bio,
+    contact,
+    avatarBg: parseAvatarColor(raw.avatar_bg, DEFAULT_AVATAR_BG),
+    avatarFg: parseAvatarColor(raw.avatar_fg, DEFAULT_AVATAR_FG),
+  }
 }
 
 export function parseClassroomSummary(raw: unknown): ClassroomSummary | null {

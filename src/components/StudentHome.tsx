@@ -8,6 +8,7 @@ import { ClassroomGrid } from './ClassroomGrid'
 import { JoinClassForm } from './JoinClassForm'
 import { PageShell } from './PageShell'
 import { RecentDocuments } from './RecentDocuments'
+import { Avatar } from './ui/Avatar'
 import { Button } from './ui/Button'
 import { Card } from './ui/Card'
 import { ComingSoon } from './ui/ComingSoon'
@@ -53,6 +54,7 @@ export function StudentHome({
     <PageShell
       eyebrow="Espace élève"
       title={`Bonjour ${user.firstName ?? user.name}`}
+      leading={<Avatar person={user} size="lg" />}
       description="Reprenez votre travail là où vous l'avez laissé, ou retrouvez vos classes."
       actions={
         <Button variant="primary" onClick={() => void createDocument()}>
