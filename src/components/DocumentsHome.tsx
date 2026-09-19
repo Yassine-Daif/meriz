@@ -24,6 +24,8 @@ interface DocumentsHomeProps {
   onImportFile: (file: File) => Promise<string | null>
   onShowSignIn: () => void
   onShowSignUp: () => void
+  onShowProfile: () => void
+  onShowClasses: () => void
   /** Message à annoncer à l'arrivée (ex. connexion réussie). */
   announcement: string | null
   /** Avis persistant (session expirée, travail mis de côté). */
@@ -80,6 +82,8 @@ export function DocumentsHome({
   onImportFile,
   onShowSignIn,
   onShowSignUp,
+  onShowProfile,
+  onShowClasses,
   announcement,
   notice,
   onClearNotice,
@@ -189,7 +193,12 @@ export function DocumentsHome({
         <Logo />
         <span className="text-base font-semibold tracking-tight">Meriz</span>
         <div className="ml-auto flex flex-wrap items-center gap-3">
-          <AccountStatus onShowSignIn={onShowSignIn} onShowSignUp={onShowSignUp} />
+          <AccountStatus
+            onShowSignIn={onShowSignIn}
+            onShowSignUp={onShowSignUp}
+            onShowProfile={onShowProfile}
+            onShowClasses={onShowClasses}
+          />
           <UiScaleControl />
         </div>
       </header>

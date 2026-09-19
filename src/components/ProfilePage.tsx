@@ -1,0 +1,210 @@
+import { useState } from 'react'
+import type { FormEvent } from 'react'
+import type { ApiClient } from '../lib/apiClient'
+import type { ApiUser } from '../lib/authApi'
+import { displayName } from '../lib/authApi'
+import { publicPreview, updateProfile } from '../lib/profileApi'
+import { useSession } from './sessionContext'
+import { FormField } from './FormField'
+import { FormAlert } from './FormAlert'
+import { PageShell } from './PageShell'
+import { ToggleSwitch } from './ToggleSwitch'
+import { primaryButtonClass } from './buttonStyles'
+
+interface ProfilePageProps {
+  user: ApiUser
+  /** Client lié au compte connecté. */
+  client: ApiClient
+  onBack: () => void
+}
+
+type Field = 'firstName' | 'name' | 'bio' | 'contact'
+const SERVER_FIELD: Record<Field, string> = {
+  firstName: 'first_name',
+  name: 'name',
+  bio: 'bio',
+  contact: 'contact',
+}
+
+/**
+ * Mon profil : prénom, nom, présentation et contact, chacun partagé ou
+ * non. L'email de connexion reste privé ; pour être contacté, on remplit
+ * le champ Contact et on active son partage.
+ */
+export function ProfilePage({ user, client, onBack }: ProfilePageProps) {
+  const { updateUser } = useSession()
+  const [firstName, setFirstName] = useState(user.firstName ?? '')
+  const [name, setName] = useState(user.name)
+  const [bio, setBio] = useState(user.bio ?? '')
+  const [bioShared, setBioShared] = useState(user.bioShared)
+  const [contact, setContact] = useState(user.contact ?? '')
+  const [contactShared, setContactShared] = useState(user.contactShared)
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<Field, string>>>({})
+  const [formError, setFormError] = useState<string | null>(null)
+  const [attempt, setAttempt] = useState(0)
+  const [pending, setPending] = useState(false)
+  const [saved, setSaved] = useState('')
+
+  const preview = publicPreview({
+    firstName: firstName.trim() === '' ? null : firstName.trim(),
+    name: name.trim(),
+    bio: bio.trim() === '' ? null : bio.trim(),
+    bioShared,
+    contact: contact.trim() === '' ? null : contact.trim(),
+    contactShared,
+  })
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (pending) return
+    setPending(true)
+    setSaved('')
+    setFormError(null)
+    setFieldErrors({})
+    const outcome = await updateProfile(client, {
+      firstName: firstName.trim(),
+      name: name.trim(),
+      bio: bio.trim() === '' ? null : bio.trim(),
+      bioShared,
+      contact: contact.trim() === '' ? null : contact.trim(),
+      contactShared,
+    })
+    setPending(false)
+    if (outcome.ok) {
+      updateUser(outcome.value)
+      setSaved('Profil enregistré.')
+      return
+    }
+    const next: Partial<Record<Field, string>> = {}
+    for (const [field, serverField] of Object.entries(SERVER_FIELD) as [Field, string][]) {
+      const message = outcome.error.fieldErrors[serverField]?.[0]
+      if (message) next[field] = message
+    }
+    setFieldErrors(next)
+    setFormError(Object.keys(next).length > 0 ? 'Vérifiez les champs signalés.' : outcome.error.message)
+    setAttempt((count) => count + 1)
+  }
+
+  return (
+    <PageShell title="Mon profil" onBack={onBack}>
+      <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-6">
+        <FormAlert message={formError} attempt={attempt} />
+
+        <section aria-labelledby="identite-titre" className="rounded-lg border border-line bg-surface p-5 shadow-sm">
+          <h2 id="identite-titre" className="text-sm font-semibold">
+            Identité
+          </h2>
+          <p className="mt-1 text-xs text-zinc-600">Votre prénom et votre nom sont visibles par les membres de vos classes.</p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <FormField
+              label="Prénom"
+              type="text"
+              value={firstName}
+              onChange={setFirstName}
+              autoComplete="given-name"
+              maxLength={100}
+              error={fieldErrors.firstName}
+            />
+            <FormField
+              label="Nom"
+              type="text"
+              value={name}
+              onChange={setName}
+              autoComplete="family-name"
+              maxLength={100}
+              error={fieldErrors.name}
+            />
+          </div>
+        </section>
+
+        <section aria-labelledby="partage-titre" className="rounded-lg border border-line bg-surface p-5 shadow-sm">
+          <h2 id="partage-titre" className="text-sm font-semibold">
+            Présentation et contact
+          </h2>
+          <p className="mt-1 rounded border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm leading-6 text-zinc-800">
+            Votre email de connexion (<span className="font-mono">{user.email}</span>) reste privé :
+            il n'est jamais montré aux autres. Pour qu'on puisse vous joindre, indiquez une adresse
+            dans « Contact » et activez son partage. Rien n'est partagé tant que vous ne l'activez
+            pas.
+          </p>
+
+          <div className="mt-4 flex flex-col gap-4">
+            <FormField
+              label="Présentation"
+              type="text"
+              value={bio}
+              onChange={setBio}
+              autoComplete="off"
+              multiline
+              required={false}
+              maxLength={280}
+              hint="Quelques mots sur vous, visibles par vos classes si vous les partagez."
+              error={fieldErrors.bio}
+            />
+            <ToggleSwitch
+              label="Partager ma présentation"
+              description="Visible par le prof et les membres de vos classes."
+              checked={bioShared}
+              onChange={setBioShared}
+            />
+
+            <FormField
+              label="Contact"
+              type="text"
+              value={contact}
+              onChange={setContact}
+              autoComplete="off"
+              required={false}
+              maxLength={255}
+              hint="Une adresse où l'on peut vous écrire, différente de votre email de connexion si vous le souhaitez."
+              error={fieldErrors.contact}
+            />
+            <ToggleSwitch
+              label="Partager mon contact"
+              description="Visible par le prof et les membres de vos classes."
+              checked={contactShared}
+              onChange={setContactShared}
+            />
+          </div>
+        </section>
+
+        <section aria-labelledby="apercu-titre" className="rounded-lg border border-dashed border-zinc-300 bg-surface p-5">
+          <h2 id="apercu-titre" className="text-sm font-semibold">
+            Ce que voient les autres
+          </h2>
+          <dl className="mt-2 grid gap-1 text-sm">
+            <div className="flex gap-2">
+              <dt className="w-28 shrink-0 text-zinc-600">Nom</dt>
+              <dd>{displayName(preview) || '(vide)'}</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="w-28 shrink-0 text-zinc-600">Présentation</dt>
+              <dd>{preview.bio ?? <span className="text-zinc-600">non partagée</span>}</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="w-28 shrink-0 text-zinc-600">Contact</dt>
+              <dd>{preview.contact ?? <span className="text-zinc-600">non partagé</span>}</dd>
+            </div>
+          </dl>
+          <p className="mt-2 text-xs text-zinc-600">
+            Aperçu de vos réglages en cours. Ils s'appliquent une fois enregistrés.
+          </p>
+        </section>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="submit" disabled={pending} className={primaryButtonClass}>
+            {pending ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+          <p role="status" aria-live="polite" className="text-sm text-zinc-700">
+            {saved && (
+              <>
+                <span aria-hidden="true">✓ </span>
+                {saved}
+              </>
+            )}
+          </p>
+        </div>
+      </form>
+    </PageShell>
+  )
+}

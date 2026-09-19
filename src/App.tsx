@@ -18,6 +18,8 @@ import type { AuthMode } from './components/AuthPage'
 import { ImportLocalDialog } from './components/ImportLocalDialog'
 import type { ImportReport } from './components/ImportLocalDialog'
 import { AccountLoading } from './components/AccountLoading'
+import { ProfilePage } from './components/ProfilePage'
+import { ClassesPage } from './components/ClassesPage'
 import { useSession } from './components/sessionContext'
 
 /** Délai laissé à un envoi en cours quand on quitte l'éditeur. */
@@ -67,11 +69,15 @@ export function App() {
   const [authMode, setAuthMode] = useState<AuthMode | null>(null)
   const [homeAnnouncement, setHomeAnnouncement] = useState<string | null>(null)
   const [proposal, setProposal] = useState<ImportProposal | null>(null)
+  // Écrans du compte, seulement une fois connecté.
+  const [page, setPage] = useState<'home' | 'profile' | 'classes'>('home')
 
   // Changement de compte : le document ouvert appartient à l'espace
   // précédent, il est refermé d'office.
   const current = opened && opened.spaceKey === spaceKey ? opened : null
   useEffect(() => {
+    // Nouveau compte : on repart de l'accueil, jamais d'un écran de l'ancien.
+    setPage('home')
     setOpened((previous) => {
       if (previous && previous.spaceKey !== spaceKey) {
         previous.saver.dispose()
@@ -224,6 +230,26 @@ export function App() {
     return <AccountLoading kind={account.kind} />
   }
 
+  // Profil et classes : remontés par compte, leurs données ne survivent
+  // jamais à un changement de compte. Sans session, retour à l'accueil.
+  if (
+    !current &&
+    page !== 'home' &&
+    session.status === 'signed-in' &&
+    account.kind === 'cloud'
+  ) {
+    return page === 'profile' ? (
+      <ProfilePage
+        key={account.key}
+        user={session.user}
+        client={account.client}
+        onBack={() => setPage('home')}
+      />
+    ) : (
+      <ClassesPage key={account.key} user={session.user} client={account.client} onBack={() => setPage('home')} />
+    )
+  }
+
   const importDialog = proposal && (
     <ImportLocalDialog
       open
@@ -252,6 +278,8 @@ export function App() {
           onImportFile={importFile}
           onShowSignIn={() => showAuth('sign-in')}
           onShowSignUp={() => showAuth('sign-up')}
+          onShowProfile={() => setPage('profile')}
+          onShowClasses={() => setPage('classes')}
           announcement={homeAnnouncement}
           notice={notice}
           onClearNotice={clearNotice}

@@ -174,9 +174,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const clearNotice = useCallback(() => setNotice(null), [])
 
+  const updateUser = useCallback((user: ApiUser) => {
+    setSession((previous) =>
+      previous.status === 'signed-in' && previous.user.id === user.id
+        ? { status: 'signed-in', user }
+        : previous,
+    )
+  }, [])
+
   const value = useMemo<SessionContextValue>(
-    () => ({ session, account, signIn, signUp, signOut, retry, notice, clearNotice }),
-    [session, account, signIn, signUp, signOut, retry, notice, clearNotice],
+    () => ({ session, account, signIn, signUp, signOut, retry, notice, clearNotice, updateUser }),
+    [session, account, signIn, signUp, signOut, retry, notice, clearNotice, updateUser],
   )
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>

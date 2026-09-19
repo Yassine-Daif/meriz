@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { displayName } from '../lib/authApi'
 import { useSession } from './sessionContext'
 import { primaryButtonClass, smallButtonClass } from './buttonStyles'
 
@@ -7,6 +8,9 @@ interface AccountStatusProps {
   compact?: boolean
   onShowSignIn?: () => void
   onShowSignUp?: () => void
+  /** Accueil, une fois connecté : accès au profil et aux classes. */
+  onShowProfile?: () => void
+  onShowClasses?: () => void
 }
 
 /**
@@ -14,7 +18,13 @@ interface AccountStatusProps {
  * déconnexion), boutons de connexion, serveur injoignable, ou comptes
  * indisponibles. Les changements sont annoncés aux lecteurs d'écran.
  */
-export function AccountStatus({ compact = false, onShowSignIn, onShowSignUp }: AccountStatusProps) {
+export function AccountStatus({
+  compact = false,
+  onShowSignIn,
+  onShowSignUp,
+  onShowProfile,
+  onShowClasses,
+}: AccountStatusProps) {
   const { session, signOut, retry } = useSession()
   const [pending, setPending] = useState(false)
   const [announcement, setAnnouncement] = useState('')
@@ -37,13 +47,23 @@ export function AccountStatus({ compact = false, onShowSignIn, onShowSignUp }: A
         <>
           <span className="min-w-0 truncate text-xs text-zinc-700" title={session.user.email}>
             <span aria-hidden="true" className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-600" />
-            Connecté : <span className="font-semibold text-ink">{session.user.name}</span>
+            Connecté : <span className="font-semibold text-ink">{displayName(session.user)}</span>
             {compact ? (
               <span className="sr-only"> ({session.user.email})</span>
             ) : (
               <span className="ml-1.5 font-mono text-[11px] text-zinc-600">{session.user.email}</span>
             )}
           </span>
+          {!compact && onShowProfile && (
+            <button type="button" onClick={onShowProfile} className={smallButtonClass}>
+              Mon profil
+            </button>
+          )}
+          {!compact && onShowClasses && (
+            <button type="button" onClick={onShowClasses} className={smallButtonClass}>
+              Mes classes
+            </button>
+          )}
           <button
             type="button"
             onClick={() => void handleSignOut()}

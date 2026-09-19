@@ -4,7 +4,18 @@ import type { ApiErrorKind } from './apiClient'
 import type { ApiUser } from './authApi'
 import { sessionAfterRestore } from './sessionState'
 
-const user: ApiUser = { id: 1, name: 'Ada', email: 'ada@b.fr', role: 'student', isAcademic: false }
+const user: ApiUser = {
+  id: 1,
+  name: 'Lovelace',
+  firstName: 'Ada',
+  email: 'ada@b.fr',
+  role: 'student',
+  isAcademic: false,
+  bio: null,
+  bioShared: false,
+  contact: null,
+  contactShared: false,
+}
 
 function failure(kind: ApiErrorKind) {
   return sessionAfterRestore({ ok: false, error: apiError(kind, null, '') })

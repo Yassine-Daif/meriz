@@ -19,7 +19,8 @@ Vous dessinez le modèle conceptuel (MCD). Meriz le vérifie, puis en tire le mo
 - **Apprendre.** Une page explique la méthode, les cardinalités et le passage au SQL.
 - **Fichiers.** Export et import au format `.meriz.json`, nom du document compris, et export du schéma en PNG.
 - **Compte, en option.** Inscription, connexion et déconnexion depuis l'accueil. Meriz marche aussi bien sans compte.
-
+- **Profil.** Prénom, nom, une présentation et un contact, chacun partagé ou non avec vos classes. L'email de connexion reste privé.
+- **Classes.** Un élève rejoint une classe avec le code donné par son prof et voit ses camarades. Un prof crée ses classes, partage leur code et gère les membres.
 Pour démarrer, le bouton « Découvrir avec l'exemple » de l'accueil ouvre le modèle Client passe Commande. Un modèle plus complet est fourni dans [examples/universite.meriz.json](examples/universite.meriz.json) : importez-le avec « Ouvrir un fichier ».
 
 ## Lancer le projet

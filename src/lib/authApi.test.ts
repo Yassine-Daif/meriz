@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ApiClient, ApiResult, HttpMethod } from './apiClient'
 import { apiError } from './apiClient'
-import { fetchCurrentUser, login, logout, register } from './authApi'
+import { displayName, fetchCurrentUser, login, logout, parseApiUser, register } from './authApi'
 
 interface Sent {
   method: HttpMethod
@@ -36,13 +36,13 @@ describe('authApi, envois', () => {
   it("inscrit sans rôle, avec le nom de l'appareil", async () => {
     const { client, sent } = fakeClient({ ok: true, status: 201, data: { user: serverUser, token: '1|abc', token_type: 'Bearer' }, body: null })
 
-    await register(client, { name: 'Ada', email: 'ada@etu.univ.fr', password: 'secret123' })
+    await register(client, { firstName: 'Ada', name: 'Lovelace', email: 'ada@etu.univ.fr', password: 'secret123' })
 
     expect(sent).toEqual([
       {
         method: 'POST',
         path: '/auth/register',
-        body: { name: 'Ada', email: 'ada@etu.univ.fr', password: 'secret123', device_name: 'Meriz web' },
+        body: { name: 'Lovelace', first_name: 'Ada', email: 'ada@etu.univ.fr', password: 'secret123', device_name: 'Meriz web' },
       },
     ])
   })
@@ -75,7 +75,18 @@ describe('authApi, réponses', () => {
       ok: true,
       value: {
         token: '1|abc',
-        user: { id: 3, name: 'Ada', email: 'ada@etu.univ.fr', role: 'student', isAcademic: true },
+        user: {
+          id: 3,
+          name: 'Ada',
+          firstName: null,
+          email: 'ada@etu.univ.fr',
+          role: 'student',
+          isAcademic: true,
+          bio: null,
+          bioShared: false,
+          contact: null,
+          contactShared: false,
+        },
       },
     })
   })
@@ -105,5 +116,41 @@ describe('authApi, réponses', () => {
 
     expect(sent[0]).toEqual({ method: 'GET', path: '/me', body: undefined })
     expect(outcome.ok && outcome.value.name).toBe('Ada')
+  })
+})
+
+describe('authApi, profil complet', () => {
+  it('lit prénom, présentation et contact avec leurs partages', () => {
+    const user = parseApiUser({
+      ...serverUser,
+      first_name: 'Ada',
+      bio: 'Passionnée de Merise',
+      bio_shared: true,
+      contact: 'ada@contact.fr',
+      contact_shared: false,
+    })
+
+    expect(user).toMatchObject({
+      firstName: 'Ada',
+      bio: 'Passionnée de Merise',
+      bioShared: true,
+      contact: 'ada@contact.fr',
+      contactShared: false,
+    })
+  })
+
+  it("tolère un ancien compte sans prénom ni champs de profil", () => {
+    expect(parseApiUser(serverUser)).toMatchObject({ firstName: null, bio: null, bioShared: false })
+  })
+
+  it('refuse un champ de profil mal typé', () => {
+    expect(parseApiUser({ ...serverUser, bio_shared: 'oui' })).toBeNull()
+    expect(parseApiUser({ ...serverUser, first_name: 42 })).toBeNull()
+  })
+
+  it('compose « Prénom Nom », ou le nom seul sans prénom', () => {
+    expect(displayName({ firstName: 'Ada', name: 'Lovelace' })).toBe('Ada Lovelace')
+    expect(displayName({ firstName: null, name: 'Lovelace' })).toBe('Lovelace')
+    expect(displayName({ firstName: '  ', name: 'Lovelace' })).toBe('Lovelace')
   })
 })

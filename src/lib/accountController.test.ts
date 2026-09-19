@@ -78,6 +78,19 @@ describe('changement de compte, cache toujours vidé', () => {
     expect(server.documentsOf('1').map((d) => d.name)).toEqual(['Secret de A'])
   })
 
+  it("le client de l'ancien compte (classes, profil) n'envoie plus de jeton", async () => {
+    const { server, controller } = setup()
+    const spaceA = controller.signedIn('1', server.tokenFor('1'))
+    if (spaceA.kind !== 'cloud') throw new Error('espace cloud attendu')
+    controller.signedIn('2', server.tokenFor('2'))
+    const before = server.requests.length
+
+    const late = await spaceA.client.request('GET', '/documents?per_page=100&page=1')
+
+    expect(late.ok ? null : late.error.kind).toBe('unauthorized')
+    expect(server.requests.slice(before).map((r) => r.token)).toEqual([null])
+  })
+
   it('la déconnexion vide le cache et éteint le dépôt', async () => {
     const { server, cache, controller } = setup()
     const repo = repositoryOf(controller.signedIn('1', server.tokenFor('1')))

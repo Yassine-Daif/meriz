@@ -13,7 +13,17 @@ export type AccountSpace =
   | { kind: 'loading'; key: 'loading' }
   /** Session gardée mais serveur injoignable, sans cache connu. */
   | { kind: 'offline-unknown'; key: 'offline-unknown' }
-  | { kind: 'cloud'; key: string; userId: string; repository: DocumentRepository }
+  | {
+      kind: 'cloud'
+      key: string
+      userId: string
+      repository: DocumentRepository
+      /**
+       * Client lié au jeton de ce compte (classes, profil). Éteint au
+       * changement de compte : un appel tardif part sans jeton.
+       */
+      client: ApiClient
+    }
 
 export const LOCAL_SPACE: AccountSpace = { kind: 'local', key: 'local' }
 export const LOADING_SPACE: AccountSpace = { kind: 'loading', key: 'loading' }
@@ -71,7 +81,7 @@ export function createAccountController({ cache, createClient, onExpired }: Acco
     if (verified) {
       repository.adoptOutbox(cache.takeOutbox(userId))
     }
-    return { kind: 'cloud', key: `user:${userId}`, userId, repository }
+    return { kind: 'cloud', key: `user:${userId}`, userId, repository, client }
   }
 
   /** Vide le cache après avoir mis de côté le travail en attente. */

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { ApiUser } from '../lib/authApi'
+import { displayName } from '../lib/authApi'
 import { useSession } from './sessionContext'
 import { SignInForm } from './SignInForm'
 import { SignUpForm } from './SignUpForm'
@@ -41,8 +42,8 @@ export function AuthPage({ mode, onModeChange, onBack, onAuthenticated }: AuthPa
   const handleSuccess = (user: ApiUser) => {
     onAuthenticated(
       mode === 'sign-in'
-        ? `Connecté en tant que ${user.name}.`
-        : `Compte créé. Bienvenue, ${user.name} !`,
+        ? `Connecté en tant que ${displayName(user)}.`
+        : `Compte créé. Bienvenue, ${user.firstName ?? displayName(user)} !`,
     )
   }
 
@@ -59,7 +60,7 @@ export function AuthPage({ mode, onModeChange, onBack, onAuthenticated }: AuthPa
     content = (
       <p className="text-sm text-zinc-700">
         Vous êtes déjà connecté en tant que{' '}
-        <span className="font-semibold text-ink">{session.user.name}</span>.
+        <span className="font-semibold text-ink">{displayName(session.user)}</span>.
       </p>
     )
   } else if (mode === 'sign-in') {

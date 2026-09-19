@@ -26,6 +26,11 @@ export interface SessionContextValue {
   /** Message à annoncer une fois (session expirée, travail mis de côté). */
   notice: string | null
   clearNotice: () => void
+  /**
+   * Profil enregistré : la session reprend l'utilisateur renvoyé par le
+   * serveur, seulement s'il s'agit toujours du compte connecté.
+   */
+  updateUser: (user: ApiUser) => void
 }
 
 export const SessionContext = createContext<SessionContextValue | null>(null)

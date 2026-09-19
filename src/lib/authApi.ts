@@ -9,14 +9,25 @@ import { unexpectedResponse } from './apiClient'
 
 export type UserRole = 'student' | 'teacher'
 
-/** Utilisateur tel que l'application l'utilise. */
+/**
+ * Mon propre compte, tel que l'application l'utilise. C'est la seule
+ * donnée qui contient l'email de connexion : il n'est jamais montré aux
+ * autres (voir le profil public des classes).
+ */
 export interface ApiUser {
   id: number
+  /** Nom de famille. */
   name: string
+  /** Prénom : peut manquer pour un compte créé avant qu'il soit demandé. */
+  firstName: string | null
   email: string
   role: UserRole
   /** Adresse d'un établissement scolaire ou universitaire reconnu. */
   isAcademic: boolean
+  bio: string | null
+  bioShared: boolean
+  contact: string | null
+  contactShared: boolean
 }
 
 export interface AuthSuccess {
@@ -32,10 +43,26 @@ export interface Credentials {
 /** Inscription neutre : aucun rôle n'est demandé ni envoyé. */
 export interface SignUpData extends Credentials {
   name: string
+  firstName: string
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+/**
+ * Champ texte facultatif : absent ou nul donne null, une chaîne passe,
+ * tout autre type rend la réponse invalide (undefined).
+ */
+export function optionalText(value: unknown): string | null | undefined {
+  if (value === undefined || value === null) return null
+  return typeof value === 'string' ? value : undefined
+}
+
+/** Booléen facultatif : absent donne false, un autre type est invalide. */
+function optionalFlag(value: unknown): boolean | undefined {
+  if (value === undefined || value === null) return false
+  return typeof value === 'boolean' ? value : undefined
 }
 
 /** Utilisateur lu dans une réponse du serveur, ou null si mal formé. */
@@ -50,13 +77,37 @@ export function parseApiUser(raw: unknown): ApiUser | null {
   ) {
     return null
   }
+  const firstName = optionalText(raw.first_name)
+  const bio = optionalText(raw.bio)
+  const contact = optionalText(raw.contact)
+  const bioShared = optionalFlag(raw.bio_shared)
+  const contactShared = optionalFlag(raw.contact_shared)
+  if (
+    firstName === undefined ||
+    bio === undefined ||
+    contact === undefined ||
+    bioShared === undefined ||
+    contactShared === undefined
+  ) {
+    return null
+  }
   return {
     id: raw.id,
     name: raw.name,
+    firstName,
     email: raw.email,
     role: raw.role,
     isAcademic: raw.is_academic,
+    bio,
+    bioShared,
+    contact,
+    contactShared,
   }
+}
+
+/** « Prénom Nom », ou le nom seul si le prénom manque. */
+export function displayName(person: { firstName: string | null; name: string }): string {
+  return [person.firstName, person.name].filter((part) => part && part.trim() !== '').join(' ')
 }
 
 function parseAuthSuccess(raw: unknown): AuthSuccess | null {
@@ -90,6 +141,7 @@ async function authenticate(
 export function register(client: ApiClient, data: SignUpData): Promise<Outcome<AuthSuccess>> {
   return authenticate(client, '/auth/register', {
     name: data.name,
+    first_name: data.firstName,
     email: data.email,
     password: data.password,
   })
