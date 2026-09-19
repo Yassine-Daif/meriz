@@ -20,6 +20,12 @@ import type { ImportReport } from './components/ImportLocalDialog'
 import { AccountLoading } from './components/AccountLoading'
 import { ProfilePage } from './components/ProfilePage'
 import { ClassesPage } from './components/ClassesPage'
+import type { ClassroomOpening } from './components/ClassesPage'
+import { ConnectedShell } from './components/ConnectedShell'
+import type { ConnectedPage } from './components/ConnectedShell'
+import { StudentHome } from './components/StudentHome'
+import { TeacherHome } from './components/TeacherHome'
+import { WorkPage } from './components/WorkPage'
 import { useSession } from './components/sessionContext'
 
 /** Délai laissé à un envoi en cours quand on quitte l'éditeur. */
@@ -69,8 +75,19 @@ export function App() {
   const [authMode, setAuthMode] = useState<AuthMode | null>(null)
   const [homeAnnouncement, setHomeAnnouncement] = useState<string | null>(null)
   const [proposal, setProposal] = useState<ImportProposal | null>(null)
-  // Écrans du compte, seulement une fois connecté.
-  const [page, setPage] = useState<'home' | 'profile' | 'classes'>('home')
+  // Page de l'espace connecté, gardée pendant l'édition : fermer un
+  // document ramène à la page d'où on l'a ouvert.
+  const [page, setPage] = useState<ConnectedPage>('home')
+  const [classroomOpening, setClassroomOpening] = useState<ClassroomOpening | null>(null)
+  // Compteur de navigation : chaque clic remonte la page, à neuf.
+  const [navigation, setNavigation] = useState(0)
+
+  const navigate = useCallback((next: ConnectedPage, opening: ClassroomOpening | null = null) => {
+    setHomeAnnouncement(null)
+    setClassroomOpening(opening)
+    setPage(next)
+    setNavigation((count) => count + 1)
+  }, [])
 
   // Changement de compte : le document ouvert appartient à l'espace
   // précédent, il est refermé d'office.
@@ -78,6 +95,7 @@ export function App() {
   useEffect(() => {
     // Nouveau compte : on repart de l'accueil, jamais d'un écran de l'ancien.
     setPage('home')
+    setClassroomOpening(null)
     setOpened((previous) => {
       if (previous && previous.spaceKey !== spaceKey) {
         previous.saver.dispose()
@@ -230,27 +248,6 @@ export function App() {
     return <AccountLoading kind={account.kind} />
   }
 
-  // Profil et classes : remontés par compte, leurs données ne survivent
-  // jamais à un changement de compte. Sans session, retour à l'accueil.
-  if (
-    !current &&
-    page !== 'home' &&
-    session.status === 'signed-in' &&
-    account.kind === 'cloud'
-  ) {
-    return page === 'profile' ? (
-      <ProfilePage
-        key={account.key}
-        user={session.user}
-        client={account.client}
-        onBack={() => setPage('home')}
-        onShowClasses={() => setPage('classes')}
-      />
-    ) : (
-      <ClassesPage key={account.key} user={session.user} client={account.client} onBack={() => setPage('home')} />
-    )
-  }
-
   const importDialog = proposal && (
     <ImportLocalDialog
       open
@@ -265,6 +262,65 @@ export function App() {
     />
   )
 
+  // Espace connecté : accueil selon le rôle, classes, travail, profil.
+  // Chaque page est remontée par compte et à chaque navigation : ses
+  // données ne survivent jamais à un changement de compte.
+  if (!current && session.status === 'signed-in' && account.kind === 'cloud') {
+    const pageKey = `${account.key}:${navigation}`
+    const homeProps = {
+      user: session.user,
+      client: account.client,
+      repository,
+      onOpenDocument: openDocument,
+      onNewDocument: newDocument,
+      onOpenClassroom: (opening: ClassroomOpening) => navigate('classes', opening),
+      onShowWork: () => navigate('work'),
+      announcement: homeAnnouncement,
+    }
+    return (
+      <>
+        <ConnectedShell
+          user={session.user}
+          page={page}
+          onNavigate={(next) => navigate(next)}
+          notice={notice}
+          onClearNotice={clearNotice}
+        >
+          {page === 'home' &&
+            (session.user.role === 'teacher' ? (
+              <TeacherHome key={pageKey} {...homeProps} />
+            ) : (
+              <StudentHome key={pageKey} {...homeProps} />
+            ))}
+          {page === 'classes' && (
+            <ClassesPage key={pageKey} user={session.user} client={account.client} opening={classroomOpening} />
+          )}
+          {page === 'work' && (
+            <WorkPage
+              key={pageKey}
+              repository={repository}
+              onOpenDocument={openDocument}
+              onNewDocument={newDocument}
+              onOpenExample={openExample}
+              onImportFile={importFile}
+            />
+          )}
+          {page === 'profile' && (
+            <ProfilePage
+              key={pageKey}
+              user={session.user}
+              client={account.client}
+              onShowClasses={() => navigate('classes')}
+            />
+          )}
+        </ConnectedShell>
+        {importDialog}
+      </>
+    )
+  }
+
+  // Sans compte, ou compte gardé mais serveur injoignable au démarrage
+  // (profil et rôle inconnus) : l'accueil des documents, sans coquille.
   if (!current) {
     return (
       <>
@@ -279,8 +335,6 @@ export function App() {
           onImportFile={importFile}
           onShowSignIn={() => showAuth('sign-in')}
           onShowSignUp={() => showAuth('sign-up')}
-          onShowProfile={() => setPage('profile')}
-          onShowClasses={() => setPage('classes')}
           announcement={homeAnnouncement}
           notice={notice}
           onClearNotice={clearNotice}
@@ -289,7 +343,6 @@ export function App() {
       </>
     )
   }
-
   return (
     <>
       <Editor

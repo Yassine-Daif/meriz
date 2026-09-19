@@ -16,7 +16,6 @@ interface ProfilePageProps {
   user: ApiUser
   /** Client lié au compte connecté. */
   client: ApiClient
-  onBack: () => void
   onShowClasses: () => void
 }
 
@@ -33,7 +32,7 @@ const SERVER_FIELD: Record<Field, string> = {
  * non. L'email de connexion reste privé ; pour être contacté, on remplit
  * le champ Contact et on active son partage.
  */
-export function ProfilePage({ user, client, onBack, onShowClasses }: ProfilePageProps) {
+export function ProfilePage({ user, client, onShowClasses }: ProfilePageProps) {
   const { updateUser } = useSession()
   const [firstName, setFirstName] = useState(user.firstName ?? '')
   const [name, setName] = useState(user.name)
@@ -88,7 +87,7 @@ export function ProfilePage({ user, client, onBack, onShowClasses }: ProfilePage
   }
 
   return (
-    <PageShell title="Mon profil" onBack={onBack}>
+    <PageShell title="Mon profil">
       <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-6">
         <FormAlert message={formError} attempt={attempt} />
 

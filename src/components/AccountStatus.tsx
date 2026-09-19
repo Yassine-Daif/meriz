@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { displayName } from '../lib/authApi'
 import { useSession } from './sessionContext'
-import { primaryButtonClass, smallButtonClass } from './buttonStyles'
+import { smallButtonClass } from './buttonStyles'
+import { buttonClass } from './ui/buttonClass'
+
+const smallPrimaryButtonClass = buttonClass({ variant: 'primary', size: 'sm' })
 
 interface AccountStatusProps {
   /** Version barre d'éditeur : n'affiche rien tant qu'on n'est pas connecté. */
@@ -45,13 +48,13 @@ export function AccountStatus({
     case 'signed-in':
       content = (
         <>
-          <span className="min-w-0 truncate text-xs text-zinc-700" title={session.user.email}>
-            <span aria-hidden="true" className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-600" />
+          <span className="min-w-0 truncate text-sm text-ink-soft" title={session.user.email}>
+            <span aria-hidden="true" className="mr-1.5 inline-block h-2 w-2 rounded-full bg-sage" />
             Connecté : <span className="font-semibold text-ink">{displayName(session.user)}</span>
             {compact ? (
               <span className="sr-only"> ({session.user.email})</span>
             ) : (
-              <span className="ml-1.5 font-mono text-[11px] text-zinc-600">{session.user.email}</span>
+              <span className="ml-1.5 font-mono text-xs text-ink-soft">{session.user.email}</span>
             )}
           </span>
           {!compact && onShowProfile && (
@@ -68,7 +71,7 @@ export function AccountStatus({
             type="button"
             onClick={() => void handleSignOut()}
             disabled={pending}
-            className={`${smallButtonClass} disabled:cursor-not-allowed disabled:opacity-60`}
+            className={smallButtonClass}
           >
             {pending ? 'Envoi et déconnexion…' : 'Se déconnecter'}
           </button>
@@ -85,7 +88,7 @@ export function AccountStatus({
             <button
               type="button"
               onClick={onShowSignUp}
-              className={`${primaryButtonClass} px-2.5 py-1.5 text-xs`}
+              className={smallPrimaryButtonClass}
             >
               Créer un compte
             </button>
@@ -96,7 +99,7 @@ export function AccountStatus({
     case 'offline':
       content = (
         <>
-          <span className="text-xs text-zinc-700">
+          <span className="text-sm text-ink-soft">
             <span aria-hidden="true">⚠ </span>
             Serveur de comptes injoignable
           </span>
@@ -107,12 +110,12 @@ export function AccountStatus({
       )
       break
     case 'restoring':
-      content = <span className="text-xs text-zinc-600">Connexion au compte…</span>
+      content = <span className="text-sm text-ink-soft">Connexion au compte…</span>
       break
     case 'unavailable':
       if (!compact) {
         content = (
-          <span className="text-xs text-zinc-600" title="Adresse du serveur non configurée (VITE_API_URL)">
+          <span className="text-sm text-ink-soft" title="Adresse du serveur non configurée (VITE_API_URL)">
             Comptes indisponibles
           </span>
         )

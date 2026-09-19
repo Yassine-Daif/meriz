@@ -38,7 +38,7 @@ export function UiScaleControl() {
   }, [scale])
 
   return (
-    <label className="flex items-center gap-1.5 text-xs font-medium text-zinc-700">
+    <label className="flex items-center gap-1.5 text-sm font-medium text-ink-soft">
       <span aria-hidden="true" className="font-semibold">
         Aa
       </span>
@@ -46,7 +46,7 @@ export function UiScaleControl() {
       <select
         value={scale}
         onChange={(event) => setScale(event.target.value)}
-        className="rounded border border-zinc-300 bg-surface px-1.5 py-1 text-xs"
+        className="min-h-8 rounded-control border border-line-strong bg-surface px-2 py-1 text-xs text-ink"
       >
         {UI_SCALES.map((option) => (
           <option key={option.id} value={option.id}>

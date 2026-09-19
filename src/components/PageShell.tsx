@@ -1,24 +1,37 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
-import { Logo } from './Logo'
-import { UiScaleControl } from './UiScaleControl'
-import { secondaryButtonClass } from './buttonStyles'
+import { Button } from './ui/Button'
+import { PageHeader } from './ui/PageHeader'
 
 interface PageShellProps {
   title: string
+  eyebrow?: string
+  description?: ReactNode
+  /** Actions principales, à droite du titre sur grand écran. */
+  actions?: ReactNode
   /** Change quand le contenu change de sujet : le titre reprend le focus. */
   focusKey?: string
-  onBack: () => void
+  /** Retour vers un niveau au-dessus (ex. d'une classe à la liste). */
+  onBack?: () => void
   backLabel?: string
   children: ReactNode
 }
 
 /**
- * Coquille des écrans de compte (profil, classes) : en-tête Meriz, retour
- * à l'accueil, et un titre qui reçoit le focus à l'arrivée pour situer
- * l'utilisateur au clavier et au lecteur d'écran.
+ * Contenu d'une page de l'espace connecté : un titre qui reçoit le focus
+ * à l'arrivée, pour situer l'utilisateur au clavier et au lecteur
+ * d'écran, puis la page. La navigation vient de la coquille.
  */
-export function PageShell({ title, focusKey, onBack, backLabel = "Retour à l'accueil", children }: PageShellProps) {
+export function PageShell({
+  title,
+  eyebrow,
+  description,
+  actions,
+  focusKey,
+  onBack,
+  backLabel = 'Retour',
+  children,
+}: PageShellProps) {
   const headingRef = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
@@ -26,30 +39,21 @@ export function PageShell({ title, focusKey, onBack, backLabel = "Retour à l'ac
   }, [focusKey, title])
 
   return (
-    <div className="h-dvh overflow-y-auto bg-shell font-sans text-ink">
-      <a
-        href="#contenu"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-10 focus:rounded focus:bg-indigo-700 focus:px-3 focus:py-2 focus:text-white"
-      >
-        Aller au contenu
-      </a>
-      <header className="flex flex-wrap items-center gap-2 border-b border-line bg-surface px-4 py-2">
-        <Logo />
-        <span className="text-base font-semibold tracking-tight">Meriz</span>
-        <button type="button" onClick={onBack} className={`${secondaryButtonClass} ml-3 py-1.5`}>
-          <span aria-hidden="true">← </span>
+    <div>
+      {onBack && (
+        <Button variant="ghost" size="sm" onClick={onBack} className="-ml-3 mb-3">
+          <span aria-hidden="true">←</span>
           {backLabel}
-        </button>
-        <div className="ml-auto">
-          <UiScaleControl />
-        </div>
-      </header>
-      <main id="contenu" className="mx-auto w-full max-w-3xl px-6 py-8">
-        <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-semibold tracking-tight">
-          {title}
-        </h1>
-        <div className="mt-5">{children}</div>
-      </main>
+        </Button>
+      )}
+      <PageHeader
+        title={title}
+        eyebrow={eyebrow}
+        description={description}
+        actions={actions}
+        headingRef={headingRef}
+      />
+      <div className="mt-6">{children}</div>
     </div>
   )
 }
