@@ -119,22 +119,22 @@ export function DictionaryView({ mcd, dispatch }: DictionaryViewProps) {
         <button
           type="button"
           onClick={() => dispatch({ type: 'ADD_PROPERTY' })}
-          className="rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell"
+          className="rounded-control border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell"
         >
           Ajouter une propriété
         </button>
-        <p className="text-xs text-zinc-600">
+        <p className="text-xs text-ink-soft">
           {rows.length} propriété{rows.length > 1 ? 's' : ''} au dictionnaire
         </p>
       </div>
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {rows.length === 0 ? (
-          <p className="text-sm text-zinc-600">
+          <p className="text-sm text-ink-soft">
             Aucune propriété. Ajoutez-en une ici ou construisez le MCD, chaque attribut créé
             entre au dictionnaire.
           </p>
         ) : (
-          <table className="w-full border-separate border-spacing-0 rounded-lg border border-line bg-surface text-sm shadow-sm">
+          <table className="w-full border-separate border-spacing-0 rounded-card border border-line bg-surface text-sm shadow-soft">
             <caption className="sr-only">
               La liste maîtresse des propriétés : nom, type conceptuel, taille, utilisation
               dans le MCD et placement
@@ -157,10 +157,10 @@ export function DictionaryView({ mcd, dispatch }: DictionaryViewProps) {
                     <button
                       type="button"
                       onClick={() => toggleSort(column.key)}
-                      className="flex items-center gap-1 text-xs font-semibold text-zinc-700"
+                      className="flex items-center gap-1 text-xs font-semibold text-ink-soft"
                     >
                       {column.label}
-                      <span aria-hidden="true" className="text-zinc-400">
+                      <span aria-hidden="true" className="text-ink-soft">
                         {sortKey === column.key ? (sortDirection === 'asc' ? '▲' : '▼') : '↕'}
                       </span>
                     </button>
@@ -186,7 +186,7 @@ export function DictionaryView({ mcd, dispatch }: DictionaryViewProps) {
                           patch: { name: event.target.value },
                         })
                       }
-                      className="w-full min-w-24 rounded border border-transparent px-1 py-0.5 font-mono text-[13px] hover:border-zinc-300 focus:border-zinc-300"
+                      className="w-full min-w-24 rounded-lg border border-transparent px-1 py-0.5 font-mono text-[13px] hover:border-line-strong focus:border-line-strong"
                     />
                   </td>
                   <td className="border-b border-line px-3 py-1.5">
@@ -200,7 +200,7 @@ export function DictionaryView({ mcd, dispatch }: DictionaryViewProps) {
                           patch: { type: event.target.value as AttributeType },
                         })
                       }
-                      className="rounded border border-zinc-300 px-1 py-0.5 font-mono text-xs"
+                      className="rounded-lg border border-line-strong px-1 py-0.5 font-mono text-xs"
                     >
                       {ATTRIBUTE_TYPES.map((type) => (
                         <option key={type} value={type}>
@@ -217,16 +217,16 @@ export function DictionaryView({ mcd, dispatch }: DictionaryViewProps) {
                       aria-label={`Taille de la propriété ${row.property.name} (nombre de caractères, vide = défaut)`}
                       value={row.property.size ?? ''}
                       onChange={(event) => updateSize(row.property.id, event.target.value)}
-                      className="w-20 rounded border border-transparent px-1 py-0.5 text-right font-mono text-[13px] hover:border-zinc-300 focus:border-zinc-300"
+                      className="w-20 rounded-lg border border-transparent px-1 py-0.5 text-right font-mono text-[13px] hover:border-line-strong focus:border-line-strong"
                     />
                   </td>
                   <td className="border-b border-line px-3 py-1.5">
                     {row.used ? (
-                      <span className="text-emerald-700">
+                      <span className="text-sage">
                         <span aria-hidden="true">✓ </span>oui
                       </span>
                     ) : (
-                      <span className="text-zinc-400">non</span>
+                      <span className="text-ink-soft">non</span>
                     )}
                   </td>
                   <td className="border-b border-line px-3 py-1.5">
@@ -234,13 +234,13 @@ export function DictionaryView({ mcd, dispatch }: DictionaryViewProps) {
                       <>
                         {row.placementLabel}
                         {row.isIdentifier && (
-                          <span className="ml-1.5 rounded-sm border border-indigo-200 bg-indigo-50 px-1 font-mono text-[11px] font-medium text-indigo-700">
+                          <span className="ml-1.5 rounded-sm border border-line bg-accent-soft px-1 font-mono text-[11px] font-medium text-accent-ink">
                             clé
                           </span>
                         )}
                       </>
                     ) : (
-                      <span className="text-zinc-400">non placée</span>
+                      <span className="text-ink-soft">non placée</span>
                     )}
                   </td>
                   <td className="border-b border-line px-3 py-1.5 text-right">
@@ -253,7 +253,7 @@ export function DictionaryView({ mcd, dispatch }: DictionaryViewProps) {
                           : 'Supprimer du dictionnaire'
                       }
                       onClick={() => deleteProperty(row)}
-                      className="rounded border border-zinc-300 px-1.5 py-0.5 text-sm hover:bg-zinc-100"
+                      className="rounded-lg border border-line-strong px-1.5 py-0.5 text-sm hover:bg-surface-soft"
                     >
                       ✕
                     </button>

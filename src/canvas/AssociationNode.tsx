@@ -2,8 +2,6 @@ import { Handle, Position } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
 import type { AssociationFlowNode } from './mcdToFlow'
 
-
-
 /**
  * Nœud association : ovale sobre, légèrement teinté d'accent (jamais
  * un lien). Affiche le nom et les attributs portés s'il y en a. Les
@@ -13,10 +11,10 @@ export function AssociationNode({ data, selected }: NodeProps<AssociationFlowNod
   const { association, attributes } = data
   return (
     <div
-      className={`rounded-full border px-6 py-2.5 text-center shadow-sm ${
+      className={`rounded-full border px-6 py-2.5 text-center text-ink shadow-soft ${
         selected
-          ? 'border-indigo-700 bg-indigo-50 ring-2 ring-indigo-200'
-          : 'border-indigo-300 bg-indigo-50/60'
+          ? 'border-mark bg-accent-soft ring-3 ring-mark/35'
+          : 'border-line-strong bg-accent-soft'
       }`}
     >
       <div className="text-sm font-semibold tracking-tight">{association.name}</div>
@@ -25,7 +23,7 @@ export function AssociationNode({ data, selected }: NodeProps<AssociationFlowNod
           {attributes.map((attribute) => (
             <li key={attribute.propertyId}>
               {attribute.name}{' '}
-              <span className="font-mono text-[11px] text-zinc-500">
+              <span className="font-mono text-[11px] text-ink-soft">
                 {attribute.type}
                 {attribute.size !== undefined && `(${attribute.size})`}
               </span>

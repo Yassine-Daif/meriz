@@ -28,12 +28,12 @@ export function LegForm({ mcd, association, leg, dispatch }: LegFormProps) {
   return (
     <form onSubmit={(event) => event.preventDefault()} className="flex flex-col gap-3">
       <h2 className="text-sm font-semibold">Patte</h2>
-      <p className="text-xs text-zinc-600">
+      <p className="text-xs text-ink-soft">
         {association.name} → {entity ? entity.name : 'entité inexistante'}
       </p>
 
       <fieldset>
-        <legend className="text-xs font-medium text-zinc-600">Cardinalité</legend>
+        <legend className="text-xs font-medium text-ink-soft">Cardinalité</legend>
         <div className="mt-1 flex gap-1">
           {CARDINALITY_OPTIONS.map((option) => {
             const label = `${option.min},${option.max}`
@@ -42,8 +42,8 @@ export function LegForm({ mcd, association, leg, dispatch }: LegFormProps) {
             return (
               <label
                 key={label}
-                className={`flex-1 cursor-pointer rounded border px-2 py-1 text-center text-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-700 ${
-                  checked ? 'border-indigo-700 bg-indigo-50 font-semibold' : 'border-zinc-300'
+                className={`flex-1 cursor-pointer rounded-lg border px-2 py-1 text-center text-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-focus ${
+                  checked ? 'border-accent bg-accent-soft font-semibold' : 'border-line-strong'
                 }`}
               >
                 <input
@@ -64,7 +64,7 @@ export function LegForm({ mcd, association, leg, dispatch }: LegFormProps) {
       </fieldset>
 
       <div>
-        <label htmlFor={roleId} className="block text-xs font-medium text-zinc-600">
+        <label htmlFor={roleId} className="block text-xs font-medium text-ink-soft">
           Rôle
         </label>
         <input
@@ -79,9 +79,9 @@ export function LegForm({ mcd, association, leg, dispatch }: LegFormProps) {
               role: event.target.value === '' ? undefined : event.target.value,
             })
           }
-          className="mt-0.5 w-full rounded border border-zinc-300 px-2 py-1 text-sm"
+          className="mt-0.5 w-full rounded-lg border border-line-strong px-2 py-1 text-sm"
         />
-        <p className="mt-0.5 text-xs text-zinc-500">
+        <p className="mt-0.5 text-xs text-ink-soft">
           Utile quand plusieurs pattes visent la même entité.
         </p>
       </div>

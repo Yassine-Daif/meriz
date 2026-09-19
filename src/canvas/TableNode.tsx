@@ -17,8 +17,8 @@ const handleStyle = { opacity: 0, width: 6, height: 6, pointerEvents: 'none' as 
 export function TableNode({ data }: NodeProps<TableFlowNode>) {
   const { table } = data
   return (
-    <div className="min-w-48 rounded-lg border border-zinc-300 bg-surface shadow-sm">
-      <div className="rounded-t-lg border-b border-line bg-shell px-3 py-1.5 text-center text-sm font-semibold tracking-tight">
+    <div className="min-w-48 rounded-2xl border border-line-strong bg-surface text-ink shadow-soft">
+      <div className="rounded-t-2xl border-b border-line bg-accent-soft px-3 py-2 text-center text-sm font-semibold tracking-tight text-ink">
         {table.name}
       </div>
       <ul className="px-3 py-2 font-mono text-xs leading-6">
@@ -27,18 +27,18 @@ export function TableNode({ data }: NodeProps<TableFlowNode>) {
             <span
               className={
                 column.isPrimaryKey
-                  ? 'font-medium underline decoration-indigo-700 underline-offset-2'
+                  ? 'font-medium underline decoration-accent-ink underline-offset-2'
                   : column.references
-                    ? 'text-indigo-700'
+                    ? 'text-accent-ink'
                     : ''
               }
             >
               {column.references && <span aria-hidden="true">#</span>}
               {column.name}
             </span>
-            <span className="ml-auto text-zinc-500">{column.sqlType}</span>
+            <span className="ml-auto text-ink-soft">{column.sqlType}</span>
             {column.isPrimaryKey && (
-              <span className="self-center rounded-sm border border-indigo-200 bg-indigo-50 px-1 text-[10px] font-medium text-indigo-700">
+              <span className="self-center rounded-full bg-accent-soft px-1.5 text-[10px] font-medium text-accent-ink">
                 PK
               </span>
             )}

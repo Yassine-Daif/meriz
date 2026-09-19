@@ -85,8 +85,8 @@ function RailItem({ view, active, onSelectView }: RailItemProps) {
         aria-current={active ? 'page' : undefined}
         title={view.label}
         onClick={() => onSelectView(view.id)}
-        className={`flex w-full items-center justify-center gap-2.5 rounded-md px-2.5 py-2 text-sm md:justify-start ${
-          active ? 'bg-indigo-700 font-medium text-white' : 'text-zinc-700 hover:bg-zinc-200/60'
+        className={`flex w-full items-center justify-center gap-2.5 rounded-control px-2.5 py-2 text-sm md:justify-start ${
+          active ? 'bg-accent font-medium text-on-accent' : 'text-ink-soft hover:bg-accent-soft hover:text-ink'
         }`}
       >
         <span aria-hidden="true">{icons[view.id]}</span>

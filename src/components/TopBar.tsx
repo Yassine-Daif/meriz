@@ -6,7 +6,8 @@ import { FileActions } from './FileActions'
 import { DocumentNameField } from './DocumentNameField'
 import { SyncStatus } from './SyncStatus'
 import { UiScaleControl } from './UiScaleControl'
-import { Logo } from './Logo'
+import { Lockup } from './ui/Lockup'
+import { ThemeToggle } from './ui/ThemeToggle'
 
 interface TopBarProps {
   state: McdEditorState
@@ -41,7 +42,7 @@ const iconProps = {
 } as const
 
 const undoButtonClass =
-  'rounded-md border border-line bg-surface p-1.5 hover:bg-shell disabled:cursor-not-allowed disabled:opacity-40'
+  'inline-flex min-h-9 min-w-9 items-center justify-center rounded-control border border-line-strong bg-surface text-ink transition-colors duration-150 hover:bg-surface-soft hover:text-ink disabled:cursor-not-allowed disabled:opacity-40'
 
 /**
  * Barre supérieure de l'éditeur : marque, retour aux documents, nom du
@@ -65,21 +66,22 @@ export function TopBar({
   onRedo,
 }: TopBarProps) {
   return (
-    <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line bg-surface px-4 py-2">
-      <h1 className="flex items-center gap-2 text-base font-semibold tracking-tight">
-        <Logo />
-        Meriz
+    <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line bg-surface px-4 py-2 text-ink">
+      <h1 className="flex items-center">
+        <Lockup size={26} label="Meriz" />
       </h1>
       <div className="flex min-w-0 items-center gap-2">
         <button
           type="button"
           onClick={onBackToDocuments}
-          className="flex items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell"
+          aria-label="Retour : fermer le document et revenir à la page précédente"
+          title="Fermer le document et revenir à la page précédente"
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-control border border-line-strong bg-surface px-3 py-1.5 text-sm font-medium text-ink transition-colors duration-150 hover:bg-surface-soft hover:text-ink"
         >
           <svg {...iconProps}>
-            <path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2Z" />
+            <path d="M15 5 8 12l7 7" />
           </svg>
-          Mes documents
+          Retour
         </button>
         <DocumentNameField name={documentName} onRename={onRename} />
       </div>
@@ -124,6 +126,7 @@ export function TopBar({
       <SyncStatus status={syncStatus} onRetry={onRetrySync} cloud={cloud} />
       <div className="ml-auto flex flex-wrap items-center gap-3">
         <AccountStatus compact />
+        <ThemeToggle />
         <UiScaleControl />
       </div>
     </header>

@@ -22,7 +22,7 @@ export function AssociationForm({ mcd, association, dispatch }: AssociationFormP
     <form onSubmit={(event) => event.preventDefault()} className="flex flex-col gap-3">
       <h2 className="text-sm font-semibold">Association</h2>
       <div>
-        <label htmlFor={nameId} className="block text-xs font-medium text-zinc-600">
+        <label htmlFor={nameId} className="block text-xs font-medium text-ink-soft">
           Nom
         </label>
         <input
@@ -32,7 +32,7 @@ export function AssociationForm({ mcd, association, dispatch }: AssociationFormP
           onChange={(event) =>
             dispatch({ type: 'RENAME_ASSOCIATION', id: association.id, name: event.target.value })
           }
-          className="mt-0.5 w-full rounded border border-zinc-300 px-2 py-1 text-sm"
+          className="mt-0.5 w-full rounded-lg border border-line-strong px-2 py-1 text-sm"
         />
       </div>
       {/* key : liste et annonce repartent à zéro d'une association à l'autre. */}

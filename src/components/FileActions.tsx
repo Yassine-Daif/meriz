@@ -27,7 +27,7 @@ interface StatusMessage {
 }
 
 const buttonClass =
-  'rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell'
+  'rounded-control border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell'
 
 /**
  * Actions fichier du document courant : Nouveau et Ouvrir créent un
@@ -114,11 +114,11 @@ export function FileActions({
       <button type="button" className={buttonClass} onClick={() => void handleExport()}>
         Exporter en image
       </button>
-      <p role="status" aria-live="polite" className="min-w-0 text-xs text-zinc-700">
+      <p role="status" aria-live="polite" className="min-w-0 text-xs text-ink-soft">
         {status && (
           <span
-            className={`inline-flex items-center gap-1 rounded border px-2 py-1 ${
-              status.kind === 'error' ? 'border-amber-400 bg-amber-50' : 'border-zinc-300 bg-zinc-50'
+            className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 ${
+              status.kind === 'error' ? 'border-warning bg-warning-soft' : 'border-line-strong bg-surface-soft'
             }`}
           >
             <span aria-hidden="true">{status.kind === 'error' ? '⚠' : '✓'}</span>

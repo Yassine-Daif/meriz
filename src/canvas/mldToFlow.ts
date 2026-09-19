@@ -65,8 +65,8 @@ export function buildFkEdges(tables: MpdTable[], nodes: TableFlowNode[]): Edge[]
         sourceHandle,
         target: ref.tableId,
         targetHandle,
-        style: { stroke: '#4338ca', strokeWidth: 1.5 },
-        markerEnd: { type: MarkerType.ArrowClosed, color: '#4338ca', width: 18, height: 18 },
+        style: { stroke: 'var(--c-mark)', strokeWidth: 1.5 },
+        markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--c-mark)', width: 18, height: 18 },
         ariaLabel: `Clé étrangère de ${table.name} vers ${ref.tableName}`,
       })
     }

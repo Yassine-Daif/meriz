@@ -32,7 +32,7 @@ function ProblemGroup({ title, icon, problems, mcd, onSelectElement, toneClass }
   }
   return (
     <div className="mt-2">
-      <h3 className="text-xs font-semibold text-zinc-700">
+      <h3 className="text-xs font-semibold text-ink-soft">
         {title} ({problems.length})
       </h3>
       <ul className="mt-1 flex flex-col gap-1">
@@ -51,12 +51,12 @@ function ProblemGroup({ title, icon, problems, mcd, onSelectElement, toneClass }
                 <button
                   type="button"
                   onClick={() => onSelectElement(elementId)}
-                  className={`w-full rounded border px-2 py-1 text-left text-xs ${toneClass}`}
+                  className={`w-full rounded-lg border px-2 py-1 text-left text-xs ${toneClass}`}
                 >
                   {body}
                 </button>
               ) : (
-                <p className={`rounded border px-2 py-1 text-xs ${toneClass}`}>{body}</p>
+                <p className={`rounded-lg border px-2 py-1 text-xs ${toneClass}`}>{body}</p>
               )}
             </li>
           )
@@ -86,7 +86,7 @@ export function ProblemsPanel({ problems, mcd, onSelectElement }: ProblemsPanelP
   return (
     <section aria-label="Rapport de vérification" className="p-3">
       <h2 className="text-sm font-semibold">Vérification</h2>
-      <p role="status" aria-live="polite" className="mt-1 text-xs text-zinc-600">
+      <p role="status" aria-live="polite" className="mt-1 text-xs text-ink-soft">
         {summary}
       </p>
       <ProblemGroup
@@ -95,7 +95,7 @@ export function ProblemsPanel({ problems, mcd, onSelectElement }: ProblemsPanelP
         problems={errors}
         mcd={mcd}
         onSelectElement={onSelectElement}
-        toneClass="border-rose-300 bg-rose-50 hover:bg-rose-100"
+        toneClass="border-danger/50 bg-danger-soft hover:border-danger"
       />
       <ProblemGroup
         title="Avertissements"
@@ -103,7 +103,7 @@ export function ProblemsPanel({ problems, mcd, onSelectElement }: ProblemsPanelP
         problems={warnings}
         mcd={mcd}
         onSelectElement={onSelectElement}
-        toneClass="border-amber-300 bg-amber-50 hover:bg-amber-100"
+        toneClass="border-warning/50 bg-warning-soft hover:border-warning"
       />
     </section>
   )

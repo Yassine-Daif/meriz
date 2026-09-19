@@ -18,7 +18,7 @@ export function EntityForm({ mcd, entity, dispatch }: EntityFormProps) {
     <form onSubmit={(event) => event.preventDefault()} className="flex flex-col gap-3">
       <h2 className="text-sm font-semibold">Entité</h2>
       <div>
-        <label htmlFor={nameId} className="block text-xs font-medium text-zinc-600">
+        <label htmlFor={nameId} className="block text-xs font-medium text-ink-soft">
           Nom
         </label>
         <input
@@ -28,7 +28,7 @@ export function EntityForm({ mcd, entity, dispatch }: EntityFormProps) {
           onChange={(event) =>
             dispatch({ type: 'RENAME_ENTITY', id: entity.id, name: event.target.value })
           }
-          className="mt-0.5 w-full rounded border border-zinc-300 px-2 py-1 text-sm"
+          className="mt-0.5 w-full rounded-lg border border-line-strong px-2 py-1 text-sm"
         />
       </div>
       <AttributesEditor

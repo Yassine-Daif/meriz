@@ -98,7 +98,7 @@ export function McdView({
           tabIndex={0}
           onPointerDown={onSeparatorPointerDown}
           onKeyDown={onSeparatorKeyDown}
-          className="w-1.5 shrink-0 cursor-col-resize bg-line hover:bg-indigo-400"
+          className="w-1.5 shrink-0 cursor-col-resize bg-line hover:bg-mark"
         />
         <div
           style={{ width: panelWidth, maxWidth: '60vw' }}

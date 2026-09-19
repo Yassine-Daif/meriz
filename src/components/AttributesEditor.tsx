@@ -51,17 +51,17 @@ export function AttributesEditor({
 
   return (
     <fieldset className="flex min-w-0 flex-col gap-2">
-      <legend className="text-xs font-medium text-zinc-600">Attributs</legend>
+      <legend className="text-xs font-medium text-ink-soft">Attributs</legend>
 
       {/* Le dictionnaire d'abord : on place une propriété existante
           au lieu de la réécrire. */}
       {unplaced.length > 0 ? (
-        <div className="flex min-w-0 flex-col gap-1.5 rounded border border-indigo-200 bg-indigo-50/50 p-1.5">
+        <div className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-line bg-accent-soft p-1.5">
           <select
             aria-label="Propriété du dictionnaire à placer ici"
             value={propertyToPlace}
             onChange={(event) => setPropertyToPlace(event.target.value)}
-            className="w-full min-w-0 rounded border border-zinc-300 bg-surface px-1.5 py-1 text-xs"
+            className="w-full min-w-0 rounded-lg border border-line-strong bg-surface px-1.5 py-1 text-xs"
           >
             <option value="">Placer depuis le dictionnaire</option>
             {unplaced.map((property) => (
@@ -74,30 +74,30 @@ export function AttributesEditor({
             type="button"
             onClick={handlePlace}
             disabled={propertyToPlace === ''}
-            className="self-end rounded border border-zinc-300 bg-surface px-2 py-1 text-xs hover:bg-shell disabled:cursor-not-allowed disabled:opacity-50"
+            className="self-end rounded-lg border border-line-strong bg-surface px-2 py-1 text-xs hover:bg-shell disabled:cursor-not-allowed disabled:opacity-50"
           >
             Placer
           </button>
         </div>
       ) : (
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-ink-soft">
           Aucune propriété libre au dictionnaire : elles sont toutes placées.
         </p>
       )}
 
-      {attributes.length === 0 && <p className="text-xs text-zinc-500">Aucun attribut.</p>}
+      {attributes.length === 0 && <p className="text-xs text-ink-soft">Aucun attribut.</p>}
       <ul className="flex min-w-0 flex-col gap-1.5">
         {attributes.map((attribute, index) => (
           <li
             key={attribute.propertyId}
-            className="min-w-0 rounded border border-line bg-shell/60 p-1.5"
+            className="min-w-0 rounded-lg border border-line bg-shell/60 p-1.5"
           >
             <input
               type="text"
               aria-label={`Nom de l'attribut ${index + 1}`}
               value={attribute.name}
               onChange={(event) => onRename(attribute.propertyId, event.target.value)}
-              className="w-full min-w-0 rounded border border-zinc-300 bg-surface px-2 py-1 text-sm"
+              className="w-full min-w-0 rounded-lg border border-line-strong bg-surface px-2 py-1 text-sm"
             />
             <div className="mt-1.5 flex min-w-0 items-center gap-2">
               <select
@@ -106,7 +106,7 @@ export function AttributesEditor({
                 onChange={(event) =>
                   onChangeType(attribute.propertyId, event.target.value as AttributeType)
                 }
-                className="min-w-0 flex-1 rounded border border-zinc-300 bg-surface px-1.5 py-1 font-mono text-xs"
+                className="min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-1.5 py-1 font-mono text-xs"
               >
                 {ATTRIBUTE_TYPES.map((type) => (
                   <option key={type} value={type}>
@@ -134,7 +134,7 @@ export function AttributesEditor({
                 aria-label={`Retirer l'attribut ${index + 1} (la propriété reste au dictionnaire)`}
                 title="Retirer (la propriété reste au dictionnaire)"
                 onClick={() => onRemove(attribute.propertyId)}
-                className="shrink-0 rounded border border-zinc-300 bg-surface px-1.5 py-0.5 text-sm hover:bg-zinc-100"
+                className="shrink-0 rounded-lg border border-line-strong bg-surface px-1.5 py-0.5 text-sm hover:bg-surface-soft"
               >
                 ✕
               </button>
@@ -145,7 +145,7 @@ export function AttributesEditor({
       <button
         type="button"
         onClick={onAdd}
-        className="self-start rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
+        className="self-start rounded-lg border border-line-strong px-2 py-1 text-xs hover:bg-surface-soft"
       >
         Nouvelle propriété
       </button>

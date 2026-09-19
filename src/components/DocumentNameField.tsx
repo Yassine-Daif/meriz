@@ -58,7 +58,7 @@ export function DocumentNameField({ name, onRename }: DocumentNameFieldProps) {
             setDraft(name)
           }
         }}
-        className="w-56 max-w-full min-w-0 rounded-md border border-line bg-surface px-2 py-1 text-sm font-medium hover:border-zinc-400"
+        className="w-56 max-w-full min-w-0 rounded-control border border-line bg-surface px-2 py-1 text-sm font-medium hover:border-ink-soft"
       />
     </div>
   )

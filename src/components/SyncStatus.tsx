@@ -7,7 +7,7 @@ interface SyncStatusProps {
   cloud: boolean
 }
 
-const badgeClass = 'inline-flex items-center gap-1.5 rounded border px-2 py-1 text-xs'
+const badgeClass = 'inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs'
 
 /**
  * État de la sauvegarde du document ouvert : enregistré, envoi en
@@ -19,7 +19,7 @@ export function SyncStatus({ status, onRetry, cloud }: SyncStatusProps) {
     <button
       type="button"
       onClick={onRetry}
-      className="rounded border border-zinc-300 bg-surface px-1.5 py-0.5 text-xs text-ink hover:bg-zinc-100"
+      className="rounded-lg border border-line-strong bg-surface px-1.5 py-0.5 text-xs text-ink hover:bg-surface-soft"
     >
       Réessayer
     </button>
@@ -28,7 +28,7 @@ export function SyncStatus({ status, onRetry, cloud }: SyncStatusProps) {
   let content = null
   if (status.kind === 'error') {
     content = (
-      <span className={`${badgeClass} border-rose-300 bg-rose-50 text-zinc-800`}>
+      <span className={`${badgeClass} border-danger/50 bg-danger-soft text-ink`}>
         <span aria-hidden="true">✕</span>
         {status.message}
         {retryButton}
@@ -36,17 +36,17 @@ export function SyncStatus({ status, onRetry, cloud }: SyncStatusProps) {
     )
   } else if (status.kind === 'offline') {
     content = (
-      <span className={`${badgeClass} border-amber-400 bg-amber-50 text-zinc-800`}>
+      <span className={`${badgeClass} border-warning bg-warning-soft text-ink`}>
         <span aria-hidden="true">⚠</span>
         Hors ligne : modifications gardées sur cet appareil, nouvel essai en cours.
         {retryButton}
       </span>
     )
   } else if (cloud && status.kind === 'saving') {
-    content = <span className={`${badgeClass} border-zinc-300 bg-zinc-50 text-zinc-700`}>Enregistrement…</span>
+    content = <span className={`${badgeClass} border-line-strong bg-surface-soft text-ink-soft`}>Enregistrement…</span>
   } else if (cloud) {
     content = (
-      <span className={`${badgeClass} border-zinc-300 bg-zinc-50 text-zinc-700`}>
+      <span className={`${badgeClass} border-line-strong bg-surface-soft text-ink-soft`}>
         <span aria-hidden="true">✓</span>
         Enregistré dans votre compte
       </span>

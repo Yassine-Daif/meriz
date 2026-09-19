@@ -61,8 +61,8 @@ export function LegEdge({ id, sourceX, sourceY, targetX, targetY, data, selected
         path={path}
         style={
           selected
-            ? { stroke: '#4338ca', strokeWidth: 2 }
-            : { stroke: '#a1a1aa', strokeWidth: 1.25 }
+            ? { stroke: 'var(--c-mark)', strokeWidth: 2.25 }
+            : { stroke: 'var(--c-line-strong)', strokeWidth: 1.5 }
         }
       />
       {data && (
@@ -72,8 +72,8 @@ export function LegEdge({ id, sourceX, sourceY, targetX, targetY, data, selected
               transform: `translate(-50%, -50%) translate(${label.x}px, ${label.y}px)`,
               pointerEvents: 'all',
             }}
-            className={`nodrag nopan absolute cursor-move touch-none rounded-sm border bg-surface px-1 font-mono text-[11px] ${
-              selected ? 'border-indigo-700 text-indigo-700' : 'border-zinc-300 text-ink'
+            className={`nodrag nopan absolute cursor-move touch-none rounded-md border bg-surface px-1.5 font-mono text-[11px] shadow-soft ${
+              selected ? 'border-mark font-semibold text-accent-ink' : 'border-line-strong text-ink'
             }`}
             title="Glisser pour déplacer l'étiquette"
             onPointerDown={onPointerDown}

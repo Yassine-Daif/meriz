@@ -44,15 +44,15 @@ export function MldView({ tables, hasErrors }: MldViewProps) {
         <button
           type="button"
           onClick={() => void handleCopy()}
-          className="rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell"
+          className="rounded-control border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell"
         >
           Copier la notation
         </button>
-        <p className="text-xs text-zinc-600">
+        <p className="text-xs text-ink-soft">
           {tables.length} table{tables.length > 1 ? 's' : ''} dérivée
           {tables.length > 1 ? 's' : ''} du MCD
         </p>
-        <p role="status" aria-live="polite" className="text-xs text-zinc-600">
+        <p role="status" aria-live="polite" className="text-xs text-ink-soft">
           {copyStatus}
         </p>
       </div>
@@ -60,7 +60,7 @@ export function MldView({ tables, hasErrors }: MldViewProps) {
         {hasErrors && <ErrorsBanner />}
         <div className="flex flex-wrap items-start gap-4 pb-6">
           {tables.map((table) => (
-            <div key={table.id} className="min-w-56 rounded-lg border border-zinc-300 bg-surface shadow-sm">
+            <div key={table.id} className="min-w-56 rounded-card border border-line-strong bg-surface shadow-soft">
               <h2 className="rounded-t-lg border-b border-line bg-shell px-3 py-1.5 text-center text-sm font-semibold tracking-tight">
                 {table.name}
               </h2>
@@ -70,21 +70,21 @@ export function MldView({ tables, hasErrors }: MldViewProps) {
                     <span
                       className={
                         column.isPrimaryKey
-                          ? 'font-medium underline decoration-indigo-700 underline-offset-2'
+                          ? 'font-medium underline decoration-accent-ink underline-offset-2'
                           : ''
                       }
                     >
                       {column.name}
                     </span>
-                    <span className="text-zinc-500">{column.type}</span>
-                    {column.nullable && <span className="text-zinc-400">NULL</span>}
+                    <span className="text-ink-soft">{column.type}</span>
+                    {column.nullable && <span className="text-ink-soft">NULL</span>}
                     {column.isPrimaryKey && (
-                      <span className="rounded-sm border border-indigo-200 bg-indigo-50 px-1 text-[10px] font-medium text-indigo-700">
+                      <span className="rounded-sm border border-line bg-accent-soft px-1 text-[10px] font-medium text-accent-ink">
                         PK
                       </span>
                     )}
                     {column.references && (
-                      <span className="text-zinc-500">→ {column.references.tableName}</span>
+                      <span className="text-ink-soft">→ {column.references.tableName}</span>
                     )}
                   </li>
                 ))}
@@ -95,10 +95,10 @@ export function MldView({ tables, hasErrors }: MldViewProps) {
 
         {/* Le MLDR textuel d'AnalyseSI : en-tête daté en commentaire,
             puis la notation relationnelle, FK préfixées #. */}
-        <div className="w-full rounded-lg border border-line bg-surface p-4 shadow-sm">
+        <div className="w-full rounded-card border border-line bg-surface p-4 shadow-soft">
           <h2 className="text-sm font-semibold tracking-tight">Notation relationnelle (MLDR)</h2>
           <div className="mt-2 font-mono text-[13px] leading-7">
-            <p className="text-zinc-500">{mldrHeader(new Date())}</p>
+            <p className="text-ink-soft">{mldrHeader(new Date())}</p>
             <ul>
               {tables.map((table) => (
                 <li key={table.id}>
@@ -109,9 +109,9 @@ export function MldView({ tables, hasErrors }: MldViewProps) {
                       <span
                         className={
                           column.isPrimaryKey
-                            ? 'font-semibold underline decoration-indigo-700 underline-offset-2'
+                            ? 'font-semibold underline decoration-accent-ink underline-offset-2'
                             : column.references
-                              ? 'text-indigo-700'
+                              ? 'text-accent-ink'
                               : ''
                         }
                       >

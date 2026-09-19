@@ -21,6 +21,7 @@ import { MpdView } from './MpdView'
 import { SqlView } from './SqlView'
 import { LearnView } from './LearnView'
 import { AboutView } from './AboutView'
+import { SkipLink } from './ui/SkipLink'
 
 interface EditorProps {
   /**
@@ -176,12 +177,8 @@ export function Editor({
 
   return (
     <div className="flex h-dvh flex-col bg-shell font-sans text-ink">
-      <a
-        href="#contenu"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-10 focus:rounded focus:bg-indigo-700 focus:px-3 focus:py-2 focus:text-white"
-      >
-        Aller au contenu
-      </a>
+      <SkipLink />
+
 
       <ReactFlowProvider>
         <TopBar

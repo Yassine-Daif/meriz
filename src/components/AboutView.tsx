@@ -1,4 +1,4 @@
-import { Logo } from './Logo'
+import { LogoMark } from './ui/Lockup'
 
 const MIT_LICENSE = `MIT License
 
@@ -28,41 +28,41 @@ export function AboutView() {
     <section aria-label="À propos" className="min-h-0 flex-1 overflow-y-auto">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-8 py-8">
         <header className="flex items-center gap-3">
-          <Logo />
+          <LogoMark size={44} />
           <div>
             <h2 className="text-2xl font-semibold tracking-tight">À propos de Meriz</h2>
-            <p className="mt-0.5 text-sm text-zinc-600">
+            <p className="mt-0.5 text-sm text-ink-soft">
               Le logiciel, son auteur et sa licence.
             </p>
           </div>
         </header>
 
-        <div className="rounded-lg border border-line bg-surface p-5 shadow-sm">
+        <div className="rounded-card border border-line bg-surface p-5 shadow-soft">
           <h3 className="text-base font-semibold tracking-tight">Le logiciel</h3>
-          <p className="mt-2 text-sm leading-6 text-zinc-700">
+          <p className="mt-2 text-sm leading-6 text-ink-soft">
             Meriz est un outil libre de modélisation de bases de données par la méthode
             Merise, entièrement dans le navigateur. C'est une alternative moderne à
             AnalyseSI : dictionnaire central des propriétés, dessin du MCD, vérification,
             puis génération du MLD, du MPD et du script SQL (MySQL et PostgreSQL). Le nom
             vient de la merise, la petite cerise sauvage qui a donné son nom à la méthode.
           </p>
-          <p className="mt-2 text-sm leading-6 text-zinc-700">
+          <p className="mt-2 text-sm leading-6 text-ink-soft">
             Construit avec React, TypeScript et React Flow. Votre travail reste chez vous :
             tout s'exécute localement, la sauvegarde automatique vit dans votre navigateur
             et les fichiers .meriz.json vous appartiennent.
           </p>
         </div>
 
-        <div className="rounded-lg border border-line bg-surface p-5 shadow-sm">
+        <div className="rounded-card border border-line bg-surface p-5 shadow-soft">
           <h3 className="text-base font-semibold tracking-tight">Auteur</h3>
-          <p className="mt-2 text-sm leading-6 text-zinc-700">
+          <p className="mt-2 text-sm leading-6 text-ink-soft">
             Développé par Yassine Daif. Le code source est ouvert et les contributions sont
             bienvenues :{' '}
             <a
               href="https://github.com/Yassine-Daif/meriz"
               target="_blank"
               rel="noreferrer"
-              className="font-medium text-indigo-700 underline underline-offset-2 hover:text-indigo-800"
+              className="font-medium text-accent-ink underline underline-offset-2 hover:text-ink"
             >
               github.com/Yassine-Daif/meriz
             </a>
@@ -70,14 +70,14 @@ export function AboutView() {
           </p>
         </div>
 
-        <div className="rounded-lg border border-line bg-surface p-5 shadow-sm">
+        <div className="rounded-card border border-line bg-surface p-5 shadow-soft">
           <h3 className="text-base font-semibold tracking-tight">Licence</h3>
-          <p className="mt-2 text-sm leading-6 text-zinc-700">
+          <p className="mt-2 text-sm leading-6 text-ink-soft">
             Meriz est distribué sous licence MIT : vous pouvez l'utiliser, le copier, le
             modifier et le redistribuer librement, y compris dans un cadre commercial, à
             condition de conserver la notice ci-dessous.
           </p>
-          <pre className="mt-3 overflow-x-auto rounded border border-line bg-shell p-3 font-mono text-[11px] leading-5 text-zinc-700">
+          <pre className="mt-3 overflow-x-auto rounded-lg border border-line bg-shell p-3 font-mono text-[11px] leading-5 text-ink-soft">
             {MIT_LICENSE}
           </pre>
         </div>

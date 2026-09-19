@@ -20,7 +20,9 @@ Vous dessinez le modèle conceptuel (MCD). Meriz le vérifie, puis en tire le mo
 - **Fichiers.** Export et import au format `.meriz.json`, nom du document compris, et export du schéma en PNG.
 - **Compte, en option.** Inscription, connexion et déconnexion depuis l'accueil. Meriz marche aussi bien sans compte.
 - **Profil.** Prénom, nom, une présentation et un contact, chacun partagé ou non avec vos classes. L'email de connexion reste privé.
+- **Accueil selon le rôle.** Connecté, un élève retrouve ses documents récents et ses classes, et peut en rejoindre une. Un prof crée ses classes et partage leur code depuis son accueil. La navigation mène à Accueil, Mes classes, Mon travail et Profil.
 - **Classes.** Un élève rejoint une classe avec le code donné par son prof et voit ses camarades. Un prof crée ses classes, partage leur code et gère les membres. Le mode prof s'active depuis le profil, pour les adresses email scolaires ou universitaires.
+- **Thème et confort.** Thème clair, sombre ou celui du système, et taille de l'interface réglable. Tout se pilote au clavier, avec un focus visible.
 
 Pour démarrer, le bouton « Découvrir avec l'exemple » de l'accueil ouvre le modèle Client passe Commande. Un modèle plus complet est fourni dans [examples/universite.meriz.json](examples/universite.meriz.json) : importez-le avec « Ouvrir un fichier ».
 
@@ -54,6 +56,14 @@ Une fois connecté, le compte fait foi pour les documents. Le navigateur n'en ga
 - Les modifications pas encore envoyées au moment d'une déconnexion sont mises de côté pour ce compte, et reprises à sa prochaine connexion.
 - À votre première connexion, Meriz propose une fois de copier dans le compte les documents créés sur cet appareil. Les originaux locaux ne sont jamais supprimés.
 
+## Design
+
+Les couleurs sont des tokens définis une seule fois dans `src/index.css`, en clair et en sombre. Les composants n'utilisent que ces tokens, jamais une couleur codée en dur. Un test (`src/design/contrast.test.ts`) vérifie que chaque couple texte et fond atteint le niveau WCAG AA dans les deux thèmes.
+
+- Les composants de base (boutons, cartes, pastilles, messages) sont dans `src/components/ui`.
+- La police Outfit est fournie avec le projet, sous licence OFL. Elle marche donc hors ligne.
+- Les sources du logo et leurs outils sont dans `design/logo`. Seuls les favicons sont publiés, dans `public/`.
+
 ## Application de bureau
 
 Le logiciel utilise Tauri. Il faut en plus Rust et les dépendances système décrites dans la [documentation Tauri](https://v2.tauri.app/start/prerequisites/).
@@ -70,8 +80,10 @@ Les installateurs des trois systèmes sont construits par GitHub Actions à chaq
 ```
 src/model        le modèle MCD, sa validation et les transformations MLD, MPD et SQL
 src/canvas       la zone de dessin React Flow, ses nœuds et ses liens
-src/components   les vues et composants de l'interface
-src/lib          les utilitaires : fichiers, stockage, export d'image, accès au serveur
+src/components   les vues et composants de l'interface, dont ui/ pour les composants de base
+src/design       le test de contraste des couleurs
+src/lib          les utilitaires : fichiers, stockage, export d'image, accès au serveur, thème
+design/logo      les sources du logo et leurs outils
 site/            le site vitrine, en HTML et CSS sans dépendance
 src-tauri/       le logiciel de bureau
 examples/        des modèles d'exemple

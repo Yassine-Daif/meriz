@@ -2,8 +2,6 @@ import { Handle, Position } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
 import type { EntityFlowNode } from './mcdToFlow'
 
-
-
 /**
  * Nœud entité : carte nette avec le nom en en-tête et la liste des
  * attributs, types en mono. Les attributs identifiants sont soulignés
@@ -14,11 +12,11 @@ export function EntityNode({ data, selected }: NodeProps<EntityFlowNode>) {
   const { entity, attributes } = data
   return (
     <div
-      className={`min-w-44 rounded-lg border bg-surface shadow-sm ${
-        selected ? 'border-indigo-700 ring-2 ring-indigo-200' : 'border-zinc-300'
+      className={`min-w-44 rounded-2xl border bg-surface text-ink shadow-soft ${
+        selected ? 'border-mark ring-3 ring-mark/35' : 'border-line-strong'
       }`}
     >
-      <div className="rounded-t-lg border-b border-line bg-shell px-3 py-1.5 text-center text-sm font-semibold tracking-tight">
+      <div className="rounded-t-2xl border-b border-line bg-accent-soft px-3 py-2 text-center text-sm font-semibold tracking-tight text-ink">
         {entity.name}
       </div>
       <ul className="px-3 py-2 text-xs leading-5">
@@ -27,18 +25,18 @@ export function EntityNode({ data, selected }: NodeProps<EntityFlowNode>) {
             <span
               className={
                 attribute.isIdentifier
-                  ? 'font-medium underline decoration-indigo-700 underline-offset-2'
+                  ? 'font-medium underline decoration-accent-ink underline-offset-2'
                   : ''
               }
             >
               {attribute.name}
             </span>
-            <span className="font-mono text-[11px] text-zinc-500">
+            <span className="font-mono text-[11px] text-ink-soft">
               {attribute.type}
               {attribute.size !== undefined && `(${attribute.size})`}
             </span>
             {attribute.isIdentifier && (
-              <span className="ml-auto self-center rounded-sm border border-indigo-200 bg-indigo-50 px-1 font-mono text-[10px] font-medium text-indigo-700">
+              <span className="ml-auto self-center rounded-full bg-accent-soft px-1.5 font-mono text-[10px] font-medium text-accent-ink">
                 clé
               </span>
             )}

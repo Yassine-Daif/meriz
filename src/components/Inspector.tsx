@@ -21,13 +21,13 @@ export function Inspector({ mcd, selection, dispatch }: InspectorProps) {
   const selectedCount = selection.nodeIds.size + selection.edgeIds.size
 
   let content: ReactNode = (
-    <p className="text-sm text-zinc-600">
+    <p className="text-sm text-ink-soft">
       Sélectionnez une entité, une association ou une patte pour l'éditer.
     </p>
   )
   if (selectedCount > 1) {
     content = (
-      <p className="text-sm text-zinc-600">
+      <p className="text-sm text-ink-soft">
         {selectedCount} éléments sélectionnés. Déplacez-les ensemble, ou Suppr pour tout
         supprimer. Sélectionnez un seul élément pour l'éditer.
       </p>
@@ -56,7 +56,7 @@ export function Inspector({ mcd, selection, dispatch }: InspectorProps) {
   }
 
   return (
-    <section aria-label="Inspecteur" className="border-b border-zinc-200 p-3">
+    <section aria-label="Inspecteur" className="border-b border-line p-3">
       {content}
     </section>
   )

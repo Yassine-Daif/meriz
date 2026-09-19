@@ -19,7 +19,7 @@ interface StatusMessage {
 }
 
 const buttonClass =
-  'flex items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell'
+  'flex items-center gap-1.5 rounded-control border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell'
 
 const iconProps = {
   width: 16,
@@ -118,7 +118,7 @@ export function McdToolbar({ dispatch, problems, onGenerate }: McdToolbarProps) 
         <button
           type="button"
           onClick={handleGenerate}
-          className="flex items-center gap-1.5 rounded-md border border-indigo-700 bg-indigo-700 px-2.5 py-1.5 text-sm font-medium text-white hover:bg-indigo-800"
+          className="flex items-center gap-1.5 rounded-control border border-accent bg-accent px-2.5 py-1.5 text-sm font-medium text-on-accent hover:bg-accent-hover"
         >
           <svg {...iconProps}>
             <path d="m4.5 12.5 5 5 10-11" />
@@ -127,11 +127,11 @@ export function McdToolbar({ dispatch, problems, onGenerate }: McdToolbarProps) 
         </button>
       </div>
 
-      <p role="status" aria-live="polite" className="min-w-0 text-xs text-zinc-700">
+      <p role="status" aria-live="polite" className="min-w-0 text-xs text-ink-soft">
         {status && (
           <span
-            className={`inline-flex items-center gap-1 rounded border px-2 py-1 ${
-              status.kind === 'error' ? 'border-amber-400 bg-amber-50' : 'border-zinc-300 bg-zinc-50'
+            className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 ${
+              status.kind === 'error' ? 'border-warning bg-warning-soft' : 'border-line-strong bg-surface-soft'
             }`}
           >
             <span aria-hidden="true">{status.kind === 'error' ? '⚠' : '✓'}</span>

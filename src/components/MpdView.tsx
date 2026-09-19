@@ -6,6 +6,7 @@ import { SQL_DIALECTS } from '../model/mpd'
 import { TableNode } from '../canvas/TableNode'
 import type { TableFlowNode } from '../canvas/TableNode'
 import { buildFkEdges, initialTableNodes } from '../canvas/mldToFlow'
+import { useTheme } from '../lib/useTheme'
 import { EmptyGeneration, ErrorsBanner } from './GenerationNotices'
 
 const nodeTypes = { table: TableNode }
@@ -51,14 +52,14 @@ export function MpdView({
   return (
     <section aria-label="Vue MPD" className={visibilityClass}>
       <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2">
-        <label htmlFor={dialectSelectId} className="text-xs font-medium text-zinc-600">
+        <label htmlFor={dialectSelectId} className="text-xs font-medium text-ink-soft">
           Dialecte SQL
         </label>
         <select
           id={dialectSelectId}
           value={settings.dialect}
           onChange={(event) => onDialectChange(event.target.value as SqlDialect)}
-          className="rounded border border-zinc-300 px-1.5 py-1 font-mono text-xs"
+          className="rounded-lg border border-line-strong px-1.5 py-1 font-mono text-xs"
         >
           {SQL_DIALECTS.map((dialect) => (
             <option key={dialect.id} value={dialect.id}>
@@ -71,14 +72,14 @@ export function MpdView({
           aria-expanded={mappingOpen}
           aria-controls={mappingPanelId}
           onClick={() => setMappingOpen((open) => !open)}
-          className="flex items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell"
+          className="flex items-center gap-1.5 rounded-control border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell"
         >
-          <span aria-hidden="true" className="text-zinc-500">
+          <span aria-hidden="true" className="text-ink-soft">
             {mappingOpen ? '▸' : '◂'}
           </span>
           Mappage des types
         </button>
-        <p className="text-xs text-zinc-600">
+        <p className="text-xs text-ink-soft">
           Types éditables colonne par colonne, choix mémorisés.
         </p>
       </div>
@@ -116,6 +117,7 @@ function MpdDiagram({ tables, hasErrors }: { tables: MpdTable[]; hasErrors: bool
   }, [])
 
   const edges = useMemo(() => buildFkEdges(tables, nodes), [tables, nodes])
+  const theme = useTheme()
 
   return (
     <div className="min-h-0 flex-1 bg-canvas">
@@ -126,6 +128,7 @@ function MpdDiagram({ tables, hasErrors }: { tables: MpdTable[]; hasErrors: bool
           nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
           nodesConnectable={false}
+          colorMode={theme.resolved}
           deleteKeyCode={null}
           proOptions={{ hideAttribution: true }}
           fitView
@@ -162,14 +165,14 @@ function TypeMappingPanel({
       aria-label="Mappage des types"
       className="w-1/2 shrink-0 overflow-auto border-l border-line bg-surface p-4"
     >
-      <table className="w-full border-separate border-spacing-0 overflow-hidden rounded-lg border border-line text-sm shadow-sm">
+      <table className="w-full border-separate border-spacing-0 overflow-hidden rounded-card border border-line text-sm shadow-soft">
         <thead className="sticky top-0 z-10">
           <tr>
             {['Colonne', 'Type conceptuel', 'Type SQL'].map((label) => (
               <th
                 key={label}
                 scope="col"
-                className="border-b border-line bg-shell px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600"
+                className="border-b border-line bg-shell px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-soft"
               >
                 {label}
               </th>
@@ -183,7 +186,7 @@ function TypeMappingPanel({
                 <th
                   scope="colgroup"
                   colSpan={3}
-                  className="border-b border-line bg-indigo-50/60 px-3 py-1.5 text-left text-xs font-semibold tracking-tight text-indigo-900"
+                  className="border-b border-line bg-accent-soft px-3 py-1.5 text-left text-xs font-semibold tracking-tight text-ink"
                 >
                   {table.name}
                 </th>
@@ -193,12 +196,12 @@ function TypeMappingPanel({
                   <td className="border-b border-line px-3 py-1.5 font-mono text-[13px]">
                     {column.name}
                     {column.isPrimaryKey && (
-                      <span className="ml-1.5 rounded-sm border border-indigo-200 bg-indigo-50 px-1 text-[10px] font-medium text-indigo-700">
+                      <span className="ml-1.5 rounded-sm border border-line bg-accent-soft px-1 text-[10px] font-medium text-accent-ink">
                         PK
                       </span>
                     )}
                   </td>
-                  <td className="border-b border-line px-3 py-1.5 font-mono text-[13px] text-zinc-600">
+                  <td className="border-b border-line px-3 py-1.5 font-mono text-[13px] text-ink-soft">
                     {column.conceptualType}
                   </td>
                   <td className="border-b border-line px-3 py-1.5">
@@ -209,7 +212,7 @@ function TypeMappingPanel({
                         value={column.overridden ? column.sqlType : ''}
                         placeholder={column.proposedType}
                         onChange={(event) => onOverrideChange(column.id, event.target.value)}
-                        className="w-full min-w-0 rounded border border-zinc-300 bg-surface px-1.5 py-0.5 font-mono text-[13px] placeholder:text-zinc-400"
+                        className="w-full min-w-0 rounded-lg border border-line-strong bg-surface px-1.5 py-0.5 font-mono text-[13px] placeholder:text-ink-soft"
                       />
                       {column.overridden && (
                         <button
@@ -217,7 +220,7 @@ function TypeMappingPanel({
                           aria-label={`Revenir au type proposé pour ${column.name}`}
                           title={`Revenir à ${column.proposedType}`}
                           onClick={() => onOverrideChange(column.id, '')}
-                          className="shrink-0 rounded border border-zinc-300 px-1.5 py-0.5 text-xs hover:bg-zinc-100"
+                          className="shrink-0 rounded-lg border border-line-strong px-1.5 py-0.5 text-xs hover:bg-surface-soft"
                         >
                           ↺
                         </button>

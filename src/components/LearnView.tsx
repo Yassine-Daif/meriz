@@ -20,7 +20,7 @@ const SECTIONS: readonly { id: string; title: string }[] = [
 /** Mini carte d'entité, dans le style réel du canvas. */
 function MiniEntity({ name, rows }: { name: string; rows: [string, string, boolean][] }) {
   return (
-    <div className="inline-block min-w-40 rounded-lg border border-zinc-300 bg-surface text-left shadow-sm">
+    <div className="inline-block min-w-40 rounded-card border border-line-strong bg-surface text-left shadow-soft">
       <div className="rounded-t-lg border-b border-line bg-shell px-3 py-1 text-center text-xs font-semibold">
         {name}
       </div>
@@ -29,14 +29,14 @@ function MiniEntity({ name, rows }: { name: string; rows: [string, string, boole
           <li key={attribute} className="flex items-baseline gap-2">
             <span
               className={
-                isIdentifier ? 'font-medium underline decoration-indigo-700 underline-offset-2' : ''
+                isIdentifier ? 'font-medium underline decoration-accent-ink underline-offset-2' : ''
               }
             >
               {attribute}
             </span>
-            <span className="font-mono text-[10px] text-zinc-500">{type}</span>
+            <span className="font-mono text-[10px] text-ink-soft">{type}</span>
             {isIdentifier && (
-              <span className="ml-auto rounded-sm border border-indigo-200 bg-indigo-50 px-1 font-mono text-[9px] font-medium text-indigo-700">
+              <span className="ml-auto rounded-sm border border-line bg-accent-soft px-1 font-mono text-[9px] font-medium text-accent-ink">
                 clé
               </span>
             )}
@@ -50,7 +50,7 @@ function MiniEntity({ name, rows }: { name: string; rows: [string, string, boole
 /** Pastille de cardinalité, comme sur les pattes du canvas. */
 function CardinalityPill({ value }: { value: string }) {
   return (
-    <span className="rounded-sm border border-zinc-300 bg-surface px-1 font-mono text-[11px]">
+    <span className="rounded-sm border border-line-strong bg-surface px-1 font-mono text-[11px]">
       {value}
     </span>
   )
@@ -58,9 +58,9 @@ function CardinalityPill({ value }: { value: string }) {
 
 function MoreInfo({ summary, children }: { summary: string; children: ReactNode }) {
   return (
-    <details className="mt-2 rounded border border-line bg-shell/60 px-3 py-2 text-sm">
-      <summary className="cursor-pointer text-xs font-medium text-zinc-700">{summary}</summary>
-      <div className="mt-2 flex flex-col gap-2 text-sm leading-6 text-zinc-700">{children}</div>
+    <details className="mt-2 rounded-lg border border-line bg-shell/60 px-3 py-2 text-sm">
+      <summary className="cursor-pointer text-xs font-medium text-ink-soft">{summary}</summary>
+      <div className="mt-2 flex flex-col gap-2 text-sm leading-6 text-ink-soft">{children}</div>
     </details>
   )
 }
@@ -78,7 +78,7 @@ function TryButton({
     <button
       type="button"
       onClick={() => onSelectView(view)}
-      className="mt-3 self-start rounded-md border border-indigo-700 bg-indigo-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-800"
+      className="mt-3 self-start rounded-control border border-accent bg-accent px-3 py-1.5 text-xs font-medium text-on-accent hover:bg-accent-hover"
     >
       {label}
     </button>
@@ -90,12 +90,12 @@ function Section({ id, title, children }: { id: string; title: string; children:
     <section
       id={id}
       aria-labelledby={`${id}-titre`}
-      className="scroll-mt-4 rounded-lg border border-line bg-surface p-5 shadow-sm"
+      className="scroll-mt-4 rounded-card border border-line bg-surface p-5 shadow-soft"
     >
       <h3 id={`${id}-titre`} tabIndex={-1} className="text-lg font-semibold tracking-tight">
         {title}
       </h3>
-      <div className="mt-3 flex flex-col gap-2.5 text-sm leading-6 text-zinc-700">{children}</div>
+      <div className="mt-3 flex flex-col gap-2.5 text-sm leading-6 text-ink-soft">{children}</div>
     </section>
   )
 }
@@ -131,13 +131,13 @@ export function LearnView({ onSelectView }: LearnViewProps) {
         aria-label="Sommaire de la page Apprendre"
         className="hidden w-56 shrink-0 overflow-y-auto border-r border-line bg-surface p-4 lg:block"
       >
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Sommaire</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-soft">Sommaire</h2>
         <ul className="mt-2 flex flex-col gap-1">
           {SECTIONS.map((section) => (
             <li key={section.id}>
               <a
                 href={`#${section.id}`}
-                className="block rounded px-2 py-1 text-sm text-zinc-700 hover:bg-zinc-200/60"
+                className="block rounded-lg px-2 py-1 text-sm text-ink-soft hover:bg-accent-soft hover:text-ink"
               >
                 {section.title}
               </a>
@@ -146,7 +146,7 @@ export function LearnView({ onSelectView }: LearnViewProps) {
           <li>
             <a
               href="#glossaire"
-              className="block rounded px-2 py-1 text-sm text-zinc-700 hover:bg-zinc-200/60"
+              className="block rounded-lg px-2 py-1 text-sm text-ink-soft hover:bg-accent-soft hover:text-ink"
             >
               Glossaire
             </a>
@@ -158,7 +158,7 @@ export function LearnView({ onSelectView }: LearnViewProps) {
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-8 py-8">
           <header>
             <h2 className="text-2xl font-semibold tracking-tight">Apprendre</h2>
-            <p className="mt-1.5 text-sm leading-6 text-zinc-600">
+            <p className="mt-1.5 text-sm leading-6 text-ink-soft">
               Comprendre ce qu'on fait, pourquoi, et à quoi ça sert. Tout au long de la page,
               le même exemple sert de fil conducteur : un client passe des commandes.
             </p>
@@ -285,13 +285,13 @@ export function LearnView({ onSelectView }: LearnViewProps) {
                   ['nom', 'texte', false],
                 ]}
               />
-              <span className="flex items-center gap-1 text-xs text-zinc-600">
+              <span className="flex items-center gap-1 text-xs text-ink-soft">
                 <CardinalityPill value="0,n" />
-                <span aria-hidden="true" className="inline-block h-px w-5 bg-zinc-400" />
-                <span className="rounded-full border border-indigo-300 bg-indigo-50/60 px-3 py-0.5 text-xs font-semibold">
+                <span aria-hidden="true" className="inline-block h-px w-5 bg-line-strong" />
+                <span className="rounded-full border border-line-strong bg-accent-soft px-3 py-0.5 text-xs font-semibold">
                   passer
                 </span>
-                <span aria-hidden="true" className="inline-block h-px w-5 bg-zinc-400" />
+                <span aria-hidden="true" className="inline-block h-px w-5 bg-line-strong" />
                 <CardinalityPill value="1,1" />
               </span>
               <MiniEntity
@@ -332,7 +332,7 @@ export function LearnView({ onSelectView }: LearnViewProps) {
                 ['0,n', 'zéro, une ou plusieurs fois'],
                 ['1,n', 'au moins une fois'],
               ].map(([value, reading]) => (
-                <li key={value} className="flex items-center gap-1.5 text-xs text-zinc-700">
+                <li key={value} className="flex items-center gap-1.5 text-xs text-ink-soft">
                   <CardinalityPill value={value ?? ''} /> {reading}
                 </li>
               ))}
@@ -406,7 +406,7 @@ export function LearnView({ onSelectView }: LearnViewProps) {
               </li>
             </ol>
             <p>En notation relationnelle, l'exemple donne :</p>
-            <pre className="overflow-x-auto rounded border border-line bg-shell p-3 font-mono text-[12px] leading-5 text-zinc-700">
+            <pre className="overflow-x-auto rounded-lg border border-line bg-shell p-3 font-mono text-[12px] leading-5 text-ink-soft">
               {`Client (numeroClient, nom)
 Commande (numeroCommande, dateCommande, #numeroClient)`}
             </pre>
@@ -452,7 +452,7 @@ Commande (numeroCommande, dateCommande, #numeroClient)`}
               manipulation language) manipule les données : SELECT, INSERT, UPDATE, DELETE.
               Le script généré par Meriz, c'est la partie DDL :
             </p>
-            <pre className="overflow-x-auto rounded border border-line bg-shell p-3 font-mono text-[12px] leading-5 text-zinc-700">
+            <pre className="overflow-x-auto rounded-lg border border-line bg-shell p-3 font-mono text-[12px] leading-5 text-ink-soft">
               {`CREATE TABLE Client (
   numeroClient INT NOT NULL AUTO_INCREMENT,
   nom VARCHAR(255) NOT NULL,
@@ -464,7 +464,7 @@ Commande (numeroCommande, dateCommande, #numeroClient)`}
               l'opération qui recolle les tables. Afficher chaque commande avec le nom de son
               client :
             </p>
-            <pre className="overflow-x-auto rounded border border-line bg-shell p-3 font-mono text-[12px] leading-5 text-zinc-700">
+            <pre className="overflow-x-auto rounded-lg border border-line bg-shell p-3 font-mono text-[12px] leading-5 text-ink-soft">
               {`SELECT numeroCommande, nom
 FROM Commande
 INNER JOIN Client ON Commande.numeroClient = Client.numeroClient;`}
@@ -503,7 +503,7 @@ INNER JOIN Client ON Commande.numeroClient = Client.numeroClient;`}
           <section
             id="glossaire"
             aria-labelledby="glossaire-titre"
-            className="scroll-mt-4 rounded-lg border border-line bg-surface p-5 shadow-sm"
+            className="scroll-mt-4 rounded-card border border-line bg-surface p-5 shadow-soft"
           >
             <h3 id="glossaire-titre" tabIndex={-1} className="text-lg font-semibold tracking-tight">
               Glossaire
@@ -512,7 +512,7 @@ INNER JOIN Client ON Commande.numeroClient = Client.numeroClient;`}
               {GLOSSARY.map(([term, definition]) => (
                 <div key={term}>
                   <dt className="font-semibold">{term}</dt>
-                  <dd className="text-zinc-600">{definition}</dd>
+                  <dd className="text-ink-soft">{definition}</dd>
                 </div>
               ))}
             </dl>

@@ -12,6 +12,12 @@ const PADDING = 0.1
  * tous les nœuds → viewport ajusté à ces dimensions → capture de
  * l'élément du viewport avec html-to-image.
  */
+/** Fond de la zone de dessin du thème courant : ce qu'on voit est ce qu'on exporte. */
+function canvasBackground(): string {
+  const value = getComputedStyle(document.documentElement).getPropertyValue('--c-canvas').trim()
+  return value === '' ? '#ffffff' : value
+}
+
 export function exportToPng(nodes: Node[], viewportElement: HTMLElement): Promise<string> {
   const bounds = getNodesBounds(nodes)
   const scale = Math.min(1, MAX_DIMENSION / bounds.width, MAX_DIMENSION / bounds.height)
@@ -20,7 +26,7 @@ export function exportToPng(nodes: Node[], viewportElement: HTMLElement): Promis
   const viewport = getViewportForBounds(bounds, width, height, 0.05, 1, PADDING)
 
   return toPng(viewportElement, {
-    backgroundColor: '#ffffff',
+    backgroundColor: canvasBackground(),
     width,
     height,
     pixelRatio: 2,

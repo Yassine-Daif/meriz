@@ -39,9 +39,9 @@ export function LegConnector({ mcd, association, dispatch }: LegConnectorProps) 
 
   return (
     <fieldset className="flex min-w-0 flex-col gap-1.5">
-      <legend className="text-xs font-medium text-zinc-600">Relier à une entité</legend>
+      <legend className="text-xs font-medium text-ink-soft">Relier à une entité</legend>
       {mcd.entities.length === 0 ? (
-        <p className="text-xs text-zinc-500">Aucune entité à relier : ajoutez d'abord une entité.</p>
+        <p className="text-xs text-ink-soft">Aucune entité à relier : ajoutez d'abord une entité.</p>
       ) : (
         <div className="flex min-w-0 items-center gap-2">
           <label htmlFor={selectId} className="sr-only">
@@ -52,7 +52,7 @@ export function LegConnector({ mcd, association, dispatch }: LegConnectorProps) 
             ref={selectRef}
             value={entityId}
             onChange={(event) => setEntityId(event.target.value)}
-            className="min-w-0 flex-1 rounded border border-zinc-300 bg-surface px-1.5 py-1 text-xs"
+            className="min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-1.5 py-1 text-xs"
           >
             <option value="">Choisir une entité</option>
             {mcd.entities.map((entity) => (
@@ -65,13 +65,13 @@ export function LegConnector({ mcd, association, dispatch }: LegConnectorProps) 
             type="button"
             onClick={handleConnect}
             disabled={entityId === ''}
-            className="shrink-0 rounded border border-zinc-300 bg-surface px-2 py-1 text-xs hover:bg-shell disabled:cursor-not-allowed disabled:opacity-50"
+            className="shrink-0 rounded-lg border border-line-strong bg-surface px-2 py-1 text-xs hover:bg-shell disabled:cursor-not-allowed disabled:opacity-50"
           >
             Relier
           </button>
         </div>
       )}
-      <p role="status" aria-live="polite" className="text-xs text-zinc-600">
+      <p role="status" aria-live="polite" className="text-xs text-ink-soft">
         {announcement}
       </p>
     </fieldset>

@@ -17,6 +17,7 @@ import { LegEdge } from './LegEdge'
 import type { McdAction, McdEditorState } from '../model/mcdReducer'
 import type { CanvasSelection } from './selection'
 import { McdDispatchContext } from './dispatchContext'
+import { useTheme } from '../lib/useTheme'
 
 // Déclarés hors composant pour garder des références stables.
 const nodeTypes = { entity: EntityNode, association: AssociationNode }
@@ -46,6 +47,7 @@ export function McdCanvas({
   onSelectionChange,
   isActive,
 }: McdCanvasProps) {
+  const theme = useTheme()
   const [nodes, setNodes] = useState<McdFlowNode[]>([])
   const [edges, setEdges] = useState<LegFlowEdge[]>([])
 
@@ -221,7 +223,8 @@ export function McdCanvas({
         // (toucher un élément suffit), Shift/Ctrl+clic = ajout.
         // Le déplacement de la vue passe au bouton du milieu ou droit,
         // et à la molette.
-        connectionLineStyle={{ stroke: '#4338ca', strokeWidth: 1.5 }}
+        connectionLineStyle={{ stroke: 'var(--c-mark)', strokeWidth: 1.5 }}
+        colorMode={theme.resolved}
         selectionOnDrag
         selectionMode={SelectionMode.Partial}
         multiSelectionKeyCode={['Shift', 'Control', 'Meta']}
