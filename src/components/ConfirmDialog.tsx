@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from 'react'
+import { buttonClass } from './ui/buttonClass'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -52,18 +53,18 @@ export function ConfirmDialog({
         event.preventDefault()
         onCancel()
       }}
-      className="m-auto w-full max-w-sm rounded-lg border border-line bg-surface p-0 shadow-xl backdrop:bg-zinc-900/40"
+      className="m-auto w-[calc(100%-2rem)] max-w-sm rounded-card border border-line bg-surface p-0 text-ink shadow-lift backdrop:bg-[rgb(var(--c-shadow)/0.45)]"
     >
-      <div className="p-5">
-        <h2 id={titleId} className="text-base font-semibold tracking-tight">
+      <div className="p-6">
+        <h2 id={titleId} className="text-lg font-semibold tracking-tight">
           {title}
         </h2>
-        <p className="mt-2 text-sm leading-6 text-zinc-700">{message}</p>
-        <div className="mt-5 flex justify-end gap-2">
+        <p className="mt-2 text-sm leading-6 text-ink-soft">{message}</p>
+        <div className="mt-6 flex flex-wrap justify-end gap-2">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-md border border-line bg-surface px-3 py-1.5 text-sm hover:bg-shell"
+            className={buttonClass({ variant: 'secondary' })}
           >
             Annuler
           </button>
@@ -71,7 +72,7 @@ export function ConfirmDialog({
             <button
               type="button"
               onClick={onSecondary}
-              className="rounded-md border border-indigo-700 bg-surface px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+              className={buttonClass({ variant: 'soft' })}
             >
               {secondaryLabel}
             </button>
@@ -79,7 +80,7 @@ export function ConfirmDialog({
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-md border border-rose-700 bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700"
+            className={buttonClass({ variant: 'danger' })}
           >
             {confirmLabel}
           </button>

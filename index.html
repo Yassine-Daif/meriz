@@ -2,14 +2,16 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Meriz</title>
+    <link rel="icon" href="./favicon.ico" sizes="any" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <meta
       name="description"
       content="Meriz : modélisation de bases de données par la méthode Merise, dans le navigateur. Dictionnaire, MCD, vérification, puis génération du MLD, du MPD et du SQL."
     />
-    <meta name="theme-color" content="#4338ca" />
+    <meta name="theme-color" content="#f6f3ee" />
     <meta property="og:title" content="Meriz" />
     <meta
       property="og:description"
@@ -17,6 +19,22 @@
     />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="fr_FR" />
+    <script>
+      // Thème appliqué avant le premier rendu : aucun flash de couleur.
+      // Même logique que src/lib/theme.ts (Système, Clair ou Sombre).
+      ;(function () {
+        var preference = 'system'
+        try {
+          var stored = localStorage.getItem('meriz-theme')
+          if (stored === 'light' || stored === 'dark') preference = stored
+        } catch (e) {}
+        var dark =
+          preference === 'dark' ||
+          (preference === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+        if (dark) document.querySelector('meta[name="theme-color"]').setAttribute('content', '#121124')
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

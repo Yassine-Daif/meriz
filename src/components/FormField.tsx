@@ -51,8 +51,8 @@ export function FormField({
     .filter(Boolean)
     .join(' ')
 
-  const fieldClass = `mt-1 w-full rounded-md border bg-surface px-3 py-2 text-sm ${mono ? 'font-mono tracking-wide' : ''} ${
-    error ? 'border-rose-600' : 'border-zinc-300 hover:border-zinc-400'
+  const fieldClass = `mt-1.5 w-full rounded-control border bg-surface px-3.5 py-2.5 text-sm text-ink transition-colors duration-150 ${mono ? 'font-mono tracking-wide' : ''} ${
+    error ? 'border-2 border-danger' : 'border-line-strong hover:border-ink-soft'
   }`
   const shared = {
     id: inputId,
@@ -69,10 +69,10 @@ export function FormField({
     <div>
       <label htmlFor={inputId} className="block text-sm font-medium text-ink">
         {label}
-        {!required && <span className="ml-1 font-normal text-zinc-600">(facultatif)</span>}
+        {!required && <span className="ml-1 font-normal text-ink-soft">(facultatif)</span>}
       </label>
       {hint && (
-        <p id={hintId} className="mt-0.5 text-xs text-zinc-600">
+        <p id={hintId} className="mt-0.5 text-xs text-ink-soft">
           {hint}
         </p>
       )}
@@ -93,12 +93,12 @@ export function FormField({
         />
       )}
       {showCounter && (
-        <p id={counterId} className="mt-0.5 text-right text-xs text-zinc-600">
+        <p id={counterId} className="mt-1 text-right text-xs text-ink-soft">
           {value.length} / {maxLength}
         </p>
       )}
       {error && (
-        <p id={errorId} className="mt-1 text-xs font-medium text-rose-700">
+        <p id={errorId} className="mt-1.5 text-xs font-medium text-danger">
           <span aria-hidden="true">✕ </span>
           {error}
         </p>

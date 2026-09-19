@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assets Meriz</title>
+<link rel="icon" href="web/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="web/favicon.ico" sizes="any">
+<style>
+  :root { --ink: #1E1B4B; --muted: #6B6890; --page: #F4F3FA; --line: #E3E1F0; --dark: #0F0E1A; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.5 system-ui, "Segoe UI", sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { margin: 0 0 4px; font-size: 26px; }
+  h2 { margin: 36px 0 12px; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  p.lead { margin: 0; color: var(--muted); }
+  .row { display: flex; flex-wrap: wrap; gap: 16px; }
+  .tile { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 10px; min-width: 120px; }
+  .tile.dark { background: var(--dark); border-color: var(--dark); }
+  .tile code { font-size: 12px; color: var(--muted); }
+  .tile.dark code { color: #8C89B0; }
+  .px { image-rendering: pixelated; }
+  .mask { border-radius: 50%; }
+  .ios { border-radius: 22%; }
+  .lockups .tile { flex: 1 1 320px; align-items: flex-start; }
+  .lockups img { height: 48px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Meriz · assets du logo</h1>
+  <p class="lead">Variante A5P « Accolées · pastille ». Aperçu de chaque fichier produit ; la liste et les usages sont dans LISEZMOI.md.</p>
+
+  <h2>SVG maîtres</h2>
+  <div class="row">
+    <div class="tile"><img src="svg/meriz-logo.svg" width="128" alt=""><code>svg/meriz-logo.svg</code></div>
+    <div class="tile dark"><img src="svg/meriz-logo.svg" width="128" alt=""><code>meriz-logo.svg sur sombre</code></div>
+    <div class="tile dark"><img src="svg/meriz-logo-dark.svg" width="128" alt=""><code>svg/meriz-logo-dark.svg</code></div>
+  </div>
+
+  <h2>Lockup horizontal</h2>
+  <div class="row lockups">
+    <div class="tile"><img src="svg/meriz-lockup.svg" alt="Meriz"><code>svg/meriz-lockup.svg</code></div>
+    <div class="tile dark"><img src="svg/meriz-lockup-dark.svg" alt="Meriz"><code>svg/meriz-lockup-dark.svg</code></div>
+  </div>
+
+  <h2>Icône PNG, taille réelle</h2>
+  <div class="row">
+    <div class="tile"><img src="png/meriz-icon-256.png" width="256" alt=""><code>256</code></div>
+    <div class="tile"><img src="png/meriz-icon-128.png" width="128" alt=""><code>128</code></div>
+    <div class="tile"><img src="png/meriz-icon-64.png" width="64" alt=""><code>64</code></div>
+    <div class="tile"><img src="png/meriz-icon-32.png" width="32" alt=""><code>32</code></div>
+    <div class="tile"><img src="png/meriz-icon-16.png" width="16" alt=""><code>16</code></div>
+    <div class="tile dark"><img src="png/meriz-icon-32.png" width="32" alt=""><code>32</code></div>
+    <div class="tile dark"><img src="png/meriz-icon-16.png" width="16" alt=""><code>16</code></div>
+  </div>
+
+  <h2>16 et 32 px agrandis (vrais pixels)</h2>
+  <div class="row">
+    <div class="tile"><img class="px" src="png/meriz-icon-16.png" width="128" alt=""><code>16 px × 8</code></div>
+    <div class="tile"><img class="px" src="png/meriz-icon-32.png" width="128" alt=""><code>32 px × 4</code></div>
+  </div>
+
+  <h2>Web et installation</h2>
+  <div class="row">
+    <div class="tile"><img src="web/favicon.svg" width="32" alt=""><code>web/favicon.svg</code></div>
+    <div class="tile"><img src="web/favicon.ico" width="32" alt=""><code>web/favicon.ico</code></div>
+    <div class="tile"><img src="web/apple-touch-icon.png" width="180" alt=""><code>apple-touch-icon.png</code></div>
+    <div class="tile"><img class="ios" src="web/apple-touch-icon.png" width="180" alt=""><code>idem, masque iOS</code></div>
+    <div class="tile"><img src="web/icon-maskable-512.png" width="180" alt=""><code>icon-maskable-512.png</code></div>
+    <div class="tile"><img class="mask" src="web/icon-maskable-512.png" width="180" alt=""><code>idem, masque rond</code></div>
+  </div>
+
+  <h2>Source Tauri</h2>
+  <div class="row">
+    <div class="tile"><img src="tauri/app-icon.png" width="256" alt=""><code>tauri/app-icon.png (1024 px)</code></div>
+  </div>
+</main>
+</body>
+</html>

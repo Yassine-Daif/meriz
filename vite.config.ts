@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -14,5 +15,10 @@ export default defineConfig({
       // rechargements du serveur de dev.
       ignored: ['**/src-tauri/**'],
     },
+  },
+  test: {
+    // Vitest vide les CSS par défaut. Les tokens de index.css restent
+    // lisibles pour le test de contraste (src/design/contrast.test.ts).
+    css: { include: [/src[\\/]index\.css/] },
   },
 })

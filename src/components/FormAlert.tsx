@@ -22,8 +22,8 @@ export function FormAlert({ message, attempt }: FormAlertProps) {
   return (
     <div ref={ref} role="alert" tabIndex={-1} className="empty:hidden">
       {message && (
-        <p className="flex items-start gap-1.5 rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-zinc-800">
-          <span aria-hidden="true" className="text-rose-700">
+        <p className="flex items-start gap-2 rounded-control bg-danger-soft px-4 py-3 text-sm text-ink">
+          <span aria-hidden="true" className="font-bold text-danger">
             ✕
           </span>
           {message}

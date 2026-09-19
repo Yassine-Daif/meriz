@@ -1,49 +1,224 @@
 @import 'tailwindcss';
 
 /*
- * Design tokens de Meriz. Gris neutres légèrement chauds pour
- * l'habillage, zone de dessin très claire, un seul accent : l'indigo
- * profond (indigo-700 = #4338CA). La mono est la voix des données :
- * types, cardinalités, dictionnaire, et plus tard le SQL.
+ * Système de design de Meriz : « le cahier de la merise ».
+ * Un papier chaud, une encre indigo profond (la couleur du mot du logo),
+ * l'indigo #4338CA en accent, et la cerise du logo en touche rare.
+ *
+ * Les couleurs sont des tokens sémantiques, définis une fois en clair et
+ * une fois en sombre. Les composants n'emploient que ces tokens : aucun
+ * gris ni hexadécimal codé en dur. Chaque couple texte et fond est
+ * vérifié au niveau WCAG AA par src/design/contrast.test.ts.
  */
-@theme {
-  --color-shell: #f7f7f5;
-  --color-surface: #ffffff;
-  --color-canvas: #fbfbfa;
-  --color-ink: #1c1c1e;
-  --color-line: #e4e4e7;
 
-  --font-sans:
-    system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono:
-    ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Consolas, 'Roboto Mono', Menlo, monospace;
+/* Thème sombre : attribut posé sur <html> avant le premier rendu. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* Outfit (licence OFL, voir assets/fonts/OFL-Outfit.txt), la police du logo. */
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('./assets/fonts/outfit-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('./assets/fonts/outfit-latin-ext-wght-normal.woff2') format('woff2-variations');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
 }
 
-/* Focus visible sur tous les éléments interactifs : exigence WCAG 2.1 AA */
+/* ------------------------------------------------------------------ */
+/* Tokens de couleur                                                  */
+
+:root {
+  color-scheme: light;
+  /* Fonds */
+  --c-shell: #f6f3ee; /* papier chaud, fond de l'application */
+  --c-surface: #ffffff; /* cartes, panneaux */
+  --c-surface-soft: #fbf9f5; /* cartes secondaires, en-têtes de cartes */
+  --c-canvas: #fcfbf8; /* zone de dessin */
+  /* Encre */
+  --c-ink: #1e1b4b; /* texte principal, l'encre du logo */
+  --c-ink-soft: #57536e; /* texte secondaire */
+  --c-line: #e6e0d6; /* séparations décoratives */
+  --c-line-strong: #8a849e; /* contours de contrôles (3:1) */
+  /* Accent */
+  --c-accent: #4338ca;
+  --c-accent-hover: #3730a3;
+  --c-on-accent: #ffffff;
+  --c-accent-soft: #eeedfd;
+  --c-accent-ink: #3730a3; /* liens et texte accentué */
+  --c-mark: #4338ca; /* traits et poignées de la zone de dessin (3:1) */
+  --c-focus: #4338ca;
+  --c-logo: #4338ca; /* tuile du logo, comme design/logo */
+  /* Touches chaleureuses et provenance */
+  --c-cherry: #b0164f;
+  --c-cherry-soft: #fce7ef;
+  --c-apricot: #9a3412;
+  --c-apricot-soft: #fdebdd;
+  --c-sage: #1f6b4a;
+  --c-sage-soft: #e1f2e8;
+  --c-sky: #1d4e89;
+  --c-sky-soft: #e3eefb;
+  /* États */
+  --c-danger: #b42318;
+  --c-danger-soft: #fdecea;
+  --c-danger-strong: #b42318;
+  --c-warning: #854a00;
+  --c-warning-soft: #fff3d6;
+  /* Ombres teintées d'encre, jamais grises */
+  --c-shadow: 30 27 75;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --c-shell: #121124; /* nuit indigo */
+  --c-surface: #1b1a31;
+  --c-surface-soft: #22213b;
+  --c-canvas: #17162c;
+  --c-ink: #eeedf8;
+  --c-ink-soft: #ada9c6;
+  --c-line: #302e4c;
+  --c-line-strong: #77739a;
+  --c-accent: #4f46e5;
+  --c-accent-hover: #4338ca;
+  --c-on-accent: #ffffff;
+  --c-accent-soft: #29275c;
+  --c-accent-ink: #c4c8ff;
+  --c-mark: #8f95f7;
+  --c-focus: #a5abff;
+  --c-logo: #6366f1;
+  --c-cherry: #f7a8c8;
+  --c-cherry-soft: #3a1830;
+  --c-apricot: #fdba8c;
+  --c-apricot-soft: #3a2416;
+  --c-sage: #8bd9b1;
+  --c-sage-soft: #153028;
+  --c-sky: #a2c6f6;
+  --c-sky-soft: #16273f;
+  --c-danger: #fca5a5;
+  --c-danger-soft: #3b1719;
+  --c-danger-strong: #dc2626;
+  --c-warning: #f5c26b;
+  --c-warning-soft: #33270f;
+  --c-shadow: 0 0 0;
+}
+
+/* Classes Tailwind reliées aux tokens (bg-surface, text-ink-soft…). */
+@theme inline {
+  --color-shell: var(--c-shell);
+  --color-surface: var(--c-surface);
+  --color-surface-soft: var(--c-surface-soft);
+  --color-canvas: var(--c-canvas);
+  --color-ink: var(--c-ink);
+  --color-ink-soft: var(--c-ink-soft);
+  --color-line: var(--c-line);
+  --color-line-strong: var(--c-line-strong);
+  --color-accent: var(--c-accent);
+  --color-accent-hover: var(--c-accent-hover);
+  --color-on-accent: var(--c-on-accent);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-accent-ink: var(--c-accent-ink);
+  --color-mark: var(--c-mark);
+  --color-focus: var(--c-focus);
+  --color-logo: var(--c-logo);
+  --color-cherry: var(--c-cherry);
+  --color-cherry-soft: var(--c-cherry-soft);
+  --color-apricot: var(--c-apricot);
+  --color-apricot-soft: var(--c-apricot-soft);
+  --color-sage: var(--c-sage);
+  --color-sage-soft: var(--c-sage-soft);
+  --color-sky: var(--c-sky);
+  --color-sky-soft: var(--c-sky-soft);
+  --color-danger: var(--c-danger);
+  --color-danger-soft: var(--c-danger-soft);
+  --color-danger-strong: var(--c-danger-strong);
+  --color-warning: var(--c-warning);
+  --color-warning-soft: var(--c-warning-soft);
+}
+
+/* Formes, typographie, ombres. */
+@theme {
+  --font-sans: 'Outfit', system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:
+    ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Consolas, 'Roboto Mono', Menlo, monospace;
+
+  --radius-control: 0.75rem;
+  --radius-card: 1.25rem;
+  --radius-panel: 1.75rem;
+
+  --shadow-soft: 0 1px 2px rgb(var(--c-shadow) / 0.06), 0 4px 14px -6px rgb(var(--c-shadow) / 0.12);
+  --shadow-lift: 0 2px 4px rgb(var(--c-shadow) / 0.08), 0 14px 30px -12px rgb(var(--c-shadow) / 0.22);
+}
+
 @layer base {
+  html {
+    font-family: var(--font-sans);
+    background: var(--c-shell);
+    color: var(--c-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Focus visible, épais et arrondi : exigence WCAG 2.1 AA. */
   :focus-visible {
-    outline: 2px solid var(--color-indigo-700);
+    outline: 3px solid var(--c-focus);
     outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+
+  ::selection {
+    background: var(--c-accent-soft);
+    color: var(--c-ink);
   }
 }
 
-/* Zone de sélection du canvas : contour tireté à l'accent, voile léger. */
+/* Mouvement réduit : aucune animation ni transition. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Zone de dessin (React Flow)                                        */
+
+.react-flow {
+  --xy-background-color: var(--c-canvas);
+  --xy-background-pattern-color: var(--c-line);
+}
+
+/* Zone de sélection : contour tireté, voile léger. */
 .react-flow__selection {
-  background: color-mix(in srgb, var(--color-indigo-700) 6%, transparent);
-  border: 1.5px dashed var(--color-indigo-700);
-  border-radius: 4px;
+  background: color-mix(in srgb, var(--c-mark) 8%, transparent);
+  border: 1.5px dashed var(--c-mark);
+  border-radius: 10px;
 }
 
 /*
- * Points de liaison du MCD : ronds accent bien visibles, qui gonflent
- * au survol pour faciliter la visée, avec un curseur crayon (le geste
- * « dessiner une patte »).
+ * Points de liaison du MCD : ronds bien visibles, qui gonflent au survol
+ * pour faciliter la visée, avec un curseur crayon (le geste « dessiner
+ * une patte »).
  */
 .react-flow__handle.meriz-handle {
   width: 12px;
   height: 12px;
-  background: var(--color-indigo-700);
-  border: 2px solid var(--color-surface);
+  background: var(--c-mark);
+  border: 2px solid var(--c-surface);
   transition:
     width 0.15s ease,
     height 0.15s ease,
@@ -56,10 +231,5 @@
 .react-flow__handle.meriz-handle:hover {
   width: 19px;
   height: 19px;
-  background: var(--color-indigo-500);
-}
-@media (prefers-reduced-motion: reduce) {
-  .react-flow__handle.meriz-handle {
-    transition: none;
-  }
+  background: var(--c-accent-hover);
 }

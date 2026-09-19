@@ -24,7 +24,7 @@ export function ToggleSwitch({ label, checked, onChange, description }: ToggleSw
           {label}
         </p>
         {description && (
-          <p id={descriptionId} className="text-xs text-zinc-600">
+          <p id={descriptionId} className="text-xs text-ink-soft">
             {description}
           </p>
         )}
@@ -36,15 +36,15 @@ export function ToggleSwitch({ label, checked, onChange, description }: ToggleSw
         aria-labelledby={labelId}
         aria-describedby={description ? descriptionId : undefined}
         onClick={() => onChange(!checked)}
-        className={`flex shrink-0 items-center gap-2 rounded-full border px-1 py-1 pr-3 text-xs font-medium ${
+        className={`flex min-h-8 shrink-0 items-center gap-2 rounded-full border px-1 py-1 pr-3 text-xs font-medium transition-colors duration-150 ${
           checked
-            ? 'border-indigo-700 bg-indigo-700 text-white hover:bg-indigo-800 hover:text-white'
-            : 'border-zinc-300 bg-surface text-ink hover:bg-shell'
+            ? 'border-accent bg-accent text-on-accent hover:border-accent-hover hover:bg-accent-hover hover:text-on-accent'
+            : 'border-line-strong bg-surface text-ink hover:bg-surface-soft hover:text-ink'
         }`}
       >
         <span
           aria-hidden="true"
-          className={`h-4 w-4 rounded-full ${checked ? 'bg-white' : 'bg-zinc-400'}`}
+          className={`h-5 w-5 rounded-full ${checked ? 'bg-on-accent' : 'bg-line-strong'}`}
         />
         {checked ? 'Oui' : 'Non'}
       </button>
