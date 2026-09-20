@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ApiClient, ApiResult, HttpMethod } from './apiClient'
+import { apiError } from './apiClient'
 import { becomeTeacher, publicPreview, updateProfile } from './profileApi'
 
 function fakeClient(result: ApiResult) {
@@ -10,7 +11,9 @@ function fakeClient(result: ApiResult) {
       sent.push({ method, path, body })
       return result
     },
-  }
+    // Le binaire n'est pas simulé ici : aucun test ne lit d'image.
+    requestBlob: async () => ({ ok: false, error: apiError('unexpected', null, 'Binaire non simulé.') }),
+    }
   return { client, sent }
 }
 

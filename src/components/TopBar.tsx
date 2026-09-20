@@ -6,6 +6,7 @@ import { FileActions } from './FileActions'
 import { DocumentNameField } from './DocumentNameField'
 import { SyncStatus } from './SyncStatus'
 import { UiScaleControl } from './UiScaleControl'
+import { Badge } from './ui/Badge'
 import { Lockup } from './ui/Lockup'
 import { ThemeToggle } from './ui/ThemeToggle'
 
@@ -13,10 +14,15 @@ interface TopBarProps {
   state: McdEditorState
   mpdSettings: MpdSettings
   documentName: string
-  onRename: (name: string) => Promise<boolean>
+  /** Renommage : absent quand le contenu n'est pas un document personnel. */
+  onRename?: (name: string) => Promise<boolean>
   onBackToDocuments: () => void
-  onNewDocument: () => void
-  onImportFile: (file: File) => Promise<string | null>
+  /** Nature du contenu ouvert (ex. « Base du devoir »), quand ce n'est pas un document. */
+  contentLabel?: string
+  /** Libellé du bouton de retour, adapté à la page d'origine. */
+  backLabel?: string
+  onNewDocument?: () => void
+  onImportFile?: (file: File) => Promise<string | null>
   /** État de la sauvegarde automatique du document. */
   syncStatus: SaveStatus
   onRetrySync: () => void
@@ -54,6 +60,8 @@ export function TopBar({
   documentName,
   onRename,
   onBackToDocuments,
+  contentLabel,
+  backLabel = 'Retour',
   onNewDocument,
   onImportFile,
   syncStatus,
@@ -74,16 +82,25 @@ export function TopBar({
         <button
           type="button"
           onClick={onBackToDocuments}
-          aria-label="Retour : fermer le document et revenir à la page précédente"
-          title="Fermer le document et revenir à la page précédente"
+          aria-label={` : fermer le modèle et revenir à la page précédente`}
+          title="Fermer le modèle et revenir à la page précédente"
           className="inline-flex min-h-9 items-center gap-1.5 rounded-control border border-line-strong bg-surface px-3 py-1.5 text-sm font-medium text-ink transition-colors duration-150 hover:bg-surface-soft hover:text-ink"
         >
           <svg {...iconProps}>
             <path d="M15 5 8 12l7 7" />
           </svg>
-          Retour
+          {backLabel}
         </button>
-        <DocumentNameField name={documentName} onRename={onRename} />
+        {onRename ? (
+          <DocumentNameField name={documentName} onRename={onRename} />
+        ) : (
+          // Base ou corrigé d'un devoir : le titre vient du devoir, il ne
+          // se renomme pas depuis l'outil de dessin.
+          <p className="flex min-w-0 items-center gap-2">
+            {contentLabel && <Badge tone="accent">{contentLabel}</Badge>}
+            <span className="truncate text-sm font-semibold text-ink">{documentName}</span>
+          </p>
+        )}
       </div>
       <div role="group" aria-label="Historique" className="flex gap-1">
         <button

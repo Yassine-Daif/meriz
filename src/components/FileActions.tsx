@@ -15,10 +15,10 @@ interface FileActionsProps {
   documentName: string
   /** L'export PNG capture le DOM du canvas : il faut la vue MCD affichée. */
   mcdVisible: boolean
-  /** Crée un nouveau document et l'ouvre. */
-  onNewDocument: () => void
+  /** Crée un nouveau document et l'ouvre. Absent hors de l'espace documents. */
+  onNewDocument?: () => void
   /** Importe un fichier comme nouveau document : message d'erreur, ou null. */
-  onImportFile: (file: File) => Promise<string | null>
+  onImportFile?: (file: File) => Promise<string | null>
 }
 
 interface StatusMessage {
@@ -63,6 +63,7 @@ export function FileActions({
   }
 
   const handleImport = async (file: File) => {
+    if (!onImportFile) return
     const error = await onImportFile(file)
     if (error) {
       // Fichier invalide : message clair, le document courant reste ouvert.
@@ -102,12 +103,16 @@ export function FileActions({
 
   return (
     <div role="group" aria-label="Fichier" className="flex flex-wrap items-center gap-2">
-      <button type="button" className={buttonClass} onClick={onNewDocument}>
-        Nouveau
-      </button>
-      <ImportFileButton className={buttonClass} onFile={(file) => void handleImport(file)}>
-        Ouvrir
-      </ImportFileButton>
+      {onNewDocument && (
+        <button type="button" className={buttonClass} onClick={onNewDocument}>
+          Nouveau
+        </button>
+      )}
+      {onImportFile && (
+        <ImportFileButton className={buttonClass} onFile={(file) => void handleImport(file)}>
+          Ouvrir
+        </ImportFileButton>
+      )}
       <button type="button" className={buttonClass} onClick={() => void handleSave()}>
         Enregistrer
       </button>

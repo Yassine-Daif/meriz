@@ -14,6 +14,8 @@ import {
 import type { ClassroomDetail, ClassroomMember, PublicProfile } from '../lib/classroomsApi'
 import { ConfirmDialog } from './ConfirmDialog'
 import { Avatar } from './ui/Avatar'
+import { AssignmentsPanel } from './assignments/AssignmentsPanel'
+import type { EditAssignmentModel } from './assignments/types'
 import { ComingSoon } from './ui/ComingSoon'
 import { TabPanel, Tabs } from './ui/Tabs'
 import { FormField } from './FormField'
@@ -22,6 +24,10 @@ import { primaryButtonClass, secondaryButtonClass, smallButtonClass } from './bu
 interface ClassroomViewProps {
   client: ApiClient
   classroomId: string
+  /** Devoir à rouvrir dans l'onglet Exercices (retour de l'outil MCD). */
+  openAssignmentId?: string | null
+  /** Ouvre l'outil MCD sur la base ou le corrigé d'un devoir. */
+  onEditAssignmentModel: EditAssignmentModel
   /** Vue déjà connue (création, adhésion) : affichée sans attendre. */
   initial: ClassroomDetail | null
   /** La classe n'est plus accessible (quittée, supprimée) : retour à la liste. */
@@ -90,7 +96,15 @@ function PersonCard({ person, extra }: { person: PublicProfile; extra?: string }
  * (renommer, nouveau code, retirer, supprimer), chaque action
  * destructive étant confirmée.
  */
-export function ClassroomView({ client, classroomId, initial, onGone, initialStatus = null }: ClassroomViewProps) {
+export function ClassroomView({
+  client,
+  classroomId,
+  initial,
+  onGone,
+  initialStatus = null,
+  openAssignmentId = null,
+  onEditAssignmentModel,
+}: ClassroomViewProps) {
   const [classroom, setClassroom] = useState<ClassroomDetail | null>(initial)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [status, setStatus] = useState<{ kind: 'info' | 'error'; text: string } | null>(null)
@@ -104,7 +118,8 @@ export function ClassroomView({ client, classroomId, initial, onGone, initialSta
   const [renaming, setRenaming] = useState(false)
   const [newName, setNewName] = useState('')
   const [renameError, setRenameError] = useState<string | undefined>()
-  const [tab, setTab] = useState<ClassroomTab>('eleves')
+  // Retour de l'outil MCD sur un devoir : on rouvre l'onglet Exercices.
+  const [tab, setTab] = useState<ClassroomTab>(openAssignmentId ? 'exercices' : 'eleves')
   const idBase = useId()
 
   // Le rappel du parent peut changer à chaque rendu : on garde le dernier
@@ -430,15 +445,21 @@ export function ClassroomView({ client, classroomId, initial, onGone, initialSta
 
         {tab === 'exercices' && (
           <TabPanel idBase={idBase} value="exercices">
-            <ComingSoon
-              headingLevel="h3"
-              title="Exercices de la classe"
-              description={
-                isTeacher
-                  ? 'Vous pourrez confier ici un sujet de MCD à cette classe, avec une échéance, et suivre les rendus.'
-                  : 'Les exercices donnés par votre prof apparaîtront ici, avec leur échéance.'
-              }
-            />
+            {isTeacher ? (
+              <AssignmentsPanel
+                client={client}
+                classroomId={classroom.id}
+                classroomName={classroom.name}
+                openAssignmentId={openAssignmentId}
+                onEditAssignmentModel={onEditAssignmentModel}
+              />
+            ) : (
+              <ComingSoon
+                headingLevel="h3"
+                title="Exercices de la classe"
+                description="Les exercices donnés par votre prof apparaîtront ici, avec leur échéance."
+              />
+            )}
           </TabPanel>
         )}
 

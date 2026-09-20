@@ -5,6 +5,7 @@ import { clientCommande } from '../model/testFixtures'
 import { createAccountController } from './accountController'
 import type { AccountSpace } from './accountController'
 import type { ApiClient } from './apiClient'
+import { apiError } from './apiClient'
 import { createCloudCache } from './cloudCache'
 import { createCloudTestServer } from './cloudTestServer'
 import type { DocumentRepository } from './documentRepository'
@@ -28,6 +29,8 @@ function setup() {
         if (!result.ok && result.error.kind === 'unauthorized' && hadToken) onUnauthorized()
         return result
       },
+        // Le binaire n'est pas simulé ici : aucun test ne lit d'image.
+      requestBlob: async () => ({ ok: false, error: apiError('unexpected', null, 'Binaire non simulé.') }),
     }
   }
   const controller = createAccountController({ cache, createClient, onExpired })

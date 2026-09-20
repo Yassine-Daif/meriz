@@ -5,6 +5,7 @@ import type { ClassroomDetail } from '../lib/classroomsApi'
 import { useClassrooms } from '../lib/useClassrooms'
 import { ClassroomGrid } from './ClassroomGrid'
 import { ClassroomView } from './ClassroomView'
+import type { EditAssignmentModel } from './assignments/types'
 import { CreateClassForm } from './CreateClassForm'
 import { JoinClassForm } from './JoinClassForm'
 import { PageShell } from './PageShell'
@@ -16,10 +17,14 @@ export interface ClassroomOpening {
   initial: ClassroomDetail | null
   /** Message annoncé à l'ouverture (ex. « Vous avez rejoint… »). */
   message: string | null
+  /** Devoir à rouvrir dans l'onglet Exercices (retour de l'outil MCD). */
+  assignmentId?: string
 }
 
 interface ClassesPageProps {
   user: ApiUser
+  /** Ouvre l'outil MCD sur la base ou le corrigé d'un devoir. */
+  onEditAssignmentModel: EditAssignmentModel
   /** Client lié au compte connecté. */
   client: ApiClient
   /** Classe à ouvrir d'emblée (depuis l'accueil). */
@@ -31,7 +36,7 @@ interface ClassesPageProps {
  * classe. Une classe choisie s'ouvre en détail. Rien n'est gardé dans le
  * navigateur : tout est relu auprès du serveur pour le compte connecté.
  */
-export function ClassesPage({ user, client, opening = null }: ClassesPageProps) {
+export function ClassesPage({ user, client, opening = null, onEditAssignmentModel }: ClassesPageProps) {
   const classrooms = useClassrooms(client)
   const { reload } = classrooms
   const [selected, setSelected] = useState<ClassroomOpening | null>(opening)
@@ -61,6 +66,8 @@ export function ClassesPage({ user, client, opening = null }: ClassesPageProps) 
           client={client}
           classroomId={selected.id}
           initial={selected.initial}
+          openAssignmentId={selected.assignmentId ?? null}
+          onEditAssignmentModel={onEditAssignmentModel}
           onGone={(message) => backToList(message)}
           initialStatus={selected.message}
         />

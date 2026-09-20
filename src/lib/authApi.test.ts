@@ -18,7 +18,9 @@ function fakeClient(result: ApiResult) {
       sent.push({ method, path, body })
       return result
     },
-  }
+    // Le binaire n'est pas simulé ici : aucun test ne lit d'image.
+    requestBlob: async () => ({ ok: false, error: apiError('unexpected', null, 'Binaire non simulé.') }),
+    }
   return { client, sent }
 }
 

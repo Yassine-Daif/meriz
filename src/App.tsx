@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { DocumentMeta, OpenedDocument } from './model/document'
+import { emptyEditorState } from './model/document'
 import type { McdEditorState } from './model/mcdReducer'
 import type { MpdSettings } from './model/mpd'
+import { DEFAULT_MPD_SETTINGS } from './model/mpd'
 import { EXAMPLE_NAME, exampleLayout, exampleMcd } from './model/example'
 import type { ApiError } from './lib/apiClient'
 import { apiError } from './lib/apiClient'
@@ -10,6 +12,9 @@ import { createLocalRepository } from './lib/documentRepository'
 import type { DocumentRepository, DocumentSaver } from './lib/documentRepository'
 import { browserDocumentStore } from './lib/documentStore'
 import { importModelFile } from './lib/importFile'
+import { parseModelFile } from './lib/persistence'
+import { createAssignmentSaver } from './lib/assignmentSaver'
+import type { AssignmentField } from './lib/assignmentsApi'
 import { markOffered, unofferedLocalIds } from './lib/importOffers'
 import { DocumentsHome } from './components/DocumentsHome'
 import { Editor } from './components/Editor'
@@ -38,12 +43,33 @@ interface ImportProposal {
   report: ImportReport | null
 }
 
-/** Document ouvert, sa sauvegarde automatique, et l'espace d'où il vient. */
+/**
+ * Ce que l'éditeur MCD est en train de travailler : un document
+ * personnel, ou la base ou le corrigé d'un devoir. La cible décide du
+ * titre affiché, du renommage et de la page de retour.
+ */
+type EditorTarget =
+  | { kind: 'document' }
+  | {
+      kind: 'assignment'
+      classroomId: string
+      assignmentId: string
+      field: AssignmentField
+      title: string
+    }
+
+/** Modèle ouvert, sa sauvegarde automatique, et l'espace d'où il vient. */
 interface OpenedSession {
   spaceKey: string
   document: OpenedDocument
   saver: DocumentSaver
   cloud: boolean
+  target: EditorTarget
+}
+
+const FIELD_LABEL: Record<AssignmentField, string> = {
+  base: 'Base du devoir',
+  solution: 'Corrigé du devoir',
 }
 
 /**
@@ -115,7 +141,7 @@ export function App() {
       setHomeAnnouncement(null)
       setOpened((previous) => {
         previous?.saver.dispose()
-        return { spaceKey, document: result.value.document, saver, cloud }
+        return { spaceKey, document: result.value.document, saver, cloud, target: { kind: 'document' } }
       })
       return null
     },
@@ -152,6 +178,53 @@ export function App() {
     [createAndOpen],
   )
 
+  /**
+   * Ouvre l'outil MCD sur la base ou le corrigé d'un devoir. Le contenu
+   * vient du serveur ; un contenu absent ou illisible donne un modèle
+   * vide, pour que le prof puisse commencer.
+   */
+  const openAssignmentModel = useCallback(
+    (assignment: { id: string; classroomId: string; title: string }, field: AssignmentField, content: string | null) => {
+      if (account.kind !== 'cloud') return
+      const parsed = content === null ? null : parseModelFile(content)
+      const document: OpenedDocument = {
+        meta: {
+          id: `${assignment.id}:${field}`,
+          name: assignment.title,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        state: parsed && parsed.ok ? parsed.state : emptyEditorState(),
+        mpdSettings: (parsed && parsed.ok ? parsed.mpdSettings : null) ?? DEFAULT_MPD_SETTINGS,
+      }
+      const saver = createAssignmentSaver({
+        client: account.client,
+        assignmentId: assignment.id,
+        field,
+        title: assignment.title,
+        initialContent: content,
+      })
+      setHomeAnnouncement(null)
+      setOpened((previous) => {
+        previous?.saver.dispose()
+        return {
+          spaceKey,
+          document,
+          saver,
+          cloud,
+          target: {
+            kind: 'assignment',
+            classroomId: assignment.classroomId,
+            assignmentId: assignment.id,
+            field,
+            title: assignment.title,
+          },
+        }
+      })
+    },
+    [account, spaceKey, cloud],
+  )
+
   const rename = useCallback(
     async (name: string): Promise<boolean> => {
       if (!current) return false
@@ -175,7 +248,16 @@ export function App() {
       current.saver.dispose()
     }
     setOpened(null)
-  }, [current])
+    // Base ou corrigé : on revient au devoir, pas à l'accueil.
+    if (current?.target.kind === 'assignment') {
+      navigate('classes', {
+        id: current.target.classroomId,
+        initial: null,
+        message: null,
+        assignmentId: current.target.assignmentId,
+      })
+    }
+  }, [current, navigate])
 
   /* ---------------- Proposition d'import des documents locaux ---------------- */
 
@@ -293,7 +375,13 @@ export function App() {
               <StudentHome key={pageKey} {...homeProps} />
             ))}
           {page === 'classes' && (
-            <ClassesPage key={pageKey} user={session.user} client={account.client} opening={classroomOpening} />
+            <ClassesPage
+              key={pageKey}
+              user={session.user}
+              client={account.client}
+              opening={classroomOpening}
+              onEditAssignmentModel={openAssignmentModel}
+            />
           )}
           {page === 'work' && (
             <WorkPage
@@ -352,10 +440,12 @@ export function App() {
         openedDocument={current.document}
         saver={current.saver}
         cloud={current.cloud}
-        onRename={rename}
+        onRename={current.target.kind === 'document' ? rename : undefined}
         onBackToDocuments={() => void leaveEditor()}
-        onNewDocument={() => void newDocument()}
-        onImportFile={importFile}
+        contentLabel={current.target.kind === 'assignment' ? FIELD_LABEL[current.target.field] : undefined}
+        backLabel={current.target.kind === 'assignment' ? 'Retour au devoir' : undefined}
+        onNewDocument={current.target.kind === 'document' ? () => void newDocument() : undefined}
+        onImportFile={current.target.kind === 'document' ? importFile : undefined}
       />
       {importDialog}
     </>

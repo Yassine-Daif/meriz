@@ -108,7 +108,7 @@ function fail<T>(error: ApiError): Outcome<T> {
 }
 
 /** Petit observable de statut, pour l'indicateur de sauvegarde. */
-function createStatusBox(initial: SaveStatus) {
+export function createStatusBox(initial: SaveStatus) {
   let status = initial
   const listeners = new Set<(status: SaveStatus) => void>()
   return {

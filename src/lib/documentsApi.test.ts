@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ApiClient, ApiResult, HttpMethod } from './apiClient'
+import { apiError } from './apiClient'
 import {
   createCloudDocument,
   deleteCloudDocument,
@@ -22,7 +23,9 @@ function scriptedClient(responses: ApiResult[]) {
       sent.push({ method, path, body })
       return responses.shift() ?? { ok: true, status: 200, data: [], body: { data: [] } }
     },
-  }
+    // Le binaire n'est pas simulé ici : aucun test ne lit d'image.
+    requestBlob: async () => ({ ok: false, error: apiError('unexpected', null, 'Binaire non simulé.') }),
+    }
   return { client, sent }
 }
 

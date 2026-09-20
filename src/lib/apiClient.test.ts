@@ -195,3 +195,50 @@ describe('apiClient, erreurs', () => {
     expect(result.ok ? null : result.error.kind).toBe('unexpected')
   })
 })
+
+describe('apiClient, multipart et binaire', () => {
+  it('envoie un FormData tel quel, sans Content-Type', async () => {
+    const { impl, calls } = fakeFetch(() => jsonResponse(200, { data: { id: '01JB' } }))
+    const client = createApiClient({ baseUrl: BASE, getToken: () => 'jeton', fetchImpl: impl })
+    const form = new FormData()
+    form.append('image', new File(['binaire'], 'schema.png', { type: 'image/png' }))
+
+    await client.request('POST', '/assignments/01JB/image', form)
+
+    expect(calls[0]?.init.body).toBe(form)
+    expect(headersOf(calls[0])['Content-Type']).toBeUndefined()
+    expect(headersOf(calls[0]).Authorization).toBe('Bearer jeton')
+  })
+
+  it('lit une réponse binaire', async () => {
+    const { impl, calls } = fakeFetch(
+      () => new Response(new Blob(['image'], { type: 'image/png' }), { status: 200 }),
+    )
+    const client = createApiClient({ baseUrl: BASE, getToken: () => 'jeton', fetchImpl: impl })
+
+    const outcome = await client.requestBlob('/assignments/01JB/image')
+
+    expect(calls[0]?.url).toBe('http://127.0.0.1:8000/api/assignments/01JB/image')
+    expect(outcome.ok && outcome.value.type).toBe('image/png')
+    expect(outcome.ok && (await outcome.value.text())).toBe('image')
+  })
+
+  it('traduit une erreur reçue à la place du binaire', async () => {
+    const { impl } = fakeFetch(() => jsonResponse(404, { message: 'Ressource introuvable.' }))
+    const client = createApiClient({ baseUrl: BASE, getToken: () => 'jeton', fetchImpl: impl })
+
+    const outcome = await client.requestBlob('/assignments/01JB/image')
+
+    expect(outcome.ok ? null : outcome.error.kind).toBe('not_found')
+  })
+
+  it('ne lit aucun binaire quand le serveur n’est pas configuré', async () => {
+    const { impl, calls } = fakeFetch(() => jsonResponse(200, {}))
+    const client = createApiClient({ baseUrl: null, getToken: () => null, fetchImpl: impl })
+
+    const outcome = await client.requestBlob('/assignments/01JB/image')
+
+    expect(calls).toHaveLength(0)
+    expect(outcome.ok ? null : outcome.error.kind).toBe('not_configured')
+  })
+})

@@ -33,11 +33,19 @@ interface EditorProps {
   saver: DocumentSaver
   /** Espace cloud : l'état d'envoi est affiché dans la barre. */
   cloud: boolean
-  /** Renomme le document. false si le serveur ou le stockage a refusé. */
-  onRename: (name: string) => Promise<boolean>
+  /**
+   * Renomme le document. false si le serveur ou le stockage a refusé.
+   * Absent pour la base ou le corrigé d'un devoir : leur titre vient du devoir.
+   */
+  onRename?: (name: string) => Promise<boolean>
   onBackToDocuments: () => void
-  onNewDocument: () => void
-  onImportFile: (file: File) => Promise<string | null>
+  /** Nature du contenu ouvert (ex. « Base du devoir »). */
+  contentLabel?: string
+  /** Libellé du bouton de retour (ex. « Retour au devoir »). */
+  backLabel?: string
+  /** Actions documents : absentes hors de l'espace documents. */
+  onNewDocument?: () => void
+  onImportFile?: (file: File) => Promise<string | null>
 }
 
 /**
@@ -50,6 +58,8 @@ export function Editor({
   cloud,
   onRename,
   onBackToDocuments,
+  contentLabel,
+  backLabel,
   onNewDocument,
   onImportFile,
 }: EditorProps) {
@@ -179,7 +189,6 @@ export function Editor({
     <div className="flex h-dvh flex-col bg-shell font-sans text-ink">
       <SkipLink />
 
-
       <ReactFlowProvider>
         <TopBar
           state={state}
@@ -187,6 +196,8 @@ export function Editor({
           documentName={openedDocument.meta.name}
           onRename={onRename}
           onBackToDocuments={onBackToDocuments}
+          contentLabel={contentLabel}
+          backLabel={backLabel}
           onNewDocument={onNewDocument}
           onImportFile={onImportFile}
           syncStatus={syncStatus}

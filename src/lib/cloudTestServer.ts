@@ -130,6 +130,8 @@ export function createCloudTestServer() {
         }
         return handle(userId, method, path, body)
       },
+      // Ce faux serveur ne sert que des documents : aucun binaire.
+      requestBlob: async () => ({ ok: false, error: apiError('unexpected', null, 'Binaire non simulé.') }),
     }),
     documentsOf: (userId: string) => [...documents.values()].filter((d) => d.ownerId === userId),
   }

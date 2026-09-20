@@ -46,7 +46,13 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 export interface ApiClient {
   readonly isConfigured: boolean
+  /**
+   * Appel JSON. Un FormData part tel quel, en multipart : le navigateur
+   * écrit lui-même la frontière, donc on ne pose pas Content-Type.
+   */
   request: (method: HttpMethod, path: string, body?: unknown) => Promise<ApiResult>
+  /** Lecture d'une réponse binaire (l'image d'un devoir, servie par jeton). */
+  requestBlob: (path: string) => Promise<Outcome<Blob>>
 }
 
 type FetchLike = (input: string, init: RequestInit) => Promise<Response>
@@ -111,13 +117,23 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
   const fetchImpl: FetchLike = options.fetchImpl ?? ((input, init) => fetch(input, init))
   const timeoutMs = options.timeoutMs ?? 15_000
 
-  const request: ApiClient['request'] = async (method, path, body) => {
+  /**
+   * Envoi commun : adresse, jeton, délai maximal. Le corps de la réponse
+   * est lu ici, tant que le délai court, en texte ou en binaire.
+   */
+  const send = async (
+    method: HttpMethod,
+    path: string,
+    body: unknown,
+    want: 'text' | 'blob',
+  ): Promise<{ ok: true; response: Response; text: string; blob: Blob | null } | { ok: false; error: ApiError }> => {
     if (options.baseUrl === null) {
       return { ok: false, error: apiError('not_configured', null, MESSAGES.notConfigured) }
     }
 
+    const multipart = typeof FormData !== 'undefined' && body instanceof FormData
     const headers: Record<string, string> = { Accept: 'application/json' }
-    if (body !== undefined) {
+    if (body !== undefined && !multipart) {
       headers['Content-Type'] = 'application/json'
     }
     const token = options.getToken()
@@ -128,23 +144,82 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     // Délai maximal : au-delà, la requête est abandonnée comme un échec réseau.
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
-    let response: Response
-    let text: string
     try {
-      response = await fetchImpl(`${options.baseUrl}/api${path}`, {
+      const response = await fetchImpl(`${options.baseUrl}/api${path}`, {
         method,
         headers,
-        body: body === undefined ? undefined : JSON.stringify(body),
+        body: body === undefined ? undefined : multipart ? (body as FormData) : JSON.stringify(body),
         signal: controller.signal,
       })
-      text = await response.text()
+      // Une erreur se lit toujours en texte : le serveur répond en JSON.
+      const binary = want === 'blob' && response.ok
+      const blob = binary ? await response.blob() : null
+      const text = binary ? '' : await response.text()
+      return { ok: true, response, text, blob }
     } catch {
       return { ok: false, error: apiError('network', null, MESSAGES.network) }
     } finally {
       clearTimeout(timer)
     }
+  }
 
+  /** Traduit une réponse en échec. Le corps sert à lire le message du serveur. */
+  const failure = (response: Response, text: string): ApiError => {
     const status = response.status
+    let payload: unknown = undefined
+    if (text.trim() !== '') {
+      try {
+        payload = JSON.parse(text)
+      } catch {
+        // Corps illisible : le statut suffit à choisir le message.
+        payload = undefined
+      }
+    }
+    const serverMessage =
+      isRecord(payload) && typeof payload.message === 'string' ? payload.message : null
+
+    if (status === 401) {
+      if (options.getToken()) {
+        options.onUnauthorized?.()
+      }
+      return apiError('unauthorized', status, MESSAGES.unauthorized)
+    }
+    if (status === 403) {
+      return apiError('forbidden', status, serverMessage ?? MESSAGES.forbidden)
+    }
+    if (status === 404) {
+      // Le serveur ne distingue pas « inexistant » de « appartient à un autre ».
+      return apiError('not_found', status, MESSAGES.notFound)
+    }
+    if (status === 422) {
+      const fieldErrors = readFieldErrors(payload)
+      const message =
+        Object.keys(fieldErrors).length > 0
+          ? MESSAGES.validation
+          : serverMessage
+            ? translateValidationMessage('', serverMessage)
+            : MESSAGES.validation
+      return { kind: 'validation', status, message, fieldErrors }
+    }
+    if (status === 429) {
+      const retryHeader = Number.parseInt(response.headers.get('Retry-After') ?? '', 10)
+      const retryAfter = Number.isFinite(retryHeader) ? retryHeader : undefined
+      return { ...apiError('rate_limited', status, rateLimitMessage(retryAfter)), retryAfter }
+    }
+    if (status >= 500) {
+      return apiError('server', status, MESSAGES.server)
+    }
+    return unexpectedResponse(status)
+  }
+
+  const request: ApiClient['request'] = async (method, path, body) => {
+    const sent = await send(method, path, body, 'text')
+    if (!sent.ok) {
+      return sent
+    }
+    const { response, text } = sent
+    const status = response.status
+
     let payload: unknown = undefined
     if (text.trim() !== '') {
       try {
@@ -161,46 +236,18 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
       const data = isRecord(payload) && 'data' in payload ? payload.data : payload
       return { ok: true, status, data, body: payload }
     }
-
-    const serverMessage =
-      isRecord(payload) && typeof payload.message === 'string' ? payload.message : null
-
-    if (status === 401) {
-      if (token) {
-        options.onUnauthorized?.()
-      }
-      return { ok: false, error: apiError('unauthorized', status, MESSAGES.unauthorized) }
-    }
-    if (status === 403) {
-      return { ok: false, error: apiError('forbidden', status, serverMessage ?? MESSAGES.forbidden) }
-    }
-    if (status === 404) {
-      // Le serveur ne distingue pas « inexistant » de « appartient à un autre ».
-      return { ok: false, error: apiError('not_found', status, MESSAGES.notFound) }
-    }
-    if (status === 422) {
-      const fieldErrors = readFieldErrors(payload)
-      const message =
-        Object.keys(fieldErrors).length > 0
-          ? MESSAGES.validation
-          : serverMessage
-            ? translateValidationMessage('', serverMessage)
-            : MESSAGES.validation
-      return { ok: false, error: { kind: 'validation', status, message, fieldErrors } }
-    }
-    if (status === 429) {
-      const retryHeader = Number.parseInt(response.headers.get('Retry-After') ?? '', 10)
-      const retryAfter = Number.isFinite(retryHeader) ? retryHeader : undefined
-      return {
-        ok: false,
-        error: { ...apiError('rate_limited', status, rateLimitMessage(retryAfter)), retryAfter },
-      }
-    }
-    if (status >= 500) {
-      return { ok: false, error: apiError('server', status, MESSAGES.server) }
-    }
-    return { ok: false, error: unexpectedResponse(status) }
+    return { ok: false, error: failure(response, text) }
   }
 
-  return { isConfigured: options.baseUrl !== null, request }
+  const requestBlob: ApiClient['requestBlob'] = async (path) => {
+    const sent = await send('GET', path, undefined, 'blob')
+    if (!sent.ok) {
+      return sent
+    }
+    if (!sent.response.ok || sent.blob === null) {
+      return { ok: false, error: failure(sent.response, sent.text) }
+    }
+    return { ok: true, value: sent.blob }
+  }
+  return { isConfigured: options.baseUrl !== null, request, requestBlob }
 }

@@ -4,6 +4,8 @@ import type { ChangeEvent, ReactNode } from 'react'
 interface ImportFileButtonProps {
   children: ReactNode
   className: string
+  /** Types acceptés. Par défaut, un modèle Meriz. */
+  accept?: string
   onFile: (file: File) => void
 }
 
@@ -12,7 +14,7 @@ interface ImportFileButtonProps {
  * modèle Meriz. L'input natif reste caché : seul le bouton est
  * focalisable, et le même fichier peut être rouvert.
  */
-export function ImportFileButton({ children, className, onFile }: ImportFileButtonProps) {
+export function ImportFileButton({ children, className, accept = '.json,application/json', onFile }: ImportFileButtonProps) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -32,7 +34,7 @@ export function ImportFileButton({ children, className, onFile }: ImportFileButt
       <input
         ref={inputRef}
         type="file"
-        accept=".json,application/json"
+        accept={accept}
         className="hidden"
         aria-hidden="true"
         tabIndex={-1}
