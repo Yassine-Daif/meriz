@@ -42,7 +42,7 @@ export function LegForm({ mcd, association, leg, dispatch }: LegFormProps) {
             return (
               <label
                 key={label}
-                className={`flex-1 cursor-pointer rounded-lg border px-2 py-1 text-center text-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-focus ${
+                className={`relative flex-1 cursor-pointer rounded-lg border px-2 py-1 text-center text-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-focus ${
                   checked ? 'border-accent bg-accent-soft font-semibold' : 'border-line-strong'
                 }`}
               >

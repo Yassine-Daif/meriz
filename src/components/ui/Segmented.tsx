@@ -40,7 +40,7 @@ export function Segmented<T extends string>({
           return (
             <label
               key={option.value}
-              className={`cursor-pointer rounded-full transition-colors duration-150 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${pad} ${
+              className={`relative cursor-pointer rounded-full transition-colors duration-150 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${pad} ${
                 checked
                   ? 'bg-accent font-semibold text-on-accent'
                   : 'font-medium text-ink-soft hover:bg-surface-soft hover:text-ink'

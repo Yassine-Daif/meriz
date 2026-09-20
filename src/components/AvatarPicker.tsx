@@ -51,7 +51,7 @@ export function AvatarPicker({ person, onChange, error }: AvatarPickerProps) {
                 <label
                   key={pair.label}
                   title={pair.label}
-                  className={`cursor-pointer rounded-full p-0.5 transition-shadow duration-150 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${
+                  className={`relative cursor-pointer rounded-full p-0.5 transition-shadow duration-150 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${
                     checked ? 'ring-2 ring-mark' : 'ring-1 ring-line hover:ring-line-strong'
                   }`}
                 >

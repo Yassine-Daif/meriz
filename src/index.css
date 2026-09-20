@@ -162,6 +162,18 @@
 }
 
 @layer base {
+  /*
+   * Chaque page gère son propre défilement (h-dvh puis overflow-y-auto).
+   * Le document, lui, ne défile jamais : sans ce verrou, un élément en
+   * position absolue (les textes réservés aux lecteurs d'écran) le
+   * rend plus haut que la fenêtre et découvre une bande vide.
+   */
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
   html {
     font-family: var(--font-sans);
     background: var(--c-shell);
