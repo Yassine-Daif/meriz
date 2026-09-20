@@ -27,9 +27,24 @@ interface TeacherHomeProps {
   announcement: string | null
 }
 
+/** Un chiffre du bandeau : le nombre, puis ce qu'il compte, en toutes lettres. */
+function Stat({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="rounded-card border border-line bg-surface p-5 shadow-soft">
+      <p className="text-3xl font-semibold tracking-tight text-ink">{value}</p>
+      <p className="mt-0.5 text-sm text-ink-soft">{label}</p>
+    </div>
+  )
+}
+
+function plural(count: number, one: string, many: string): string {
+  return count > 1 ? many : one
+}
+
 /**
- * Tableau de bord prof : créer une classe en premier, partager les codes,
- * reprendre ses documents. Devoirs, cours et corrections arrivent plus tard.
+ * Tableau de bord prof : ses classes et leurs codes en premier, la
+ * création d'une classe à portée de main, ses documents, puis ce qui
+ * arrive (devoirs, cours, corrections).
  */
 export function TeacherHome({
   user,
@@ -44,6 +59,14 @@ export function TeacherHome({
   const classrooms = useClassrooms(client)
   const [actionError, setActionError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
+  const [documentCount, setDocumentCount] = useState<number | null>(null)
+
+  const list = classrooms.classrooms
+  const mine = list?.filter((classroom) => classroom.myRole === 'teacher') ?? []
+  // Effectifs renvoyés par le serveur pour mes classes ; une classe sans
+  // effectif connu ne compte pas.
+  const studentCount = mine.reduce((total, classroom) => total + (classroom.membersCount ?? 0), 0)
+  const hasClassrooms = (list?.length ?? 0) > 0
 
   const createDocument = async () => {
     setActionError(null)
@@ -59,6 +82,53 @@ export function TeacherHome({
       setStatus('Copie impossible dans ce navigateur : recopiez le code affiché.')
     }
   }
+
+  const createSection = (
+    <section
+      aria-labelledby="creer-titre"
+      className="grid gap-6 rounded-panel bg-accent-soft p-6 sm:p-8 md:grid-cols-2 md:items-center"
+    >
+      <div>
+        <h2 id="creer-titre" className="text-2xl font-semibold tracking-tight text-ink">
+          Créer une classe
+        </h2>
+        <p className="mt-2 text-base leading-7 text-ink">
+          Donnez-lui un nom : Meriz lui attribue un code de 8 caractères. Vos élèves le saisissent pour vous rejoindre.
+        </p>
+      </div>
+      <div className="rounded-card bg-surface p-5 shadow-soft">
+        <CreateClassForm
+          client={client}
+          onCreated={(classroom) =>
+            onOpenClassroom({
+              id: classroom.id,
+              initial: classroom,
+              message: `Classe « ${classroom.name} » créée. Partagez son code à vos élèves.`,
+            })
+          }
+        />
+      </div>
+    </section>
+  )
+
+  const classesSection = (
+    <section aria-labelledby="classes-titre">
+      <h2 id="classes-titre" className="text-lg font-semibold tracking-tight text-ink">
+        Mes classes
+      </h2>
+      <p role="status" aria-live="polite" className="mt-1 min-h-5 text-sm text-ink-soft">
+        {status}
+      </p>
+      <div className="mt-2">
+        <ClassroomGrid
+          state={classrooms}
+          onOpen={(classroom) => onOpenClassroom({ id: classroom.id, initial: null, message: null })}
+          onCopyCode={(code) => void copyCode(code)}
+          emptyText="Aucune classe pour l’instant : créez la première avec le formulaire ci-dessus."
+        />
+      </div>
+    </section>
+  )
 
   return (
     <PageShell
@@ -80,56 +150,31 @@ export function TeacherHome({
         </Notice>
       )}
 
-      <section
-        aria-labelledby="creer-titre"
-        className="grid gap-6 rounded-panel bg-accent-soft p-6 sm:p-8 md:grid-cols-2 md:items-center"
-      >
-        <div>
-          <h2 id="creer-titre" className="text-2xl font-semibold tracking-tight text-ink">
-            Créer une classe
-          </h2>
-          <p className="mt-2 text-base leading-7 text-ink">
-            Donnez-lui un nom : Meriz lui attribue un code de 8 caractères. Vos élèves le saisissent pour vous
-            rejoindre.
-          </p>
-        </div>
-        <div className="rounded-card bg-surface p-5 shadow-soft">
-          <CreateClassForm
-            client={client}
-            onCreated={(classroom) =>
-              onOpenClassroom({
-                id: classroom.id,
-                initial: classroom,
-                message: `Classe « ${classroom.name} » créée. Partagez son code à vos élèves.`,
-              })
-            }
-          />
-        </div>
+      <section aria-label="Vos chiffres" className="grid gap-3 sm:grid-cols-3">
+        <Stat
+          value={list === null ? '…' : String(mine.length)}
+          label={plural(mine.length, 'classe dont vous êtes le prof', 'classes dont vous êtes le prof')}
+        />
+        <Stat
+          value={list === null ? '…' : String(studentCount)}
+          label={plural(studentCount, 'élève inscrit', 'élèves inscrits')}
+        />
+        <Stat
+          value={documentCount === null ? '…' : String(documentCount)}
+          label={plural(documentCount ?? 0, 'document personnel', 'documents personnels')}
+        />
       </section>
 
-      <section aria-labelledby="classes-titre" className="mt-10">
-        <h2 id="classes-titre" className="text-lg font-semibold tracking-tight text-ink">
-          Mes classes
-        </h2>
-        <p role="status" aria-live="polite" className="mt-1 min-h-5 text-sm text-ink-soft">
-          {status}
-        </p>
-        <div className="mt-2">
-          <ClassroomGrid
-            state={classrooms}
-            onOpen={(classroom) => onOpenClassroom({ id: classroom.id, initial: null, message: null })}
-            onCopyCode={(code) => void copyCode(code)}
-            emptyText="Aucune classe pour l’instant : créez la première ci-dessus."
-          />
-        </div>
-      </section>
-
+      {/* Les classes passent devant dès qu'il y en a ; sinon la création ouvre la marche. */}
+      <div className="mt-10">{hasClassrooms ? classesSection : createSection}</div>
+      <div className="mt-10">{hasClassrooms ? createSection : classesSection}</div>
       <div className="mt-10">
         <RecentDocuments
           repository={repository}
           onOpenDocument={onOpenDocument}
           onNewDocument={onNewDocument}
           onShowAll={onShowWork}
+          onLoaded={(documents) => setDocumentCount(documents.length)}
         />
       </div>
 

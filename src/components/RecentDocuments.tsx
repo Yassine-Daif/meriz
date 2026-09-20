@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { DocumentMeta } from '../model/document'
 import type { ApiError } from '../lib/apiClient'
 import type { DocumentRepository } from '../lib/documentRepository'
@@ -12,6 +12,8 @@ interface RecentDocumentsProps {
   onNewDocument: () => Promise<ApiError | null>
   /** Vers « Mon travail », la liste complète. */
   onShowAll: () => void
+  /** Documents chargés : évite un second appel à qui veut les compter. */
+  onLoaded?: (documents: DocumentMeta[]) => void
   limit?: number
 }
 
@@ -23,11 +25,25 @@ function mostRecent(documents: DocumentMeta[], limit: number): DocumentMeta[] {
  * Les derniers documents modifiés, pour reprendre le travail en un
  * clic. La gestion complète (renommer, supprimer…) est dans Mon travail.
  */
-export function RecentDocuments({ repository, onOpenDocument, onNewDocument, onShowAll, limit = 4 }: RecentDocumentsProps) {
+export function RecentDocuments({
+  repository,
+  onOpenDocument,
+  onNewDocument,
+  onShowAll,
+  onLoaded,
+  limit = 4,
+}: RecentDocumentsProps) {
   const [documents, setDocuments] = useState<DocumentMeta[]>(() => mostRecent(repository.cachedList(), limit))
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  // Le rappel du parent peut changer à chaque rendu : on garde le dernier
+  // sans relancer le chargement.
+  const onLoadedRef = useRef(onLoaded)
+  useEffect(() => {
+    onLoadedRef.current = onLoaded
+  }, [onLoaded])
 
   useEffect(() => {
     let active = true
@@ -36,6 +52,7 @@ export function RecentDocuments({ repository, onOpenDocument, onNewDocument, onS
       setLoaded(true)
       if (result.ok) {
         setDocuments(mostRecent(result.value.documents, limit))
+        onLoadedRef.current?.(result.value.documents)
       }
     })
     return () => {

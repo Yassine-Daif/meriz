@@ -51,7 +51,7 @@ export function AccountStatus({
         <>
           <Avatar person={session.user} size="sm" />
           <span className="min-w-0 truncate text-sm text-ink-soft" title={session.user.email}>
-            Connecté : <span className="font-semibold text-ink">{displayName(session.user)}</span>
+            <span className="font-semibold text-ink">{displayName(session.user)}</span>
             {compact ? (
               <span className="sr-only"> ({session.user.email})</span>
             ) : (
