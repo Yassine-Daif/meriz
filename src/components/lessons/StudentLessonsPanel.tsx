@@ -6,6 +6,7 @@ import type { Lesson, LessonSummary } from '../../lib/lessonsApi'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { Notice } from '../ui/Notice'
+import { UpdatedAt } from '../ui/UpdatedAt'
 import { LessonPage } from './LessonPage'
 
 interface StudentLessonsPanelProps {
@@ -68,6 +69,7 @@ export function StudentLessonsPanel({ client, classroomId }: StudentLessonsPanel
         </Button>
         <p className="text-xs font-semibold tracking-wide text-ink-soft uppercase">Cours</p>
         <h3 className="text-xl font-semibold tracking-tight text-ink">{lesson.title}</h3>
+        <UpdatedAt iso={lesson.updatedAt} className="mt-1 block text-sm text-ink-soft" />
         <div className="mt-5">
           <LessonPage client={client} lessonId={lesson.id} blocks={parseBlocks(lesson.blocks)} />
         </div>
@@ -124,6 +126,7 @@ export function StudentLessonsPanel({ client, classroomId }: StudentLessonsPanel
                     {lesson.mediaCount > 0 && <Badge tone="sky">{mediaCountLabel(lesson.mediaCount)}</Badge>}
                   </span>
                 </span>
+                <UpdatedAt iso={lesson.updatedAt} className="text-xs text-ink-soft" />
               </button>
             </li>
           ))}
