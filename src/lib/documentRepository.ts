@@ -127,6 +127,24 @@ export function createStatusBox(initial: SaveStatus) {
   }
 }
 
+/**
+ * Sauvegarde qui n'enregistre rien, pour un contenu ouvert en lecture
+ * seule (le rendu d'un élève, un corrigé libéré). L'éditeur garde la
+ * même interface, aucun appel ne part.
+ */
+export function createInertSaver(): DocumentSaver {
+  const box = createStatusBox({ kind: 'saved' })
+  return {
+    save: () => {},
+    flush: async () => true,
+    retry: () => {},
+    rename: () => {},
+    getStatus: box.get,
+    subscribe: box.subscribe,
+    dispose: box.clear,
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Espace local, sans compte                                           */
 

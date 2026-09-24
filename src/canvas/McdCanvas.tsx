@@ -30,6 +30,11 @@ interface McdCanvasProps {
   onSelectionChange: Dispatch<SetStateAction<CanvasSelection>>
   /** Vue MCD affichée ou non : masquée, ses raccourcis Suppr sont coupés. */
   isActive: boolean
+  /**
+   * Consultation seule : on parcourt, on zoome, on sélectionne pour lire,
+   * mais rien ne se déplace, ne se relie ni ne se supprime.
+   */
+  readOnly?: boolean
 }
 
 /**
@@ -46,6 +51,7 @@ export function McdCanvas({
   selection,
   onSelectionChange,
   isActive,
+  readOnly = false,
 }: McdCanvasProps) {
   const theme = useTheme()
   const [nodes, setNodes] = useState<McdFlowNode[]>([])
@@ -211,11 +217,13 @@ export function McdCanvas({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeDragStop={onNodeDragStop}
-        onConnect={onConnect}
+        onConnect={readOnly ? undefined : onConnect}
         onNodesDelete={onNodesDelete}
         onEdgesDelete={onEdgesDelete}
         onBeforeDelete={onBeforeDelete}
-        deleteKeyCode={isActive ? ['Backspace', 'Delete'] : null}
+        nodesDraggable={!readOnly}
+        nodesConnectable={!readOnly}
+        deleteKeyCode={isActive && !readOnly ? ['Backspace', 'Delete'] : null}
         edgesFocusable
         fitView
         fitViewOptions={{ padding: 0.2, maxZoom: 1 }}

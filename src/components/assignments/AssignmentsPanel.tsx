@@ -6,7 +6,8 @@ import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { Notice } from '../ui/Notice'
 import { AssignmentEditor } from './AssignmentEditor'
-import type { EditAssignmentModel } from './types'
+import { SubmissionsPanel } from './SubmissionsPanel'
+import type { EditAssignmentModel, OpenReadOnlyModel } from './types'
 
 interface AssignmentsPanelProps {
   client: ApiClient
@@ -14,11 +15,18 @@ interface AssignmentsPanelProps {
   classroomName: string
   /** Devoir à rouvrir d'emblée (retour de l'outil MCD). */
   openAssignmentId: string | null
+  /** Rendu à rouvrir dans ce devoir (retour d'une consultation). */
+  openSubmissionId: string | null
   onEditAssignmentModel: EditAssignmentModel
+  onOpenReadOnlyModel: OpenReadOnlyModel
 }
 
-/** Ce que l'on regarde : la liste, un devoir existant, ou un nouveau. */
-type View = { kind: 'list' } | { kind: 'edit'; assignment: Assignment } | { kind: 'create' }
+/** Ce que l'on regarde : la liste, un devoir, un nouveau, ou ses rendus. */
+type View =
+  | { kind: 'list' }
+  | { kind: 'edit'; assignment: Assignment }
+  | { kind: 'create' }
+  | { kind: 'submissions'; assignment: Assignment }
 
 /** État du devoir, écrit en toutes lettres et non porté par la seule couleur. */
 function StateBadges({ assignment }: { assignment: AssignmentSummary }) {
@@ -47,7 +55,9 @@ export function AssignmentsPanel({
   classroomId,
   classroomName,
   openAssignmentId,
+  openSubmissionId,
   onEditAssignmentModel,
+  onOpenReadOnlyModel,
 }: AssignmentsPanelProps) {
   const [assignments, setAssignments] = useState<AssignmentSummary[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -70,13 +80,17 @@ export function AssignmentsPanel({
   }, [load])
 
   const open = useCallback(
-    async (id: string) => {
+    async (id: string, showSubmissions = false) => {
       setOpening(id)
       const result = await getAssignment(client, id)
       setOpening(null)
       if (result.ok) {
         setStatus(null)
-        setView({ kind: 'edit', assignment: result.value })
+        setView(
+          showSubmissions
+            ? { kind: 'submissions', assignment: result.value }
+            : { kind: 'edit', assignment: result.value },
+        )
       } else {
         setStatus(result.error.message)
         void load()
@@ -85,17 +99,34 @@ export function AssignmentsPanel({
     [client, load],
   )
 
-  // Retour de l'outil MCD : le devoir travaillé se rouvre tout seul.
+  // Retour de l'outil MCD : le devoir travaillé se rouvre tout seul, sur
+  // ses rendus quand on revenait d'un rendu consulté.
   useEffect(() => {
     if (openAssignmentId) {
-      void open(openAssignmentId)
+      void open(openAssignmentId, openSubmissionId !== null)
     }
-  }, [openAssignmentId, open])
+  }, [openAssignmentId, openSubmissionId, open])
 
   const backToList = (message: string | null) => {
     setView({ kind: 'list' })
     setStatus(message)
     void load()
+  }
+
+  if (view.kind === 'submissions') {
+    const assignment = view.assignment
+    return (
+      <SubmissionsPanel
+        client={client}
+        assignment={assignment}
+        openSubmissionId={openSubmissionId}
+        onBack={(message) => {
+          setView({ kind: 'edit', assignment })
+          setStatus(message)
+        }}
+        onOpenReadOnlyModel={onOpenReadOnlyModel}
+      />
+    )
   }
 
   if (view.kind !== 'list') {
@@ -111,6 +142,11 @@ export function AssignmentsPanel({
           void load()
         }}
         onEditModel={onEditAssignmentModel}
+        onShowSubmissions={
+          view.kind === 'edit'
+            ? () => setView({ kind: 'submissions', assignment: view.assignment })
+            : undefined
+        }
       />
     )
   }

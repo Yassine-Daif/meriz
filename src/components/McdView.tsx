@@ -29,6 +29,8 @@ interface McdViewProps {
    * position du canvas survivent), simplement masquée.
    */
   isActive: boolean
+  /** Consultation seule : le modèle se parcourt, il ne se modifie pas. */
+  readOnly?: boolean
 }
 
 /**
@@ -44,6 +46,7 @@ export function McdView({
   onSelectElement,
   onGenerate,
   isActive,
+  readOnly = false,
 }: McdViewProps) {
   const [panelWidth, setPanelWidth] = useState(300)
 
@@ -79,7 +82,7 @@ export function McdView({
       aria-label="Vue MCD"
       className={isActive ? 'flex min-h-0 flex-1 flex-col' : 'hidden'}
     >
-      <McdToolbar dispatch={dispatch} problems={problems} onGenerate={onGenerate} />
+      <McdToolbar dispatch={dispatch} problems={problems} onGenerate={onGenerate} readOnly={readOnly} />
       <div className="flex min-h-0 flex-1">
         <McdCanvas
           state={state}
@@ -87,6 +90,7 @@ export function McdView({
           selection={selection}
           onSelectionChange={onSelectionChange}
           isActive={isActive}
+          readOnly={readOnly}
         />
         <div
           role="separator"
@@ -104,7 +108,7 @@ export function McdView({
           style={{ width: panelWidth, maxWidth: '60vw' }}
           className="flex shrink-0 flex-col overflow-y-auto bg-surface"
         >
-          <Inspector mcd={state.mcd} selection={selection} dispatch={dispatch} />
+          <Inspector mcd={state.mcd} selection={selection} dispatch={dispatch} readOnly={readOnly} />
           <ProblemsPanel problems={problems} mcd={state.mcd} onSelectElement={onSelectElement} />
         </div>
       </div>

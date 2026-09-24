@@ -11,25 +11,29 @@ interface InspectorProps {
   mcd: Mcd
   selection: CanvasSelection
   dispatch: Dispatch<McdAction>
+  /** Consultation seule : les champs s'affichent, désactivés. */
+  readOnly?: boolean
 }
 
 /**
  * Panneau d'inspection : édite l'élément sélectionné dans le canvas
  * quand la sélection compte exactement un élément.
  */
-export function Inspector({ mcd, selection, dispatch }: InspectorProps) {
+export function Inspector({ mcd, selection, dispatch, readOnly = false }: InspectorProps) {
   const selectedCount = selection.nodeIds.size + selection.edgeIds.size
 
   let content: ReactNode = (
     <p className="text-sm text-ink-soft">
-      Sélectionnez une entité, une association ou une patte pour l'éditer.
+      Sélectionnez une entité, une association ou une patte pour {readOnly ? 'voir son détail' : "l'éditer"}.
     </p>
   )
   if (selectedCount > 1) {
     content = (
       <p className="text-sm text-ink-soft">
-        {selectedCount} éléments sélectionnés. Déplacez-les ensemble, ou Suppr pour tout
-        supprimer. Sélectionnez un seul élément pour l'éditer.
+        {selectedCount} éléments sélectionnés.{' '}
+        {readOnly
+          ? "Sélectionnez un seul élément pour voir son détail."
+          : "Déplacez-les ensemble, ou Suppr pour tout supprimer. Sélectionnez un seul élément pour l'éditer."}
       </p>
     )
   }
@@ -55,9 +59,17 @@ export function Inspector({ mcd, selection, dispatch }: InspectorProps) {
     }
   }
 
+  // En consultation, un fieldset désactivé neutralise d'un seul attribut
+  // tous les champs et boutons du formulaire affiché.
   return (
     <section aria-label="Inspecteur" className="border-b border-line p-3">
-      {content}
+      {readOnly ? (
+        <fieldset disabled className="min-w-0 border-0 p-0">
+          {content}
+        </fieldset>
+      ) : (
+        content
+      )}
     </section>
   )
 }

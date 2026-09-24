@@ -34,6 +34,8 @@ interface AssignmentEditorProps {
   /** Devoir enregistré : la liste et le formulaire suivent. */
   onSaved: (assignment: Assignment) => void
   onEditModel: EditAssignmentModel
+  /** Ouvre les rendus du devoir. Absent tant que le devoir n'existe pas. */
+  onShowSubmissions?: () => void
 }
 
 type Field = 'title' | 'instructions' | 'dueAt'
@@ -64,6 +66,7 @@ export function AssignmentEditor({
   onDone,
   onSaved,
   onEditModel,
+  onShowSubmissions,
 }: AssignmentEditorProps) {
   const dueId = useId()
   const [title, setTitle] = useState(assignment?.title ?? '')
@@ -357,6 +360,24 @@ export function AssignmentEditor({
               )}
             </div>
           </section>
+
+          {onShowSubmissions && (
+            <section aria-labelledby="suivi-titre" className="mt-4 rounded-card border border-line bg-surface p-5 shadow-soft">
+              <h4 id="suivi-titre" className="text-base font-semibold text-ink">
+                Suivi
+              </h4>
+              <p className="mt-1 text-sm text-ink-soft">
+                {assignment.status === 'published'
+                  ? 'Les travaux remis par vos élèves, à consulter et à noter.'
+                  : 'Publiez le devoir pour que vos élèves puissent rendre leur travail.'}
+              </p>
+              <div className="mt-3">
+                <Button variant="primary" onClick={onShowSubmissions} disabled={pending}>
+                  Voir les rendus
+                </Button>
+              </div>
+            </section>
+          )}
 
           <div className="mt-6 border-t border-line pt-4">
             <button

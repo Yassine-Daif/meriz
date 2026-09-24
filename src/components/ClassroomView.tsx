@@ -15,7 +15,8 @@ import type { ClassroomDetail, ClassroomMember, PublicProfile } from '../lib/cla
 import { ConfirmDialog } from './ConfirmDialog'
 import { Avatar } from './ui/Avatar'
 import { AssignmentsPanel } from './assignments/AssignmentsPanel'
-import type { EditAssignmentModel } from './assignments/types'
+import { StudentAssignmentsPanel } from './assignments/StudentAssignmentsPanel'
+import type { EditAssignmentModel, OpenReadOnlyModel, OpenWorkDocument } from './assignments/types'
 import { ComingSoon } from './ui/ComingSoon'
 import { TabPanel, Tabs } from './ui/Tabs'
 import { FormField } from './FormField'
@@ -26,8 +27,14 @@ interface ClassroomViewProps {
   classroomId: string
   /** Devoir à rouvrir dans l'onglet Exercices (retour de l'outil MCD). */
   openAssignmentId?: string | null
+  /** Rendu à rouvrir dans ce devoir (retour d'une consultation). */
+  openSubmissionId?: string | null
   /** Ouvre l'outil MCD sur la base ou le corrigé d'un devoir. */
   onEditAssignmentModel: EditAssignmentModel
+  /** Ouvre l'outil MCD sur le travail d'un élève pour un devoir. */
+  onOpenWorkDocument: OpenWorkDocument
+  /** Ouvre l'outil MCD en consultation (rendu d'un élève, corrigé libéré). */
+  onOpenReadOnlyModel: OpenReadOnlyModel
   /** Vue déjà connue (création, adhésion) : affichée sans attendre. */
   initial: ClassroomDetail | null
   /** La classe n'est plus accessible (quittée, supprimée) : retour à la liste. */
@@ -103,7 +110,10 @@ export function ClassroomView({
   onGone,
   initialStatus = null,
   openAssignmentId = null,
+  openSubmissionId = null,
   onEditAssignmentModel,
+  onOpenWorkDocument,
+  onOpenReadOnlyModel,
 }: ClassroomViewProps) {
   const [classroom, setClassroom] = useState<ClassroomDetail | null>(initial)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -451,13 +461,17 @@ export function ClassroomView({
                 classroomId={classroom.id}
                 classroomName={classroom.name}
                 openAssignmentId={openAssignmentId}
+                openSubmissionId={openSubmissionId}
                 onEditAssignmentModel={onEditAssignmentModel}
+                onOpenReadOnlyModel={onOpenReadOnlyModel}
               />
             ) : (
-              <ComingSoon
-                headingLevel="h3"
-                title="Exercices de la classe"
-                description="Les exercices donnés par votre prof apparaîtront ici, avec leur échéance."
+              <StudentAssignmentsPanel
+                client={client}
+                classroomId={classroom.id}
+                openAssignmentId={openAssignmentId}
+                onOpenWorkDocument={onOpenWorkDocument}
+                onOpenReadOnlyModel={onOpenReadOnlyModel}
               />
             )}
           </TabPanel>

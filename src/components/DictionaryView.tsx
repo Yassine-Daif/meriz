@@ -43,6 +43,8 @@ function compareRows(a: DictionaryRow, b: DictionaryRow, key: SortKey): number {
 interface DictionaryViewProps {
   mcd: Mcd
   dispatch: Dispatch<McdAction>
+  /** Consultation seule : la liste se lit et se trie, elle ne s'édite pas. */
+  readOnly?: boolean
 }
 
 /**
@@ -50,7 +52,7 @@ interface DictionaryViewProps {
  * Chaque propriété est définie ici une seule fois ; les entités et
  * associations la référencent. Une propriété peut rester non placée.
  */
-export function DictionaryView({ mcd, dispatch }: DictionaryViewProps) {
+export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryViewProps) {
   const [sortKey, setSortKey] = useState<SortKey>('name')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
 
@@ -116,13 +118,15 @@ export function DictionaryView({ mcd, dispatch }: DictionaryViewProps) {
   return (
     <section aria-label="Dictionnaire des données" className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center gap-3 border-b border-line bg-surface px-4 py-2">
-        <button
-          type="button"
-          onClick={() => dispatch({ type: 'ADD_PROPERTY' })}
-          className="rounded-control border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell"
-        >
-          Ajouter une propriété
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'ADD_PROPERTY' })}
+            className="rounded-control border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell"
+          >
+            Ajouter une propriété
+          </button>
+        )}
         <p className="text-xs text-ink-soft">
           {rows.length} propriété{rows.length > 1 ? 's' : ''} au dictionnaire
         </p>
@@ -130,8 +134,9 @@ export function DictionaryView({ mcd, dispatch }: DictionaryViewProps) {
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {rows.length === 0 ? (
           <p className="text-sm text-ink-soft">
-            Aucune propriété. Ajoutez-en une ici ou construisez le MCD, chaque attribut créé
-            entre au dictionnaire.
+            {readOnly
+              ? 'Aucune propriété au dictionnaire de ce modèle.'
+              : 'Aucune propriété. Ajoutez-en une ici ou construisez le MCD, chaque attribut créé entre au dictionnaire.'}
           </p>
         ) : (
           <table className="w-full border-separate border-spacing-0 rounded-card border border-line bg-surface text-sm shadow-soft">
@@ -179,6 +184,7 @@ export function DictionaryView({ mcd, dispatch }: DictionaryViewProps) {
                       type="text"
                       aria-label={`Nom de la propriété ${row.property.name}`}
                       value={row.property.name}
+                      disabled={readOnly}
                       onChange={(event) =>
                         dispatch({
                           type: 'UPDATE_PROPERTY',
@@ -193,6 +199,7 @@ export function DictionaryView({ mcd, dispatch }: DictionaryViewProps) {
                     <select
                       aria-label={`Type de la propriété ${row.property.name}`}
                       value={row.property.type}
+                      disabled={readOnly}
                       onChange={(event) =>
                         dispatch({
                           type: 'UPDATE_PROPERTY',
@@ -216,6 +223,7 @@ export function DictionaryView({ mcd, dispatch }: DictionaryViewProps) {
                       placeholder="défaut"
                       aria-label={`Taille de la propriété ${row.property.name} (nombre de caractères, vide = défaut)`}
                       value={row.property.size ?? ''}
+                      disabled={readOnly}
                       onChange={(event) => updateSize(row.property.id, event.target.value)}
                       className="w-20 rounded-lg border border-transparent px-1 py-0.5 text-right font-mono text-[13px] hover:border-line-strong focus:border-line-strong"
                     />
@@ -244,6 +252,7 @@ export function DictionaryView({ mcd, dispatch }: DictionaryViewProps) {
                     )}
                   </td>
                   <td className="border-b border-line px-3 py-1.5 text-right">
+                    {!readOnly && (
                     <button
                       type="button"
                       aria-label={`Supprimer la propriété ${row.property.name} du dictionnaire`}
@@ -257,6 +266,7 @@ export function DictionaryView({ mcd, dispatch }: DictionaryViewProps) {
                     >
                       ✕
                     </button>
+                    )}
                   </td>
                 </tr>
               ))}

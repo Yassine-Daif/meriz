@@ -28,6 +28,8 @@ interface TopBarProps {
   onRetrySync: () => void
   /** Espace cloud : l'état d'envoi est affiché. */
   cloud: boolean
+  /** Consultation seule : ni historique, ni état d'envoi. */
+  readOnly?: boolean
   mcdVisible: boolean
   canUndo: boolean
   canRedo: boolean
@@ -67,6 +69,7 @@ export function TopBar({
   syncStatus,
   onRetrySync,
   cloud,
+  readOnly = false,
   mcdVisible,
   canUndo,
   canRedo,
@@ -82,7 +85,7 @@ export function TopBar({
         <button
           type="button"
           onClick={onBackToDocuments}
-          aria-label={` : fermer le modèle et revenir à la page précédente`}
+          aria-label={`${backLabel} : fermer le modèle et revenir à la page précédente`}
           title="Fermer le modèle et revenir à la page précédente"
           className="inline-flex min-h-9 items-center gap-1.5 rounded-control border border-line-strong bg-surface px-3 py-1.5 text-sm font-medium text-ink transition-colors duration-150 hover:bg-surface-soft hover:text-ink"
         >
@@ -101,7 +104,9 @@ export function TopBar({
             <span className="truncate text-sm font-semibold text-ink">{documentName}</span>
           </p>
         )}
+        {readOnly && <Badge tone="sky">Lecture seule</Badge>}
       </div>
+      {!readOnly && (
       <div role="group" aria-label="Historique" className="flex gap-1">
         <button
           type="button"
@@ -132,6 +137,7 @@ export function TopBar({
           </svg>
         </button>
       </div>
+      )}
       <FileActions
         state={state}
         mpdSettings={mpdSettings}
@@ -140,7 +146,7 @@ export function TopBar({
         onNewDocument={onNewDocument}
         onImportFile={onImportFile}
       />
-      <SyncStatus status={syncStatus} onRetry={onRetrySync} cloud={cloud} />
+      {!readOnly && <SyncStatus status={syncStatus} onRetry={onRetrySync} cloud={cloud} />}
       <div className="ml-auto flex flex-wrap items-center gap-3">
         <AccountStatus compact />
         <ThemeToggle />

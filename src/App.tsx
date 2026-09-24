@@ -8,7 +8,7 @@ import { EXAMPLE_NAME, exampleLayout, exampleMcd } from './model/example'
 import type { ApiError } from './lib/apiClient'
 import { apiError } from './lib/apiClient'
 import { browserStorage } from './lib/browserStorage'
-import { createLocalRepository } from './lib/documentRepository'
+import { createInertSaver, createLocalRepository } from './lib/documentRepository'
 import type { DocumentRepository, DocumentSaver } from './lib/documentRepository'
 import { browserDocumentStore } from './lib/documentStore'
 import { importModelFile } from './lib/importFile'
@@ -26,6 +26,7 @@ import { AccountLoading } from './components/AccountLoading'
 import { ProfilePage } from './components/ProfilePage'
 import { ClassesPage } from './components/ClassesPage'
 import type { ClassroomOpening } from './components/ClassesPage'
+import type { ReadOnlyModel } from './components/assignments/types'
 import { ConnectedShell } from './components/ConnectedShell'
 import type { ConnectedPage } from './components/ConnectedShell'
 import { StudentHome } from './components/StudentHome'
@@ -45,8 +46,9 @@ interface ImportProposal {
 
 /**
  * Ce que l'éditeur MCD est en train de travailler : un document
- * personnel, ou la base ou le corrigé d'un devoir. La cible décide du
- * titre affiché, du renommage et de la page de retour.
+ * personnel, la base ou le corrigé d'un devoir, le travail d'un élève
+ * sur un devoir, ou un modèle consulté sans y toucher. La cible décide
+ * du titre affiché, du renommage, de la lecture seule et du retour.
  */
 type EditorTarget =
   | { kind: 'document' }
@@ -56,6 +58,15 @@ type EditorTarget =
       assignmentId: string
       field: AssignmentField
       title: string
+    }
+  | { kind: 'work'; classroomId: string; assignmentId: string }
+  | {
+      kind: 'review'
+      classroomId: string
+      assignmentId: string
+      /** Rendu consulté, ou null pour un corrigé libéré. */
+      submissionId: string | null
+      label: string
     }
 
 /** Modèle ouvert, sa sauvegarde automatique, et l'espace d'où il vient. */
@@ -70,6 +81,43 @@ interface OpenedSession {
 const FIELD_LABEL: Record<AssignmentField, string> = {
   base: 'Base du devoir',
   solution: 'Corrigé du devoir',
+}
+
+/** Ce que la barre de l'éditeur propose, selon ce qui est ouvert. */
+interface EditorChrome {
+  contentLabel?: string
+  backLabel?: string
+  /** Le titre se renomme depuis la barre : documents personnels seulement. */
+  canRename: boolean
+  /** Nouveau document et Ouvrir un fichier : hors de l'espace documents, non. */
+  documentActions: boolean
+  readOnly: boolean
+}
+
+function editorChrome(target: EditorTarget): EditorChrome {
+  switch (target.kind) {
+    case 'document':
+      return { canRename: true, documentActions: true, readOnly: false }
+    case 'assignment':
+      return {
+        contentLabel: FIELD_LABEL[target.field],
+        backLabel: 'Retour au devoir',
+        canRename: false,
+        documentActions: false,
+        readOnly: false,
+      }
+    case 'work':
+      // Le travail de l'élève est son document : il peut le renommer.
+      return { backLabel: 'Retour au devoir', canRename: true, documentActions: false, readOnly: false }
+    case 'review':
+      return {
+        contentLabel: target.label,
+        backLabel: target.submissionId === null ? 'Retour au devoir' : 'Retour au rendu',
+        canRename: false,
+        documentActions: false,
+        readOnly: true,
+      }
+  }
 }
 
 /**
@@ -131,8 +179,9 @@ export function App() {
     })
   }, [spaceKey])
 
-  const openDocument = useCallback(
-    async (id: string): Promise<ApiError | null> => {
+  /** Ouvre un document de l'espace, pour lui-même ou comme travail sur un devoir. */
+  const openStoredDocument = useCallback(
+    async (id: string, target: EditorTarget): Promise<ApiError | null> => {
       const result = await repository.open(id)
       if (!result.ok) {
         return result.error
@@ -141,11 +190,23 @@ export function App() {
       setHomeAnnouncement(null)
       setOpened((previous) => {
         previous?.saver.dispose()
-        return { spaceKey, document: result.value.document, saver, cloud, target: { kind: 'document' } }
+        return { spaceKey, document: result.value.document, saver, cloud, target }
       })
       return null
     },
     [repository, spaceKey, cloud],
+  )
+
+  const openDocument = useCallback(
+    (id: string) => openStoredDocument(id, { kind: 'document' }),
+    [openStoredDocument],
+  )
+
+  /** Le document de travail d'un élève sur un devoir : retour au devoir en fermant. */
+  const openWorkDocument = useCallback(
+    (classroomId: string, assignmentId: string, documentId: string) =>
+      openStoredDocument(documentId, { kind: 'work', classroomId, assignmentId }),
+    [openStoredDocument],
   )
 
   const createAndOpen = useCallback(
@@ -225,6 +286,40 @@ export function App() {
     [account, spaceKey, cloud],
   )
 
+  /**
+   * Ouvre un modèle en consultation : le rendu d'un élève pour son prof,
+   * ou un corrigé libéré. Rien n'est enregistré, rien ne se modifie.
+   */
+  const openReadOnlyModel = useCallback(
+    (model: ReadOnlyModel) => {
+      const parsed = parseModelFile(model.content)
+      const now = new Date().toISOString()
+      const document: OpenedDocument = {
+        meta: { id: model.key, name: model.name, createdAt: now, updatedAt: now },
+        state: parsed.ok ? parsed.state : emptyEditorState(),
+        mpdSettings: (parsed.ok ? parsed.mpdSettings : null) ?? DEFAULT_MPD_SETTINGS,
+      }
+      setHomeAnnouncement(null)
+      setOpened((previous) => {
+        previous?.saver.dispose()
+        return {
+          spaceKey,
+          document,
+          saver: createInertSaver(),
+          cloud,
+          target: {
+            kind: 'review',
+            classroomId: model.classroomId,
+            assignmentId: model.assignmentId,
+            submissionId: model.submissionId,
+            label: model.label,
+          },
+        }
+      })
+    },
+    [spaceKey, cloud],
+  )
+
   const rename = useCallback(
     async (name: string): Promise<boolean> => {
       if (!current) return false
@@ -248,13 +343,16 @@ export function App() {
       current.saver.dispose()
     }
     setOpened(null)
-    // Base ou corrigé : on revient au devoir, pas à l'accueil.
-    if (current?.target.kind === 'assignment') {
+    // Tout ce qui vient d'un devoir y retourne : on ne retombe jamais
+    // sur l'accueil après avoir dessiné une base, travaillé ou consulté.
+    const target = current?.target
+    if (target && target.kind !== 'document') {
       navigate('classes', {
-        id: current.target.classroomId,
+        id: target.classroomId,
         initial: null,
         message: null,
-        assignmentId: current.target.assignmentId,
+        assignmentId: target.assignmentId,
+        submissionId: target.kind === 'review' ? (target.submissionId ?? undefined) : undefined,
       })
     }
   }, [current, navigate])
@@ -381,6 +479,8 @@ export function App() {
               client={account.client}
               opening={classroomOpening}
               onEditAssignmentModel={openAssignmentModel}
+              onOpenWorkDocument={openWorkDocument}
+              onOpenReadOnlyModel={openReadOnlyModel}
             />
           )}
           {page === 'work' && (
@@ -431,6 +531,7 @@ export function App() {
       </>
     )
   }
+  const chrome = editorChrome(current.target)
   return (
     <>
       <Editor
@@ -440,12 +541,13 @@ export function App() {
         openedDocument={current.document}
         saver={current.saver}
         cloud={current.cloud}
-        onRename={current.target.kind === 'document' ? rename : undefined}
+        readOnly={chrome.readOnly}
+        onRename={chrome.canRename ? rename : undefined}
         onBackToDocuments={() => void leaveEditor()}
-        contentLabel={current.target.kind === 'assignment' ? FIELD_LABEL[current.target.field] : undefined}
-        backLabel={current.target.kind === 'assignment' ? 'Retour au devoir' : undefined}
-        onNewDocument={current.target.kind === 'document' ? () => void newDocument() : undefined}
-        onImportFile={current.target.kind === 'document' ? importFile : undefined}
+        contentLabel={chrome.contentLabel}
+        backLabel={chrome.backLabel}
+        onNewDocument={chrome.documentActions ? () => void newDocument() : undefined}
+        onImportFile={chrome.documentActions ? importFile : undefined}
       />
       {importDialog}
     </>

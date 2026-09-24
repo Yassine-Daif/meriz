@@ -1,6 +1,8 @@
 import type { ApiClient, Outcome } from './apiClient'
 import { unexpectedResponse } from './apiClient'
 import { optionalText } from './authApi'
+import { parseCloudDocument } from './documentsApi'
+import type { CloudDocument } from './documentsApi'
 
 /**
  * Devoirs d'une classe : exercices et examens donnés par le prof. Le
@@ -226,6 +228,20 @@ export function removeAssignmentImage(client: ApiClient, id: string): Promise<Ou
 /** L'image est servie avec le jeton : une balise img ne peut pas la charger seule. */
 export function fetchAssignmentImage(client: ApiClient, id: string): Promise<Outcome<Blob>> {
   return client.requestBlob(assignmentPath(id, '/image'))
+}
+
+/**
+ * Copie la base du devoir dans un document personnel : c'est le point de
+ * départ du travail de l'élève. Le corrigé n'est jamais copié. Sans base,
+ * le serveur refuse sur le champ base_content.
+ */
+export async function copyAssignmentBase(client: ApiClient, id: string): Promise<Outcome<CloudDocument>> {
+  const result = await client.request('POST', assignmentPath(id, '/copy'))
+  if (!result.ok) {
+    return result
+  }
+  const document = parseCloudDocument(result.data)
+  return document ? { ok: true, value: document } : { ok: false, error: unexpectedResponse(result.status) }
 }
 
 /* ------------------------------------------------------------------ */

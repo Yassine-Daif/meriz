@@ -6,6 +6,7 @@ import { createCloudCache } from './cloudCache'
 import { createCloudTestServer } from './cloudTestServer'
 import {
   createCloudRepository,
+  createInertSaver,
   createLocalRepository,
   MAX_WAIT_MS,
   RETRY_DELAYS_MS,
@@ -369,5 +370,26 @@ describe('dépôt local, sans compte', () => {
     expect(await saver.flush()).toBe(true)
     expect(repo.kind).toBe('local')
     expect((await repo.list()).ok).toBe(true)
+  })
+})
+
+describe('sauvegarde inerte', () => {
+  it('n’enregistre rien et se dit toujours enregistrée', async () => {
+    const saver = createInertSaver()
+    let seen = 0
+    const stop = saver.subscribe(() => {
+      seen += 1
+    })
+
+    saver.save(stateOf(clientCommande), DEFAULT_MPD_SETTINGS)
+    saver.rename('Autre nom')
+    saver.retry()
+
+    expect(saver.getStatus()).toEqual({ kind: 'saved' })
+    expect(await saver.flush()).toBe(true)
+    // Rien ne change, donc rien n'est annoncé à l'indicateur.
+    expect(seen).toBe(0)
+    stop()
+    saver.dispose()
   })
 })

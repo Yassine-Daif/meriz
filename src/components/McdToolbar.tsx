@@ -11,6 +11,8 @@ interface McdToolbarProps {
   problems: ValidationProblem[]
   /** Ouvre les résultats (MLD, MPD, SQL), toujours dérivés du MCD courant. */
   onGenerate: () => void
+  /** Consultation seule : plus d'ajout, mais vérifier et générer restent. */
+  readOnly?: boolean
 }
 
 interface StatusMessage {
@@ -34,7 +36,7 @@ const iconProps = {
 } as const
 
 /** Sous-barre de la vue MCD : ajout d'éléments, vérification, génération. */
-export function McdToolbar({ dispatch, problems, onGenerate }: McdToolbarProps) {
+export function McdToolbar({ dispatch, problems, onGenerate, readOnly = false }: McdToolbarProps) {
   const { screenToFlowPosition } = useReactFlow()
   const [status, setStatus] = useState<StatusMessage | null>(null)
   // Décalage en cascade pour que des ajouts répétés ne s'empilent pas.
@@ -88,24 +90,28 @@ export function McdToolbar({ dispatch, problems, onGenerate }: McdToolbarProps) 
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line bg-surface px-4 py-2">
-      <div role="group" aria-label="Édition du MCD" className="flex gap-2">
-        <button
-          type="button"
-          className={buttonClass}
-          onClick={() => dispatch({ type: 'ADD_ENTITY', position: nextPosition() })}
-        >
-          Ajouter une entité
-        </button>
-        <button
-          type="button"
-          className={buttonClass}
-          onClick={() => dispatch({ type: 'ADD_ASSOCIATION', position: nextPosition() })}
-        >
-          Ajouter une association
-        </button>
-      </div>
+      {!readOnly && (
+        <>
+          <div role="group" aria-label="Édition du MCD" className="flex gap-2">
+            <button
+              type="button"
+              className={buttonClass}
+              onClick={() => dispatch({ type: 'ADD_ENTITY', position: nextPosition() })}
+            >
+              Ajouter une entité
+            </button>
+            <button
+              type="button"
+              className={buttonClass}
+              onClick={() => dispatch({ type: 'ADD_ASSOCIATION', position: nextPosition() })}
+            >
+              Ajouter une association
+            </button>
+          </div>
 
-      <div aria-hidden="true" className="h-6 w-px bg-line" />
+          <div aria-hidden="true" className="h-6 w-px bg-line" />
+        </>
+      )}
 
       <div role="group" aria-label="Vérification et génération" className="flex gap-2">
         <button type="button" className={buttonClass} onClick={handleVerify}>

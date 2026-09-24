@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ApiClient, ApiResult, HttpMethod } from './apiClient'
 import { apiError } from './apiClient'
 import {
+  copyAssignmentBase,
   createAssignment,
   deleteAssignment,
   formatDueDate,
@@ -171,6 +172,33 @@ describe('devoirs, appels', () => {
     expect(sent[0]).toMatchObject({ method: 'POST', path: '/assignments/01JB/image' })
     expect(body).toBeInstanceOf(FormData)
     expect((body as FormData).get('image')).toBe(file)
+  })
+
+  it('copie la base dans un document personnel, sans corps de requête', async () => {
+    const { client, sent } = scriptedClient([
+      ok({
+        id: '01DOC',
+        name: 'Modéliser une bibliothèque',
+        content: '{"format":"meriz-mcd"}',
+        created_at: '2026-09-21T10:00:00+00:00',
+        updated_at: '2026-09-21T10:00:00+00:00',
+      }),
+    ])
+
+    const outcome = await copyAssignmentBase(client, '01JB')
+
+    expect(sent[0]).toEqual({ method: 'POST', path: '/assignments/01JB/copy', body: undefined })
+    expect(outcome.ok && outcome.value).toMatchObject({ id: '01DOC', content: '{"format":"meriz-mcd"}' })
+  })
+
+  it("remonte tel quel le refus d'une copie sans base", async () => {
+    const error = apiError('validation', 422, 'Les informations saisies sont invalides.')
+    error.fieldErrors = { base_content: ["Ce devoir n'a pas de base. Commencez sur une page blanche."] }
+    const { client } = scriptedClient([{ ok: false, error }])
+
+    const outcome = await copyAssignmentBase(client, '01JB')
+
+    expect(outcome).toEqual({ ok: false, error })
   })
 
   it("retire l'image sur son chemin", async () => {

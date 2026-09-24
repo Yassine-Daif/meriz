@@ -46,7 +46,15 @@ interface EditorProps {
   /** Actions documents : absentes hors de l'espace documents. */
   onNewDocument?: () => void
   onImportFile?: (file: File) => Promise<string | null>
+  /**
+   * Consultation seule : le modèle s'affiche, se parcourt, se vérifie et
+   * s'exporte, mais ne se modifie pas et rien n'est enregistré.
+   */
+  readOnly?: boolean
 }
+
+/** Consultation seule : aucune action n'atteint le modèle. */
+const IGNORE_ACTION = () => {}
 
 /**
  * L'éditeur Merise sur un document : MCD, dictionnaire, MLD, MPD, SQL,
@@ -62,8 +70,12 @@ export function Editor({
   backLabel,
   onNewDocument,
   onImportFile,
+  readOnly = false,
 }: EditorProps) {
-  const [history, dispatch] = useReducer(historyReducer, openedDocument.state, createHistory)
+  const [history, editAction] = useReducer(historyReducer, openedDocument.state, createHistory)
+  // Une seule barrière pour tout l'éditeur : l'inspecteur, le dictionnaire,
+  // la barre d'outils et les étiquettes de pattes passent tous par là.
+  const dispatch = readOnly ? IGNORE_ACTION : editAction
   const state = history.present
   const [selection, setSelection] = useState<CanvasSelection>(EMPTY_SELECTION)
   // La vue active est un état d'interface, jamais une donnée du modèle.
@@ -84,8 +96,11 @@ export function Editor({
   // Sauvegarde automatique : le saver ignore les états identiques, donc
   // ouvrir un document sans y toucher ne modifie pas sa date.
   useEffect(() => {
+    if (readOnly) {
+      return
+    }
     saver.save(state, mpdSettings)
-  }, [state, mpdSettings, saver])
+  }, [state, mpdSettings, saver, readOnly])
 
   useEffect(() => {
     setSyncStatus(saver.getStatus())
@@ -100,7 +115,7 @@ export function Editor({
     state.mcd.entities.length === 0 &&
     state.mcd.associations.length === 0
   useEffect(() => {
-    if (modelIsEmpty) {
+    if (modelIsEmpty || readOnly) {
       return
     }
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -108,7 +123,7 @@ export function Editor({
     }
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
-  }, [modelIsEmpty])
+  }, [modelIsEmpty, readOnly])
 
   // Ctrl+A dans la vue MCD : tout sélectionner (hors champs de saisie).
   useEffect(() => {
@@ -135,6 +150,9 @@ export function Editor({
   // Annuler/rétablir au clavier, partout dans l'éditeur, sauf dans un
   // champ de saisie : la frappe s'y annule nativement.
   useEffect(() => {
+    if (readOnly) {
+      return
+    }
     const onKeyDown = (event: KeyboardEvent) => {
       if ((!event.ctrlKey && !event.metaKey) || isEditableTarget(event.target)) {
         return
@@ -142,15 +160,15 @@ export function Editor({
       const key = event.key.toLowerCase()
       if (key === 'z' && !event.shiftKey) {
         event.preventDefault()
-        dispatch({ type: 'UNDO' })
+        editAction({ type: 'UNDO' })
       } else if (key === 'y' || (key === 'z' && event.shiftKey)) {
         event.preventDefault()
-        dispatch({ type: 'REDO' })
+        editAction({ type: 'REDO' })
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  }, [readOnly])
 
   // Générer : le MCD est vérifié par la barre d'outils, on ouvre le résultat.
   const handleGenerate = useCallback(() => {
@@ -203,11 +221,12 @@ export function Editor({
           syncStatus={syncStatus}
           onRetrySync={saver.retry}
           cloud={cloud}
+          readOnly={readOnly}
           mcdVisible={activeView === 'mcd'}
           canUndo={history.past.length > 0}
           canRedo={history.future.length > 0}
-          onUndo={() => dispatch({ type: 'UNDO' })}
-          onRedo={() => dispatch({ type: 'REDO' })}
+          onUndo={() => editAction({ type: 'UNDO' })}
+          onRedo={() => editAction({ type: 'REDO' })}
         />
 
         <div className="flex min-h-0 flex-1">
@@ -215,7 +234,7 @@ export function Editor({
 
           <main id="contenu" className="flex min-h-0 min-w-0 flex-1 flex-col">
             {activeView === 'dictionnaire' && (
-              <DictionaryView mcd={state.mcd} dispatch={dispatch} />
+              <DictionaryView mcd={state.mcd} dispatch={dispatch} readOnly={readOnly} />
             )}
 
             <McdView
@@ -227,6 +246,7 @@ export function Editor({
               onSelectElement={selectElement}
               onGenerate={handleGenerate}
               isActive={activeView === 'mcd'}
+              readOnly={readOnly}
             />
 
             {activeView === 'mld' && <MldView tables={mldTables} hasErrors={hasErrors} />}
