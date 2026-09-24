@@ -22,6 +22,16 @@ describe('traduction des messages de validation du serveur', () => {
     expect(translateValidationMessage('name', 'The name field must be a string.')).toBe('Valeur invalide.')
   })
 
+  it('traduit le refus d’un fichier trop lourd', () => {
+    expect(translateValidationMessage('file', 'The file field must not be greater than 2048 kilobytes.')).toBe(
+      'Fichier trop lourd : 2048 Ko au plus.',
+    )
+    // Les caractères et les kilo-octets ne se confondent pas.
+    expect(translateValidationMessage('title', 'The title field must not be greater than 200 characters.')).toBe(
+      '200 caractères maximum.',
+    )
+  })
+
   it('laisse intact un message inconnu ou déjà en français', () => {
     expect(translateValidationMessage('email', 'Email ou mot de passe incorrect.')).toBe(
       'Email ou mot de passe incorrect.',

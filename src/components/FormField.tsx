@@ -3,7 +3,7 @@ import type { Ref } from 'react'
 
 interface FormFieldProps {
   label: string
-  type: 'text' | 'email' | 'password'
+  type: 'text' | 'email' | 'password' | 'url'
   value: string
   onChange: (value: string) => void
   autoComplete: string
@@ -17,6 +17,8 @@ interface FormFieldProps {
   required?: boolean
   /** Zone de texte sur plusieurs lignes, avec un compteur si maxLength. */
   multiline?: boolean
+  /** Hauteur de la zone de texte, en lignes. */
+  rows?: number
   /** Police mono (codes, identifiants). */
   mono?: boolean
   inputRef?: Ref<HTMLInputElement>
@@ -39,6 +41,7 @@ export function FormField({
   maxLength,
   required = true,
   multiline = false,
+  rows = 3,
   mono = false,
   inputRef,
 }: FormFieldProps) {
@@ -79,7 +82,7 @@ export function FormField({
       {multiline ? (
         <textarea
           {...shared}
-          rows={3}
+          rows={rows}
           autoComplete={autoComplete}
           onChange={(event) => onChange(event.target.value)}
         />

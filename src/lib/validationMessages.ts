@@ -20,6 +20,10 @@ const RULES: { pattern: RegExp; translate: (field: string, match: RegExpMatchArr
     pattern: /must not be greater than (\d+) characters/i,
     translate: (_field, match) => `${match[1]} caractères maximum.`,
   },
+  {
+    pattern: /must not be greater than (\d+) kilobytes/i,
+    translate: (_field, match) => `Fichier trop lourd : ${match[1]} Ko au plus.`,
+  },
   { pattern: /must be a string/i, translate: () => 'Valeur invalide.' },
 ]
 

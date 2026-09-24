@@ -17,7 +17,8 @@ import { Avatar } from './ui/Avatar'
 import { AssignmentsPanel } from './assignments/AssignmentsPanel'
 import { StudentAssignmentsPanel } from './assignments/StudentAssignmentsPanel'
 import type { EditAssignmentModel, OpenReadOnlyModel, OpenWorkDocument } from './assignments/types'
-import { ComingSoon } from './ui/ComingSoon'
+import { LessonsPanel } from './lessons/LessonsPanel'
+import { StudentLessonsPanel } from './lessons/StudentLessonsPanel'
 import { TabPanel, Tabs } from './ui/Tabs'
 import { FormField } from './FormField'
 import { primaryButtonClass, secondaryButtonClass, smallButtonClass } from './buttonStyles'
@@ -479,15 +480,11 @@ export function ClassroomView({
 
         {tab === 'cours' && (
           <TabPanel idBase={idBase} value="cours">
-            <ComingSoon
-              headingLevel="h3"
-              title="Cours de la classe"
-              description={
-                isTeacher
-                  ? 'Vous pourrez publier ici vos supports de cours, à côté de l’outil de modélisation.'
-                  : 'Les supports publiés par votre prof apparaîtront ici.'
-              }
-            />
+            {isTeacher ? (
+              <LessonsPanel client={client} classroomId={classroom.id} classroomName={classroom.name} />
+            ) : (
+              <StudentLessonsPanel client={client} classroomId={classroom.id} />
+            )}
           </TabPanel>
         )}
       </div>
