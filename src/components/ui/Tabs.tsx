@@ -17,6 +17,11 @@ interface TabsProps<T extends string> {
   onChange: (value: T) => void
   /** Identifiant commun des onglets et des panneaux. */
   idBase?: string
+  /**
+   * Taille des onglets. « sm » sert aux onglets imbriqués dans une page
+   * qui en porte déjà : plus compacts, ils se lisent d'un cran en dessous.
+   */
+  size?: 'md' | 'sm'
 }
 
 
@@ -26,7 +31,7 @@ interface TabsProps<T extends string> {
  * marqué par le gras et par un trait épais, jamais par la seule
  * couleur.
  */
-export function Tabs<T extends string>({ label, items, value, onChange, idBase }: TabsProps<T>) {
+export function Tabs<T extends string>({ label, items, value, onChange, idBase, size = 'md' }: TabsProps<T>) {
   const generated = useId()
   const base = idBase ?? generated
   // Les boutons sont gardés par valeur : le focus suit le choix sans
@@ -68,7 +73,9 @@ export function Tabs<T extends string>({ label, items, value, onChange, idBase }
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(item.value)}
             onKeyDown={move}
-            className={`-mb-px rounded-t-control border-b-3 px-4 py-2.5 text-sm transition-colors duration-150 ${
+            className={`-mb-px rounded-t-control text-sm transition-colors duration-150 ${
+              size === 'sm' ? 'border-b-2 px-3 py-2' : 'border-b-3 px-4 py-2.5'
+            } ${
               selected
                 ? 'border-mark font-semibold text-ink'
                 : 'border-transparent font-medium text-ink-soft hover:bg-surface-soft hover:text-ink'

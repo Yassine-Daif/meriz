@@ -5,8 +5,8 @@ import type { Assignment, AssignmentSummary } from '../../lib/assignmentsApi'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { Notice } from '../ui/Notice'
-import { AssignmentEditor } from './AssignmentEditor'
-import { SubmissionsPanel } from './SubmissionsPanel'
+import { AssignmentWorkspace } from './AssignmentWorkspace'
+import type { AssignmentTab } from './AssignmentWorkspace'
 import type { EditAssignmentModel, OpenReadOnlyModel } from './types'
 
 interface AssignmentsPanelProps {
@@ -21,12 +21,11 @@ interface AssignmentsPanelProps {
   onOpenReadOnlyModel: OpenReadOnlyModel
 }
 
-/** Ce que l'on regarde : la liste, un devoir, un nouveau, ou ses rendus. */
+/** Ce que l'on regarde : la liste, un devoir ouvert, ou un nouveau. */
 type View =
   | { kind: 'list' }
-  | { kind: 'edit'; assignment: Assignment }
+  | { kind: 'edit'; assignment: Assignment; tab: AssignmentTab }
   | { kind: 'create' }
-  | { kind: 'submissions'; assignment: Assignment }
 
 /** État du devoir, écrit en toutes lettres et non porté par la seule couleur. */
 function StateBadges({ assignment }: { assignment: AssignmentSummary }) {
@@ -86,11 +85,7 @@ export function AssignmentsPanel({
       setOpening(null)
       if (result.ok) {
         setStatus(null)
-        setView(
-          showSubmissions
-            ? { kind: 'submissions', assignment: result.value }
-            : { kind: 'edit', assignment: result.value },
-        )
+        setView({ kind: 'edit', assignment: result.value, tab: showSubmissions ? 'rendus' : 'enonce' })
       } else {
         setStatus(result.error.message)
         void load()
@@ -113,40 +108,25 @@ export function AssignmentsPanel({
     void load()
   }
 
-  if (view.kind === 'submissions') {
-    const assignment = view.assignment
-    return (
-      <SubmissionsPanel
-        client={client}
-        assignment={assignment}
-        openSubmissionId={openSubmissionId}
-        onBack={(message) => {
-          setView({ kind: 'edit', assignment })
-          setStatus(message)
-        }}
-        onOpenReadOnlyModel={onOpenReadOnlyModel}
-      />
-    )
-  }
-
   if (view.kind !== 'list') {
+    const opened = view.kind === 'edit' ? view.assignment : null
     return (
-      <AssignmentEditor
+      <AssignmentWorkspace
+        // Une clé par devoir : l'onglet de départ est relu à chaque ouverture.
+        key={opened?.id ?? 'creation'}
         client={client}
         classroomId={classroomId}
         classroomName={classroomName}
-        assignment={view.kind === 'edit' ? view.assignment : null}
+        assignment={opened}
+        initialTab={view.kind === 'edit' ? view.tab : 'enonce'}
+        openSubmissionId={openSubmissionId}
         onDone={backToList}
         onSaved={(assignment) => {
-          setView({ kind: 'edit', assignment })
+          setView({ kind: 'edit', assignment, tab: 'enonce' })
           void load()
         }}
         onEditModel={onEditAssignmentModel}
-        onShowSubmissions={
-          view.kind === 'edit'
-            ? () => setView({ kind: 'submissions', assignment: view.assignment })
-            : undefined
-        }
+        onOpenReadOnlyModel={onOpenReadOnlyModel}
       />
     )
   }

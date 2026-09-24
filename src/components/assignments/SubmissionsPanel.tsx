@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import type { Assignment } from '../../lib/assignmentsApi'
-import { formatDueDate } from '../../lib/assignmentsApi'
 import { displayName } from '../../lib/authApi'
 import { formatSubmittedAt, listAssignmentSubmissions } from '../../lib/submissionsApi'
 import type { SubmissionSummary } from '../../lib/submissionsApi'
@@ -17,8 +16,6 @@ interface SubmissionsPanelProps {
   assignment: Assignment
   /** Rendu à rouvrir d'emblée (retour de l'outil MCD). */
   openSubmissionId: string | null
-  /** Retour au devoir, avec un message à annoncer. */
-  onBack: (message: string | null) => void
   onOpenReadOnlyModel: OpenReadOnlyModel
 }
 
@@ -33,7 +30,6 @@ export function SubmissionsPanel({
   client,
   assignment,
   openSubmissionId,
-  onBack,
   onOpenReadOnlyModel,
 }: SubmissionsPanelProps) {
   const [submissions, setSubmissions] = useState<SubmissionSummary[] | null>(null)
@@ -74,19 +70,16 @@ export function SubmissionsPanel({
 
   return (
     <section aria-labelledby="rendus-titre">
-      <Button variant="ghost" size="sm" onClick={() => onBack(null)} className="-ml-3 mb-3">
-        <span aria-hidden="true">←</span>
-        Retour au devoir
-      </Button>
-
-      <h3 id="rendus-titre" className="text-xl font-semibold tracking-tight text-ink">
-        Rendus
+      <h4 id="rendus-titre" className="text-base font-semibold text-ink">
+        Travaux remis
         {submissions && submissions.length > 0 && (
           <span className="font-normal text-ink-soft"> ({submissions.length})</span>
         )}
-      </h3>
+      </h4>
       <p className="mt-1 text-sm text-ink-soft">
-        {assignment.title}. {formatDueDate(assignment.dueAt)}.
+        {assignment.status === 'published'
+          ? 'Les travaux remis par vos élèves, à consulter et à noter.'
+          : 'Ce devoir est un brouillon : vos élèves ne peuvent pas encore rendre leur travail.'}
       </p>
 
       <p role="status" aria-live="polite" className="mt-2 min-h-5 text-sm text-ink-soft">

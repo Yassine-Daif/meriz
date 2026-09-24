@@ -4,7 +4,6 @@ import type { ApiClient } from '../../lib/apiClient'
 import {
   createAssignment,
   deleteAssignment,
-  formatDueDate,
   fromLocalInput,
   publishAssignment,
   releaseSolution,
@@ -17,7 +16,6 @@ import type { Assignment, AssignmentType } from '../../lib/assignmentsApi'
 import { ConfirmDialog } from '../ConfirmDialog'
 import { FormAlert } from '../FormAlert'
 import { FormField } from '../FormField'
-import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { Segmented } from '../ui/Segmented'
 import { AssignmentImageField } from './AssignmentImageField'
@@ -26,7 +24,6 @@ import type { EditAssignmentModel } from './types'
 interface AssignmentEditorProps {
   client: ApiClient
   classroomId: string
-  classroomName: string
   /** Devoir existant, ou null pour une création. */
   assignment: Assignment | null
   /** Retour à la liste, avec un message à annoncer. */
@@ -34,8 +31,6 @@ interface AssignmentEditorProps {
   /** Devoir enregistré : la liste et le formulaire suivent. */
   onSaved: (assignment: Assignment) => void
   onEditModel: EditAssignmentModel
-  /** Ouvre les rendus du devoir. Absent tant que le devoir n'existe pas. */
-  onShowSubmissions?: () => void
 }
 
 type Field = 'title' | 'instructions' | 'dueAt'
@@ -54,19 +49,18 @@ const TYPES = [
 type PendingAction = 'delete' | 'withhold' | 'unpublish'
 
 /**
- * Créer ou modifier un devoir : consigne, image, type, échéance, puis
- * la base et le corrigé qui se construisent dans l'outil MCD. La
- * publication et la libération du corrigé sont deux gestes distincts.
+ * L'énoncé d'un devoir : consigne, image, type, échéance, puis la base
+ * et le corrigé qui se construisent dans l'outil MCD. La publication et
+ * la libération du corrigé sont deux gestes distincts. L'entête et les
+ * sections du devoir sont portées par AssignmentWorkspace.
  */
 export function AssignmentEditor({
   client,
   classroomId,
-  classroomName,
   assignment,
   onDone,
   onSaved,
   onEditModel,
-  onShowSubmissions,
 }: AssignmentEditorProps) {
   const dueId = useId()
   const [title, setTitle] = useState(assignment?.title ?? '')
@@ -179,36 +173,7 @@ export function AssignmentEditor({
 
   return (
     <div>
-      <Button variant="ghost" size="sm" onClick={() => onDone(null)} className="-ml-3 mb-3">
-        <span aria-hidden="true">←</span>
-        Retour aux devoirs
-      </Button>
-
-      <h3 className="text-xl font-semibold tracking-tight text-ink">
-        {assignment ? 'Modifier le devoir' : 'Créer un devoir'}
-      </h3>
-      <p className="mt-1 text-sm text-ink-soft">Classe {classroomName}.</p>
-
-      {assignment && (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Badge tone={assignment.status === 'published' ? 'sage' : 'neutral'}>
-            {assignment.status === 'published' ? 'Publié' : 'Brouillon'}
-          </Badge>
-          <Badge tone={assignment.hasBase ? 'accent' : 'neutral'}>
-            {assignment.hasBase ? 'Base prête' : 'Sans base'}
-          </Badge>
-          <Badge tone={assignment.hasSolution ? (assignment.solutionReleased ? 'apricot' : 'neutral') : 'neutral'}>
-            {assignment.hasSolution
-              ? assignment.solutionReleased
-                ? 'Corrigé libéré'
-                : 'Corrigé retenu'
-              : 'Sans corrigé'}
-          </Badge>
-          <span className="text-sm text-ink-soft">{formatDueDate(assignment.dueAt)}</span>
-        </div>
-      )}
-
-      <form onSubmit={(event) => void submit(event)} className="mt-5 flex flex-col gap-5">
+      <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-5">
         <FormAlert message={formError} attempt={attempt} />
 
         <FormField
@@ -360,24 +325,6 @@ export function AssignmentEditor({
               )}
             </div>
           </section>
-
-          {onShowSubmissions && (
-            <section aria-labelledby="suivi-titre" className="mt-4 rounded-card border border-line bg-surface p-5 shadow-soft">
-              <h4 id="suivi-titre" className="text-base font-semibold text-ink">
-                Suivi
-              </h4>
-              <p className="mt-1 text-sm text-ink-soft">
-                {assignment.status === 'published'
-                  ? 'Les travaux remis par vos élèves, à consulter et à noter.'
-                  : 'Publiez le devoir pour que vos élèves puissent rendre leur travail.'}
-              </p>
-              <div className="mt-3">
-                <Button variant="primary" onClick={onShowSubmissions} disabled={pending}>
-                  Voir les rendus
-                </Button>
-              </div>
-            </section>
-          )}
 
           <div className="mt-6 border-t border-line pt-4">
             <button
