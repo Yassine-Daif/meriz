@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import type { ApiError } from '../lib/apiClient'
+import type { ApiClient, ApiError } from '../lib/apiClient'
 import type { DocumentRepository } from '../lib/documentRepository'
+import { ClassWorkPanel } from './assignments/ClassWorkPanel'
+import type { OpenReadOnlyModel, OpenWorkDocument } from './assignments/types'
 import { DocumentList } from './DocumentList'
 import { PageShell } from './PageShell'
-import { ComingSoon } from './ui/ComingSoon'
 import { Segmented } from './ui/Segmented'
 
 type WorkTab = 'personal' | 'class'
@@ -14,19 +15,35 @@ const TABS = [
 ] as const
 
 interface WorkPageProps {
+  client: ApiClient
   repository: DocumentRepository
+  /** Devoir à rouvrir d'emblée (retour de l'outil MCD). */
+  openAssignmentId: string | null
   onOpenDocument: (id: string) => Promise<ApiError | null>
   onNewDocument: () => Promise<ApiError | null>
   onOpenExample: () => Promise<ApiError | null>
   onImportFile: (file: File) => Promise<string | null>
+  onOpenWorkDocument: OpenWorkDocument
+  onOpenReadOnlyModel: OpenReadOnlyModel
 }
 
 /**
- * Mon travail : mes documents personnels, avec toutes leurs actions. Le
- * travail rendu dans une classe aura son onglet avec la phase suivante.
+ * Mon travail : mes documents personnels d'un côté, les devoirs de mes
+ * classes de l'autre, toutes classes confondues.
  */
-export function WorkPage({ repository, onOpenDocument, onNewDocument, onOpenExample, onImportFile }: WorkPageProps) {
-  const [tab, setTab] = useState<WorkTab>('personal')
+export function WorkPage({
+  client,
+  repository,
+  openAssignmentId,
+  onOpenDocument,
+  onNewDocument,
+  onOpenExample,
+  onImportFile,
+  onOpenWorkDocument,
+  onOpenReadOnlyModel,
+}: WorkPageProps) {
+  // Revenir de l'outil sur un devoir ramène à l'onglet qui l'a ouvert.
+  const [tab, setTab] = useState<WorkTab>(openAssignmentId === null ? 'personal' : 'class')
 
   return (
     <PageShell
@@ -48,10 +65,11 @@ export function WorkPage({ repository, onOpenDocument, onNewDocument, onOpenExam
             onImportFile={onImportFile}
           />
         ) : (
-          <ComingSoon
-            headingLevel="h2"
-            title="Travail de classe"
-            description="Les exercices et examens de vos classes, avec leur provenance, se retrouveront ici."
+          <ClassWorkPanel
+            client={client}
+            openAssignmentId={openAssignmentId}
+            onOpenWorkDocument={onOpenWorkDocument}
+            onOpenReadOnlyModel={onOpenReadOnlyModel}
           />
         )}
       </div>

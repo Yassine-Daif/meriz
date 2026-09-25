@@ -8,7 +8,7 @@ import { Notice } from './ui/Notice'
 import { SkipLink } from './ui/SkipLink'
 import { ThemeToggle } from './ui/ThemeToggle'
 
-export type ConnectedPage = 'home' | 'classes' | 'work' | 'profile'
+export type ConnectedPage = 'home' | 'classes' | 'corrections' | 'work' | 'profile'
 
 interface ConnectedShellProps {
   user: ApiUser
@@ -31,6 +31,13 @@ const ICONS: Record<ConnectedPage, ReactNode> = {
       <path d="M16 12.6c2.4-.2 4 1.2 4.5 4" />
     </>
   ),
+  corrections: (
+    <>
+      <path d="M8 4.5h8a1.5 1.5 0 0 1 1.5 1.5v13a1.5 1.5 0 0 1-1.5 1.5H8A1.5 1.5 0 0 1 6.5 19V6A1.5 1.5 0 0 1 8 4.5" />
+      <path d="M9.5 4.5V3.8a1.3 1.3 0 0 1 1.3-1.3h2.4a1.3 1.3 0 0 1 1.3 1.3v.7" />
+      <path d="m9.5 12.5 1.8 1.8 3.4-3.6" />
+    </>
+  ),
   work: <path d="M3.5 7a1.5 1.5 0 0 1 1.5-1.5h4.2l2 2.2H19A1.5 1.5 0 0 1 20.5 9.2V17.5A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z" />,
   profile: (
     <>
@@ -40,9 +47,10 @@ const ICONS: Record<ConnectedPage, ReactNode> = {
   ),
 }
 
-const ITEMS: { page: ConnectedPage; label: string }[] = [
+const ITEMS: { page: ConnectedPage; label: string; teacherOnly?: boolean }[] = [
   { page: 'home', label: 'Accueil' },
   { page: 'classes', label: 'Mes classes' },
+  { page: 'corrections', label: 'À corriger', teacherOnly: true },
   { page: 'work', label: 'Mon travail' },
   { page: 'profile', label: 'Profil' },
 ]
@@ -54,6 +62,10 @@ const ITEMS: { page: ConnectedPage; label: string }[] = [
  * aria-current, par le fond et par un trait, jamais par la couleur seule.
  */
 export function ConnectedShell({ user, page, onNavigate, notice, onClearNotice, children }: ConnectedShellProps) {
+  // Corriger des rendus n'a de sens que pour un prof : l'entrée ne
+  // s'affiche pas ailleurs, plutôt que de mener à une page toujours vide.
+  const items = ITEMS.filter((item) => !item.teacherOnly || user.role === 'teacher')
+
   return (
     <div className="flex h-dvh flex-col bg-shell font-sans text-ink">
       <SkipLink />
@@ -76,7 +88,7 @@ export function ConnectedShell({ user, page, onNavigate, notice, onClearNotice, 
           className="shrink-0 overflow-x-auto border-b border-line bg-surface lg:w-60 lg:overflow-x-visible lg:border-r lg:border-b-0"
         >
           <ul className="flex gap-1 px-3 py-2 lg:flex-col lg:px-3 lg:py-5">
-            {ITEMS.map((item) => {
+            {items.map((item) => {
               const current = item.page === page
               return (
                 <li key={item.page} className="shrink-0">

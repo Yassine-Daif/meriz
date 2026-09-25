@@ -38,6 +38,8 @@ interface TeacherHomeProps {
   onNewDocument: () => Promise<ApiError | null>
   onOpenClassroom: (opening: ClassroomOpening) => void
   onShowWork: () => void
+  /** Les rendus à noter, toutes classes confondues. */
+  onShowCorrections: () => void
   /** Message à annoncer à l'arrivée (ex. connexion réussie). */
   announcement: string | null
 }
@@ -69,6 +71,7 @@ export function TeacherHome({
   onNewDocument,
   onOpenClassroom,
   onShowWork,
+  onShowCorrections,
   announcement,
 }: TeacherHomeProps) {
   const classrooms = useClassrooms(client)
@@ -189,7 +192,9 @@ export function TeacherHome({
             title="Pour vos classes"
             classrooms={mine}
             shortcuts={TEACHER_SHORTCUTS}
-            hint="Les rendus à noter se trouvent dans l’onglet Rendus de chaque devoir."
+            action={
+              <Button onClick={onShowCorrections}>Voir les rendus à corriger</Button>
+            }
             onOpen={onOpenClassroom}
           />
         </div>

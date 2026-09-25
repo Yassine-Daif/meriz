@@ -25,6 +25,8 @@ interface SubmissionReviewProps {
   /** Corrigé du devoir, quand le prof en a construit un. */
   solutionContent: string | null
   submissionId: string
+  /** Libellé du retour : la liste d'où l'on vient n'est pas toujours la même. */
+  backLabel?: string
   /** Retour à la liste des rendus, avec un message à annoncer. */
   onBack: (message: string | null) => void
   onOpenReadOnlyModel: OpenReadOnlyModel
@@ -42,6 +44,7 @@ export function SubmissionReview({
   assignmentTitle,
   solutionContent,
   submissionId,
+  backLabel = 'Retour aux rendus',
   onBack,
   onOpenReadOnlyModel,
 }: SubmissionReviewProps) {
@@ -151,7 +154,7 @@ export function SubmissionReview({
   const back = (
     <Button variant="ghost" size="sm" onClick={() => onBack(null)} className="-ml-3 mb-3">
       <span aria-hidden="true">←</span>
-      Retour aux rendus
+      {backLabel}
     </Button>
   )
 

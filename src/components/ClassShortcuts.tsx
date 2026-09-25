@@ -1,4 +1,5 @@
 import { useId, useState } from 'react'
+import type { ReactNode } from 'react'
 import type { ClassroomSummary } from '../lib/classroomsApi'
 import type { ClassroomOpening } from './ClassesPage'
 import type { ClassroomTab } from './ClassroomView'
@@ -16,8 +17,8 @@ interface ClassShortcutsProps {
   /** Classes déjà chargées par l'accueil : rien n'est rechargé ici. */
   classrooms: readonly ClassroomSummary[]
   shortcuts: readonly ClassShortcut[]
-  /** Phrase sous les boutons, pour ce qui n'a pas de raccourci propre. */
-  hint?: string
+  /** Ce qui suit les raccourcis, pour ce qui ne dépend pas d'une classe. */
+  action?: ReactNode
   onOpen: (opening: ClassroomOpening) => void
 }
 
@@ -28,7 +29,7 @@ interface ClassShortcutsProps {
  *
  * Sans classe, il n'y a rien à proposer : le bloc ne s'affiche pas.
  */
-export function ClassShortcuts({ title, classrooms, shortcuts, hint, onOpen }: ClassShortcutsProps) {
+export function ClassShortcuts({ title, classrooms, shortcuts, action, onOpen }: ClassShortcutsProps) {
   const selectId = useId()
   const titleId = `${selectId}-titre`
   const [chosen, setChosen] = useState(classrooms[0]?.id ?? '')
@@ -91,7 +92,7 @@ export function ClassShortcuts({ title, classrooms, shortcuts, hint, onOpen }: C
           ))}
         </ul>
 
-        {hint && <p className="mt-4 text-sm text-ink-soft">{hint}</p>}
+        {action && <div className="mt-4">{action}</div>}
       </div>
     </section>
   )

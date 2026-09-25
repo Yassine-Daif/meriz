@@ -26,6 +26,8 @@ import { AccountLoading } from './components/AccountLoading'
 import { ProfilePage } from './components/ProfilePage'
 import { ClassesPage } from './components/ClassesPage'
 import type { ClassroomOpening } from './components/ClassesPage'
+import { CorrectionsPage } from './components/CorrectionsPage'
+import type { CorrectionOpening } from './components/CorrectionsPage'
 import type { ReadOnlyModel } from './components/assignments/types'
 import { ConnectedShell } from './components/ConnectedShell'
 import type { ConnectedPage } from './components/ConnectedShell'
@@ -59,7 +61,7 @@ type EditorTarget =
       field: AssignmentField
       title: string
     }
-  | { kind: 'work'; classroomId: string; assignmentId: string }
+  | { kind: 'work'; classroomId: string; assignmentId: string; origin: EditorOrigin }
   | {
       kind: 'review'
       classroomId: string
@@ -67,7 +69,20 @@ type EditorTarget =
       /** Rendu consulté, ou null pour un corrigé libéré. */
       submissionId: string | null
       label: string
+      origin: EditorOrigin
     }
+
+/** La page d'où l'outil a été ouvert, celle où fermer doit ramener. */
+type EditorOrigin = 'classes' | 'corrections' | 'work'
+
+/**
+ * Ce qu'une page doit rouvrir en arrivant. Seule la page visée lit sa
+ * charge : personne d'autre n'a à la comprendre.
+ */
+type Opening =
+  | { page: 'classes'; classroom: ClassroomOpening }
+  | { page: 'corrections'; correction: CorrectionOpening }
+  | { page: 'work'; assignmentId: string }
 
 /** Modèle ouvert, sa sauvegarde automatique, et l'espace d'où il vient. */
 interface OpenedSession {
@@ -152,16 +167,22 @@ export function App() {
   // Page de l'espace connecté, gardée pendant l'édition : fermer un
   // document ramène à la page d'où on l'a ouvert.
   const [page, setPage] = useState<ConnectedPage>('home')
-  const [classroomOpening, setClassroomOpening] = useState<ClassroomOpening | null>(null)
+  const [opening, setOpening] = useState<Opening | null>(null)
   // Compteur de navigation : chaque clic remonte la page, à neuf.
   const [navigation, setNavigation] = useState(0)
 
-  const navigate = useCallback((next: ConnectedPage, opening: ClassroomOpening | null = null) => {
+  const navigate = useCallback((next: ConnectedPage, target: Opening | null = null) => {
     setHomeAnnouncement(null)
-    setClassroomOpening(opening)
+    setOpening(target)
     setPage(next)
     setNavigation((count) => count + 1)
   }, [])
+
+  /**
+   * D'où l'on ouvre l'outil MCD, donc où le fermer ramène. Un rendu
+   * ouvert depuis « À corriger » y retourne, pas dans la classe.
+   */
+  const editorOrigin: EditorOrigin = page === 'corrections' ? 'corrections' : page === 'work' ? 'work' : 'classes'
 
   // Changement de compte : le document ouvert appartient à l'espace
   // précédent, il est refermé d'office.
@@ -169,7 +190,7 @@ export function App() {
   useEffect(() => {
     // Nouveau compte : on repart de l'accueil, jamais d'un écran de l'ancien.
     setPage('home')
-    setClassroomOpening(null)
+    setOpening(null)
     setOpened((previous) => {
       if (previous && previous.spaceKey !== spaceKey) {
         previous.saver.dispose()
@@ -205,8 +226,8 @@ export function App() {
   /** Le document de travail d'un élève sur un devoir : retour au devoir en fermant. */
   const openWorkDocument = useCallback(
     (classroomId: string, assignmentId: string, documentId: string) =>
-      openStoredDocument(documentId, { kind: 'work', classroomId, assignmentId }),
-    [openStoredDocument],
+      openStoredDocument(documentId, { kind: 'work', classroomId, assignmentId, origin: editorOrigin }),
+    [openStoredDocument, editorOrigin],
   )
 
   const createAndOpen = useCallback(
@@ -313,11 +334,12 @@ export function App() {
             assignmentId: model.assignmentId,
             submissionId: model.submissionId,
             label: model.label,
+            origin: editorOrigin,
           },
         }
       })
     },
-    [spaceKey, cloud],
+    [spaceKey, cloud, editorOrigin],
   )
 
   const rename = useCallback(
@@ -345,16 +367,37 @@ export function App() {
     setOpened(null)
     // Tout ce qui vient d'un devoir y retourne : on ne retombe jamais
     // sur l'accueil après avoir dessiné une base, travaillé ou consulté.
+    // Et on revient par la porte d'entrée, celle de la page d'origine.
     const target = current?.target
-    if (target && target.kind !== 'document') {
-      navigate('classes', {
+    if (!target || target.kind === 'document') {
+      return
+    }
+    const origin = target.kind === 'work' || target.kind === 'review' ? target.origin : 'classes'
+    if (origin === 'corrections' && target.kind === 'review' && target.submissionId !== null) {
+      navigate('corrections', {
+        page: 'corrections',
+        correction: {
+          submissionId: target.submissionId,
+          classroomId: target.classroomId,
+          assignmentId: target.assignmentId,
+        },
+      })
+      return
+    }
+    if (origin === 'work') {
+      navigate('work', { page: 'work', assignmentId: target.assignmentId })
+      return
+    }
+    navigate('classes', {
+      page: 'classes',
+      classroom: {
         id: target.classroomId,
         initial: null,
         message: null,
         assignmentId: target.assignmentId,
         submissionId: target.kind === 'review' ? (target.submissionId ?? undefined) : undefined,
-      })
-    }
+      },
+    })
   }, [current, navigate])
 
   /* ---------------- Proposition d'import des documents locaux ---------------- */
@@ -453,7 +496,7 @@ export function App() {
       repository,
       onOpenDocument: openDocument,
       onNewDocument: newDocument,
-      onOpenClassroom: (opening: ClassroomOpening) => navigate('classes', opening),
+      onOpenClassroom: (classroom: ClassroomOpening) => navigate('classes', { page: 'classes', classroom }),
       onShowWork: () => navigate('work'),
       announcement: homeAnnouncement,
     }
@@ -468,7 +511,11 @@ export function App() {
         >
           {page === 'home' &&
             (session.user.role === 'teacher' ? (
-              <TeacherHome key={pageKey} {...homeProps} />
+              <TeacherHome
+                key={pageKey}
+                {...homeProps}
+                onShowCorrections={() => navigate('corrections')}
+              />
             ) : (
               <StudentHome key={pageKey} {...homeProps} />
             ))}
@@ -477,20 +524,32 @@ export function App() {
               key={pageKey}
               user={session.user}
               client={account.client}
-              opening={classroomOpening}
+              opening={opening?.page === 'classes' ? opening.classroom : null}
               onEditAssignmentModel={openAssignmentModel}
               onOpenWorkDocument={openWorkDocument}
+              onOpenReadOnlyModel={openReadOnlyModel}
+            />
+          )}
+          {page === 'corrections' && (
+            <CorrectionsPage
+              key={pageKey}
+              client={account.client}
+              opening={opening?.page === 'corrections' ? opening.correction : null}
               onOpenReadOnlyModel={openReadOnlyModel}
             />
           )}
           {page === 'work' && (
             <WorkPage
               key={pageKey}
+              client={account.client}
               repository={repository}
+              openAssignmentId={opening?.page === 'work' ? opening.assignmentId : null}
               onOpenDocument={openDocument}
               onNewDocument={newDocument}
               onOpenExample={openExample}
               onImportFile={importFile}
+              onOpenWorkDocument={openWorkDocument}
+              onOpenReadOnlyModel={openReadOnlyModel}
             />
           )}
           {page === 'profile' && (
