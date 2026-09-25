@@ -57,6 +57,7 @@ export function SubmissionsPanel({
         classroomId={assignment.classroomId}
         assignmentId={assignment.id}
         assignmentTitle={assignment.title}
+        solutionContent={assignment.solutionContent}
         submissionId={view.submissionId}
         onBack={(message) => {
           setView({ kind: 'list' })

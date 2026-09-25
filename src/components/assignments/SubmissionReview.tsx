@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import { displayName } from '../../lib/authApi'
+import { parseModelFile } from '../../lib/persistence'
+import { compareMcd } from '../../model/compare'
+import { ComparisonPanel } from './ComparisonPanel'
 import { formatSubmittedAt, getSubmission, gradeSubmission, removeGrade } from '../../lib/submissionsApi'
 import type { Submission } from '../../lib/submissionsApi'
 import { ConfirmDialog } from '../ConfirmDialog'
@@ -19,6 +22,8 @@ interface SubmissionReviewProps {
   classroomId: string
   assignmentId: string
   assignmentTitle: string
+  /** Corrigé du devoir, quand le prof en a construit un. */
+  solutionContent: string | null
   submissionId: string
   /** Retour à la liste des rendus, avec un message à annoncer. */
   onBack: (message: string | null) => void
@@ -35,6 +40,7 @@ export function SubmissionReview({
   classroomId,
   assignmentId,
   assignmentTitle,
+  solutionContent,
   submissionId,
   onBack,
   onOpenReadOnlyModel,
@@ -51,15 +57,42 @@ export function SubmissionReview({
   const [saved, setSaved] = useState('')
   const [confirmRemove, setConfirmRemove] = useState(false)
 
+  /**
+   * Comparaison au corrigé, calculée ici sans rien demander au serveur :
+   * le prof a déjà les deux contenus en main. Une lecture impossible d'un
+   * côté ou de l'autre donne simplement « pas de comparaison ».
+   */
+  const comparison = useMemo(() => {
+    if (solutionContent === null || submission === null) {
+      return null
+    }
+    const corrige = parseModelFile(solutionContent)
+    const rendu = parseModelFile(submission.content)
+    if (!corrige.ok || !rendu.ok) {
+      return null
+    }
+    return compareMcd(rendu.state.mcd, corrige.state.mcd)
+  }, [solutionContent, submission])
+
   const adopt = useCallback((value: Submission) => {
     setSubmission(value)
     setGrade(value.grade ?? '')
     setFeedback(value.feedback ?? '')
   }, [])
 
+  // Numéro du dernier chargement demandé. Une réponse dépassée n'écrase
+  // plus le formulaire : sans ce garde-fou, une seconde lecture qui
+  // revient en retard effacerait la note que le prof vient de saisir.
+  const loadTicket = useRef(0)
+
   const load = useCallback(async () => {
+    const ticket = loadTicket.current + 1
+    loadTicket.current = ticket
     setLoadError(null)
     const result = await getSubmission(client, submissionId)
+    if (ticket !== loadTicket.current) {
+      return
+    }
     if (result.ok) adopt(result.value)
     else setLoadError(result.error.message)
   }, [client, submissionId, adopt])
@@ -202,6 +235,23 @@ export function SubmissionReview({
           </Button>
         </div>
       </Card>
+
+      {comparison ? (
+        <ComparisonPanel
+          comparison={comparison}
+          onUseGrade={setGrade}
+          onAddToFeedback={(text) =>
+            // On ajoute sans écraser : le prof garde ce qu'il avait écrit.
+            setFeedback((current) => (current.trim() === '' ? text : `${current.trimEnd()}\n\n${text}`))
+          }
+        />
+      ) : (
+        <p className="mt-4 text-sm text-ink-soft">
+          {solutionContent === null
+            ? 'Pas de comparaison : ce devoir n’a pas de corrigé. Construisez-en un pour obtenir cette aide.'
+            : 'Pas de comparaison : le corrigé ou le rendu n’a pas pu être relu.'}
+        </p>
+      )}
 
       <form onSubmit={(event) => void submit(event)} className="mt-4 flex flex-col gap-5">
         <FormAlert message={formError} attempt={attempt} />
