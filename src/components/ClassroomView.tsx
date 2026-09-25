@@ -30,6 +30,8 @@ interface ClassroomViewProps {
   openAssignmentId?: string | null
   /** Rendu à rouvrir dans ce devoir (retour d'une consultation). */
   openSubmissionId?: string | null
+  /** Onglet d'arrivée, quand on vient d'un raccourci de l'accueil. */
+  openTab?: ClassroomTab | null
   /** Ouvre l'outil MCD sur la base ou le corrigé d'un devoir. */
   onEditAssignmentModel: EditAssignmentModel
   /** Ouvre l'outil MCD sur le travail d'un élève pour un devoir. */
@@ -45,7 +47,7 @@ interface ClassroomViewProps {
 }
 
 /** Sections de l'espace d'une classe. */
-type ClassroomTab = 'eleves' | 'exercices' | 'cours'
+export type ClassroomTab = 'eleves' | 'exercices' | 'cours'
 
 type PendingAction =
   | { kind: 'leave' }
@@ -112,6 +114,7 @@ export function ClassroomView({
   initialStatus = null,
   openAssignmentId = null,
   openSubmissionId = null,
+  openTab = null,
   onEditAssignmentModel,
   onOpenWorkDocument,
   onOpenReadOnlyModel,
@@ -129,8 +132,9 @@ export function ClassroomView({
   const [renaming, setRenaming] = useState(false)
   const [newName, setNewName] = useState('')
   const [renameError, setRenameError] = useState<string | undefined>()
-  // Retour de l'outil MCD sur un devoir : on rouvre l'onglet Exercices.
-  const [tab, setTab] = useState<ClassroomTab>(openAssignmentId ? 'exercices' : 'eleves')
+  // Onglet d'arrivée : celui demandé par un raccourci de l'accueil, sinon
+  // Exercices au retour de l'outil MCD sur un devoir, sinon les élèves.
+  const [tab, setTab] = useState<ClassroomTab>(openTab ?? (openAssignmentId ? 'exercices' : 'eleves'))
   const idBase = useId()
 
   // Le rappel du parent peut changer à chaque rendu : on garde le dernier

@@ -6,14 +6,29 @@ import type { DocumentRepository } from '../lib/documentRepository'
 import { useClassrooms } from '../lib/useClassrooms'
 import type { ClassroomOpening } from './ClassesPage'
 import { ClassroomGrid } from './ClassroomGrid'
+import { ClassShortcuts } from './ClassShortcuts'
+import type { ClassShortcut } from './ClassShortcuts'
 import { CreateClassForm } from './CreateClassForm'
 import { PageShell } from './PageShell'
 import { RecentDocuments } from './RecentDocuments'
 import { Avatar } from './ui/Avatar'
 import { Button } from './ui/Button'
-import { ComingSoon } from './ui/ComingSoon'
 import { LiveAnnouncement } from './ui/LiveAnnouncement'
 import { Notice } from './ui/Notice'
+
+/** Là où un prof va le plus souvent, dans une de ses classes. */
+const TEACHER_SHORTCUTS: readonly ClassShortcut[] = [
+  {
+    tab: 'exercices',
+    label: 'Devoirs',
+    description: 'Les sujets donnés à la classe, leurs rendus, et la création d’un nouveau devoir.',
+  },
+  {
+    tab: 'cours',
+    label: 'Cours',
+    description: 'Vos supports publiés pour la classe, et la composition d’un nouveau cours.',
+  },
+]
 
 interface TeacherHomeProps {
   user: ApiUser
@@ -167,6 +182,18 @@ export function TeacherHome({
 
       {/* Les classes passent devant dès qu'il y en a ; sinon la création ouvre la marche. */}
       <div className="mt-10">{hasClassrooms ? classesSection : createSection}</div>
+      {/* Les raccourcis suivent les classes : sans classe, ils ne s'affichent pas. */}
+      {mine.length > 0 && (
+        <div className="mt-10">
+          <ClassShortcuts
+            title="Pour vos classes"
+            classrooms={mine}
+            shortcuts={TEACHER_SHORTCUTS}
+            hint="Les rendus à noter se trouvent dans l’onglet Rendus de chaque devoir."
+            onOpen={onOpenClassroom}
+          />
+        </div>
+      )}
       <div className="mt-10">{hasClassrooms ? createSection : classesSection}</div>
       <div className="mt-10">
         <RecentDocuments
@@ -178,16 +205,6 @@ export function TeacherHome({
         />
       </div>
 
-      <section aria-labelledby="bientot-titre" className="mt-10">
-        <h2 id="bientot-titre" className="text-lg font-semibold tracking-tight text-ink">
-          Bientôt pour vos classes
-        </h2>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
-          <ComingSoon title="Créer un devoir" description="Confier un sujet de MCD à une classe, avec une échéance." />
-          <ComingSoon title="Créer un cours" description="Publier vos supports, à côté de l'outil de modélisation." />
-          <ComingSoon title="À corriger" description="Les rendus de vos élèves, regroupés et prêts à annoter." />
-        </div>
-      </section>
     </PageShell>
   )
 }

@@ -5,6 +5,7 @@ import type { ClassroomDetail } from '../lib/classroomsApi'
 import { useClassrooms } from '../lib/useClassrooms'
 import { ClassroomGrid } from './ClassroomGrid'
 import { ClassroomView } from './ClassroomView'
+import type { ClassroomTab } from './ClassroomView'
 import type { EditAssignmentModel, OpenReadOnlyModel, OpenWorkDocument } from './assignments/types'
 import { CreateClassForm } from './CreateClassForm'
 import { JoinClassForm } from './JoinClassForm'
@@ -21,6 +22,8 @@ export interface ClassroomOpening {
   assignmentId?: string
   /** Rendu à rouvrir dans ce devoir (retour d'une consultation). */
   submissionId?: string
+  /** Onglet d'arrivée, quand on vient d'un raccourci de l'accueil. */
+  tab?: ClassroomTab
 }
 
 interface ClassesPageProps {
@@ -81,6 +84,7 @@ export function ClassesPage({
           initial={selected.initial}
           openAssignmentId={selected.assignmentId ?? null}
           openSubmissionId={selected.submissionId ?? null}
+          openTab={selected.tab ?? null}
           onEditAssignmentModel={onEditAssignmentModel}
           onOpenWorkDocument={onOpenWorkDocument}
           onOpenReadOnlyModel={onOpenReadOnlyModel}

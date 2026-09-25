@@ -5,15 +5,30 @@ import type { DocumentRepository } from '../lib/documentRepository'
 import { useClassrooms } from '../lib/useClassrooms'
 import type { ClassroomOpening } from './ClassesPage'
 import { ClassroomGrid } from './ClassroomGrid'
+import { ClassShortcuts } from './ClassShortcuts'
+import type { ClassShortcut } from './ClassShortcuts'
 import { JoinClassForm } from './JoinClassForm'
 import { PageShell } from './PageShell'
 import { RecentDocuments } from './RecentDocuments'
 import { Avatar } from './ui/Avatar'
 import { Button } from './ui/Button'
 import { Card } from './ui/Card'
-import { ComingSoon } from './ui/ComingSoon'
 import { LiveAnnouncement } from './ui/LiveAnnouncement'
 import { Notice } from './ui/Notice'
+
+/** Là où un élève va le plus souvent, dans une de ses classes. */
+const STUDENT_SHORTCUTS: readonly ClassShortcut[] = [
+  {
+    tab: 'exercices',
+    label: 'Exercices',
+    description: 'Les exercices et les examens donnés par votre prof, avec leur échéance et votre avancement.',
+  },
+  {
+    tab: 'cours',
+    label: 'Cours',
+    description: 'Les supports publiés par votre prof, à lire à côté de l’outil de modélisation.',
+  },
+]
 
 interface StudentHomeProps {
   user: ApiUser
@@ -112,16 +127,14 @@ export function StudentHome({
         </aside>
       </div>
 
-      <section aria-labelledby="bientot-titre" className="mt-10">
-        <h2 id="bientot-titre" className="text-lg font-semibold tracking-tight text-ink">
-          Bientôt dans vos classes
-        </h2>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
-          <ComingSoon title="Exercices" description="Les MCD à réaliser que votre prof vous confie, avec leur échéance." />
-          <ComingSoon title="Examens" description="Des épreuves chronométrées, rendues directement depuis Meriz." />
-          <ComingSoon title="Cours" description="Les supports de votre prof, à côté de l'outil pour pratiquer." />
-        </div>
-      </section>
+      <div className="mt-10">
+        <ClassShortcuts
+          title="Dans vos classes"
+          classrooms={classrooms.classrooms ?? []}
+          shortcuts={STUDENT_SHORTCUTS}
+          onOpen={onOpenClassroom}
+        />
+      </div>
     </PageShell>
   )
 }
