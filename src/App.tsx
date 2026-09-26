@@ -10,7 +10,7 @@ import { apiError } from './lib/apiClient'
 import { browserStorage } from './lib/browserStorage'
 import { createInertSaver, createLocalRepository } from './lib/documentRepository'
 import { getLiveSnapshot } from './lib/liveApi'
-import { createPoller } from './lib/poller'
+import { createLiveTransport } from './lib/liveTransport'
 import type { DocumentRepository, DocumentSaver } from './lib/documentRepository'
 import { browserDocumentStore } from './lib/documentStore'
 import { importModelFile } from './lib/importFile'
@@ -40,9 +40,6 @@ import { useSession } from './components/sessionContext'
 
 /** Délai laissé à un envoi en cours quand on quitte l'éditeur. */
 const LEAVE_FLUSH_MS = 3000
-
-/** Cadence d'un travail observé en direct : assez vif pour suivre une main. */
-const LIVE_REFRESH_MS = 3000
 
 interface ImportProposal {
   documents: DocumentMeta[]
@@ -360,37 +357,51 @@ export function App() {
   const liveAssignmentId = current?.target.kind === 'review' ? current.target.assignmentId : null
 
   /**
-   * Un travail observé se relit toutes les trois secondes, tant que la
-   * consultation reste ouverte et la page au premier plan. Seul l'état
-   * du modèle est remplacé, jamais l'identifiant du document : l'éditeur
-   * ne remonte pas, donc le cadrage et la vue du prof sont gardés.
+   * Adopte un modèle observé. Seul l'état est remplacé, jamais
+   * l'identifiant du document : l'éditeur ne remonte pas, donc le
+   * cadrage et la vue du prof sont gardés. Un contenu identique au
+   * précédent ne change rien, un contenu illisible non plus : on garde
+   * alors la dernière image bonne.
+   */
+  const adoptLiveContent = useCallback((content: string) => {
+    if (content === lastLiveContent.current) {
+      return
+    }
+    lastLiveContent.current = content
+    const parsed = parseModelFile(content)
+    if (!parsed.ok) {
+      return
+    }
+    setOpened((previous) =>
+      previous ? { ...previous, document: { ...previous.document, state: parsed.state } } : previous,
+    )
+  }, [])
+
+  /**
+   * Un travail observé arrive en direct par websocket, et le
+   * rafraîchissement régulier reste en filet : si le direct ne s'établit
+   * pas ou retombe, l'image continue d'avancer. Tout se ferme avec la
+   * vue, et s'interrompt quand l'onglet passe en arrière-plan.
    */
   useEffect(() => {
     if (account.kind !== 'cloud' || liveTarget === null || liveAssignmentId === null) {
       return
     }
     const client = account.client
-    const poller = createPoller({
-      delayMs: LIVE_REFRESH_MS,
-      run: async (stillWanted) => {
+    const transport = createLiveTransport({
+      assignmentId: liveAssignmentId,
+      studentId: liveTarget.studentId,
+      fetchSnapshot: async (stillWanted) => {
         const result = await getLiveSnapshot(client, liveAssignmentId, liveTarget.studentId)
-        if (!stillWanted() || !result.ok || result.value.content === lastLiveContent.current) {
-          return
+        if (stillWanted() && result.ok) {
+          adoptLiveContent(result.value.content)
         }
-        lastLiveContent.current = result.value.content
-        const parsed = parseModelFile(result.value.content)
-        if (!parsed.ok) {
-          // Modèle illisible à cet instant : on garde la dernière image bonne.
-          return
-        }
-        setOpened((previous) =>
-          previous ? { ...previous, document: { ...previous.document, state: parsed.state } } : previous,
-        )
       },
+      onContent: adoptLiveContent,
     })
-    poller.start()
-    return () => poller.stop()
-  }, [account, liveTarget, liveAssignmentId])
+    transport.start()
+    return () => transport.stop()
+  }, [account, liveTarget, liveAssignmentId, adoptLiveContent])
 
   const rename = useCallback(
     async (name: string): Promise<boolean> => {

@@ -30,11 +30,11 @@ export interface Poller {
 }
 
 /** Sources du navigateur, quand on ne les simule pas. */
-function browserHidden(): boolean {
+export function browserHidden(): boolean {
   return typeof document !== 'undefined' && document.visibilityState === 'hidden'
 }
 
-function browserVisibility(listener: () => void): () => void {
+export function browserVisibility(listener: () => void): () => void {
   if (typeof document === 'undefined') {
     return () => {}
   }
