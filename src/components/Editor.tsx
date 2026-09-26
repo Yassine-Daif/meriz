@@ -93,6 +93,18 @@ export function Editor({
   const mldTables = useMemo(() => mcdToMld(state.mcd), [state.mcd])
   const mpdTables = useMemo(() => buildMpd(mldTables, mpdSettings), [mldTables, mpdSettings])
 
+  // Observation en direct : le modèle consulté change tout seul quand
+  // son auteur travaille. On l'adopte sans remonter l'éditeur, pour
+  // garder le cadrage, le zoom et la vue en cours. L'adoption passe par
+  // editAction et non par la barrière : observer n'est pas modifier,
+  // mais il faut bien que l'image suive.
+  useEffect(() => {
+    if (!readOnly || openedDocument.state === history.present) {
+      return
+    }
+    editAction({ type: 'ADOPT', state: openedDocument.state })
+  }, [readOnly, openedDocument.state, history.present])
+
   // Sauvegarde automatique : le saver ignore les états identiques, donc
   // ouvrir un document sans y toucher ne modifie pas sa date.
   useEffect(() => {

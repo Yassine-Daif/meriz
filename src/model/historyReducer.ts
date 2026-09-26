@@ -17,7 +17,16 @@ export interface HistoryState {
   lastSignature: string | null
 }
 
-export type HistoryAction = McdAction | { type: 'UNDO' } | { type: 'REDO' }
+export type HistoryAction =
+  | McdAction
+  | { type: 'UNDO' }
+  | { type: 'REDO' }
+  /**
+   * Adopter un état venu d'ailleurs : l'instantané d'un travail observé
+   * en direct. Ce n'est pas une modification de l'utilisateur, donc rien
+   * ne s'historise, et il n'y a rien à annuler.
+   */
+  | { type: 'ADOPT'; state: McdEditorState }
 
 export function createHistory(present: McdEditorState): HistoryState {
   return { past: [], present, future: [], lastSignature: null }
@@ -45,6 +54,10 @@ function actionSignature(action: McdAction): string | null {
 }
 
 export function historyReducer(state: HistoryState, action: HistoryAction): HistoryState {
+  if (action.type === 'ADOPT') {
+    return createHistory(action.state)
+  }
+
   if (action.type === 'UNDO') {
     const previous = state.past[state.past.length - 1]
     if (!previous) {

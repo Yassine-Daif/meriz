@@ -17,6 +17,8 @@ interface AssignmentsPanelProps {
   openAssignmentId: string | null
   /** Rendu à rouvrir dans ce devoir (retour d'une consultation). */
   openSubmissionId: string | null
+  /** Section du devoir rouvert, quand ce n'est pas l'énoncé. */
+  openAssignmentTab: AssignmentTab | null
   onEditAssignmentModel: EditAssignmentModel
   onOpenReadOnlyModel: OpenReadOnlyModel
 }
@@ -55,6 +57,7 @@ export function AssignmentsPanel({
   classroomName,
   openAssignmentId,
   openSubmissionId,
+  openAssignmentTab,
   onEditAssignmentModel,
   onOpenReadOnlyModel,
 }: AssignmentsPanelProps) {
@@ -79,13 +82,13 @@ export function AssignmentsPanel({
   }, [load])
 
   const open = useCallback(
-    async (id: string, showSubmissions = false) => {
+    async (id: string, tab: AssignmentTab = 'enonce') => {
       setOpening(id)
       const result = await getAssignment(client, id)
       setOpening(null)
       if (result.ok) {
         setStatus(null)
-        setView({ kind: 'edit', assignment: result.value, tab: showSubmissions ? 'rendus' : 'enonce' })
+        setView({ kind: 'edit', assignment: result.value, tab })
       } else {
         setStatus(result.error.message)
         void load()
@@ -95,12 +98,12 @@ export function AssignmentsPanel({
   )
 
   // Retour de l'outil MCD : le devoir travaillé se rouvre tout seul, sur
-  // ses rendus quand on revenait d'un rendu consulté.
+  // la section d'où l'on venait, ses rendus ou son suivi.
   useEffect(() => {
     if (openAssignmentId) {
-      void open(openAssignmentId, openSubmissionId !== null)
+      void open(openAssignmentId, openAssignmentTab ?? (openSubmissionId !== null ? 'rendus' : 'enonce'))
     }
-  }, [openAssignmentId, openSubmissionId, open])
+  }, [openAssignmentId, openSubmissionId, openAssignmentTab, open])
 
   const backToList = (message: string | null) => {
     setView({ kind: 'list' })
@@ -123,6 +126,11 @@ export function AssignmentsPanel({
         onDone={backToList}
         onSaved={(assignment) => {
           setView({ kind: 'edit', assignment, tab: 'enonce' })
+          void load()
+        }}
+        onAssignmentChanged={(assignment) => {
+          // Le devoir change sous la même section : on ne touche pas à l'onglet.
+          setView((previous) => (previous.kind === 'edit' ? { ...previous, assignment } : previous))
           void load()
         }}
         onEditModel={onEditAssignmentModel}

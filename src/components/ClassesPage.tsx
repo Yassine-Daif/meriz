@@ -6,6 +6,7 @@ import { useClassrooms } from '../lib/useClassrooms'
 import { ClassroomGrid } from './ClassroomGrid'
 import { ClassroomView } from './ClassroomView'
 import type { ClassroomTab } from './ClassroomView'
+import type { AssignmentTab } from './assignments/AssignmentWorkspace'
 import type { EditAssignmentModel, OpenReadOnlyModel, OpenWorkDocument } from './assignments/types'
 import { CreateClassForm } from './CreateClassForm'
 import { JoinClassForm } from './JoinClassForm'
@@ -22,6 +23,8 @@ export interface ClassroomOpening {
   assignmentId?: string
   /** Rendu à rouvrir dans ce devoir (retour d'une consultation). */
   submissionId?: string
+  /** Section du devoir rouvert, quand ce n'est pas l'énoncé. */
+  assignmentTab?: AssignmentTab
   /** Onglet d'arrivée, quand on vient d'un raccourci de l'accueil. */
   tab?: ClassroomTab
 }
@@ -84,6 +87,7 @@ export function ClassesPage({
           initial={selected.initial}
           openAssignmentId={selected.assignmentId ?? null}
           openSubmissionId={selected.submissionId ?? null}
+          openAssignmentTab={selected.assignmentTab ?? null}
           openTab={selected.tab ?? null}
           onEditAssignmentModel={onEditAssignmentModel}
           onOpenWorkDocument={onOpenWorkDocument}

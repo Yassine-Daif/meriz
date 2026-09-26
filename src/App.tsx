@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { DocumentMeta, OpenedDocument } from './model/document'
 import { emptyEditorState } from './model/document'
 import type { McdEditorState } from './model/mcdReducer'
@@ -9,6 +9,8 @@ import type { ApiError } from './lib/apiClient'
 import { apiError } from './lib/apiClient'
 import { browserStorage } from './lib/browserStorage'
 import { createInertSaver, createLocalRepository } from './lib/documentRepository'
+import { getLiveSnapshot } from './lib/liveApi'
+import { createPoller } from './lib/poller'
 import type { DocumentRepository, DocumentSaver } from './lib/documentRepository'
 import { browserDocumentStore } from './lib/documentStore'
 import { importModelFile } from './lib/importFile'
@@ -38,6 +40,9 @@ import { useSession } from './components/sessionContext'
 
 /** Délai laissé à un envoi en cours quand on quitte l'éditeur. */
 const LEAVE_FLUSH_MS = 3000
+
+/** Cadence d'un travail observé en direct : assez vif pour suivre une main. */
+const LIVE_REFRESH_MS = 3000
 
 interface ImportProposal {
   documents: DocumentMeta[]
@@ -70,6 +75,8 @@ type EditorTarget =
       submissionId: string | null
       label: string
       origin: EditorOrigin
+      /** Travail suivi en direct : l'élève observé, sinon null. */
+      live: { studentId: number } | null
     }
 
 /** La page d'où l'outil a été ouvert, celle où fermer doit ramener. */
@@ -320,6 +327,8 @@ export function App() {
         state: parsed.ok ? parsed.state : emptyEditorState(),
         mpdSettings: (parsed.ok ? parsed.mpdSettings : null) ?? DEFAULT_MPD_SETTINGS,
       }
+      // Point de départ de l'observation : ce contenu est déjà à l'écran.
+      lastLiveContent.current = model.live ? model.content : null
       setHomeAnnouncement(null)
       setOpened((previous) => {
         previous?.saver.dispose()
@@ -335,12 +344,53 @@ export function App() {
             submissionId: model.submissionId,
             label: model.label,
             origin: editorOrigin,
+            live: model.live ?? null,
           },
         }
       })
     },
     [spaceKey, cloud, editorOrigin],
   )
+
+  /* ---------------- Observation en direct ---------------- */
+
+  // Dernier contenu adopté, pour ne remplacer l'état que s'il a changé.
+  const lastLiveContent = useRef<string | null>(null)
+  const liveTarget = current?.target.kind === 'review' ? current.target.live : null
+  const liveAssignmentId = current?.target.kind === 'review' ? current.target.assignmentId : null
+
+  /**
+   * Un travail observé se relit toutes les trois secondes, tant que la
+   * consultation reste ouverte et la page au premier plan. Seul l'état
+   * du modèle est remplacé, jamais l'identifiant du document : l'éditeur
+   * ne remonte pas, donc le cadrage et la vue du prof sont gardés.
+   */
+  useEffect(() => {
+    if (account.kind !== 'cloud' || liveTarget === null || liveAssignmentId === null) {
+      return
+    }
+    const client = account.client
+    const poller = createPoller({
+      delayMs: LIVE_REFRESH_MS,
+      run: async (stillWanted) => {
+        const result = await getLiveSnapshot(client, liveAssignmentId, liveTarget.studentId)
+        if (!stillWanted() || !result.ok || result.value.content === lastLiveContent.current) {
+          return
+        }
+        lastLiveContent.current = result.value.content
+        const parsed = parseModelFile(result.value.content)
+        if (!parsed.ok) {
+          // Modèle illisible à cet instant : on garde la dernière image bonne.
+          return
+        }
+        setOpened((previous) =>
+          previous ? { ...previous, document: { ...previous.document, state: parsed.state } } : previous,
+        )
+      },
+    })
+    poller.start()
+    return () => poller.stop()
+  }, [account, liveTarget, liveAssignmentId])
 
   const rename = useCallback(
     async (name: string): Promise<boolean> => {
@@ -396,6 +446,8 @@ export function App() {
         message: null,
         assignmentId: target.assignmentId,
         submissionId: target.kind === 'review' ? (target.submissionId ?? undefined) : undefined,
+        // Un travail observé ramène au suivi, là où le prof l'a ouvert.
+        assignmentTab: target.kind === 'review' && target.live !== null ? 'suivi' : undefined,
       },
     })
   }, [current, navigate])

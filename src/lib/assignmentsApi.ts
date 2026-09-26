@@ -34,6 +34,9 @@ export interface AssignmentSummary {
   /** Présence du corrigé : renvoyée au prof de la classe seulement. */
   hasSolution: boolean
   solutionReleased: boolean
+  /** Suivi en direct ouvert par le prof. Visible de l'élève aussi : c'est ainsi qu'il sait. */
+  liveTracking: boolean
+  liveTrackingEnabledAt: string | null
   createdAt: string | null
   updatedAt: string | null
 }
@@ -77,12 +80,14 @@ export function parseAssignmentSummary(raw: unknown): AssignmentSummary | null {
   const dueAt = optionalText(raw.due_at)
   const publishedAt = optionalText(raw.published_at)
   const imageUrl = optionalText(raw.image_url)
+  const liveTrackingEnabledAt = optionalText(raw.live_tracking_enabled_at)
   const createdAt = optionalText(raw.created_at)
   const updatedAt = optionalText(raw.updated_at)
   if (
     dueAt === undefined ||
     publishedAt === undefined ||
     imageUrl === undefined ||
+    liveTrackingEnabledAt === undefined ||
     createdAt === undefined ||
     updatedAt === undefined
   ) {
@@ -101,6 +106,8 @@ export function parseAssignmentSummary(raw: unknown): AssignmentSummary | null {
     hasBase: optionalFlag(raw.has_base),
     hasSolution: optionalFlag(raw.has_solution),
     solutionReleased: optionalFlag(raw.solution_released),
+    liveTracking: optionalFlag(raw.live_tracking),
+    liveTrackingEnabledAt,
     createdAt,
     updatedAt,
   }

@@ -3,6 +3,8 @@ import type { ApiClient } from '../../lib/apiClient'
 import { assignmentTypeLabel, copyAssignmentBase, formatDueDate } from '../../lib/assignmentsApi'
 import type { Assignment } from '../../lib/assignmentsApi'
 import { createCloudDocument, getCloudDocument } from '../../lib/documentsApi'
+import { formatDate } from '../../lib/formatDate'
+import { getLastObservedAt } from '../../lib/liveApi'
 import { emptyEditorState } from '../../model/document'
 import { DEFAULT_MPD_SETTINGS } from '../../model/mpd'
 import { serializeModel } from '../../lib/persistence'
@@ -52,6 +54,8 @@ export function StudentAssignmentView({
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
   const [confirmSubmit, setConfirmSubmit] = useState(false)
+  // Heure de dernière lecture de mon travail par mon prof, s'il y en a eu.
+  const [observedAt, setObservedAt] = useState<string | null>(null)
 
   const locked = submission?.status === 'graded'
 
@@ -71,6 +75,23 @@ export function StudentAssignmentView({
       active = false
     }
   }, [client, assignment.id])
+
+  // Transparence : quand mon travail a été lu. Une seule lecture à
+  // l'ouverture du devoir, cette heure raconte le passé.
+  useEffect(() => {
+    if (!assignment.liveTracking || workId === null) {
+      return
+    }
+    let active = true
+    void getLastObservedAt(client, workId).then((result) => {
+      if (active && result.ok) {
+        setObservedAt(result.value)
+      }
+    })
+    return () => {
+      active = false
+    }
+  }, [client, assignment.liveTracking, workId])
 
   /** Retient le document de travail, puis ouvre l'outil dessus. */
   const linkAndOpen = useCallback(
@@ -210,6 +231,22 @@ export function StudentAssignmentView({
         </Notice>
       )}
 
+      {assignment.liveTracking && (
+        <Notice tone="info" title="Votre prof peut suivre cet exercice en direct">
+          Il voit votre modèle tel que vous l’enregistrez, sans pouvoir y toucher. Il ne voit ni vos autres
+          documents, ni votre travail sur d’autres devoirs.
+          <span className="mt-1 block text-ink-soft">
+            {observedAt !== null ? (
+              <>
+                Dernière lecture de votre travail : <time dateTime={observedAt}>{formatDate(observedAt)}</time>.
+              </>
+            ) : (
+              'Votre travail n’a pas encore été lu.'
+            )}
+          </span>
+        </Notice>
+      )}
+
       <Card as="section" aria-labelledby="consigne-titre">
         <h4 id="consigne-titre" className="text-base font-semibold text-ink">
           Consigne
@@ -228,7 +265,9 @@ export function StudentAssignmentView({
         </h4>
         <p className="mt-1 text-sm text-ink-soft">
           {workId !== null
-            ? 'Votre travail est un document personnel : il s’enregistre tout seul, et n’est remis à votre prof qu’au clic sur Rendre.'
+            ? assignment.liveTracking
+              ? 'Votre travail est un document personnel : il s’enregistre tout seul. Votre prof peut le regarder pendant ce devoir, mais le rendre reste votre geste.'
+              : 'Votre travail est un document personnel : il s’enregistre tout seul, et n’est remis à votre prof qu’au clic sur Rendre.'
             : submission
               ? 'Votre travail n’est pas ouvert sur cet appareil. Vous pouvez repartir de ce que vous avez déjà rendu.'
               : assignment.hasBase

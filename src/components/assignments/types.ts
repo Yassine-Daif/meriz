@@ -37,6 +37,12 @@ export interface ReadOnlyModel {
   /** Pastille de la barre, ex. « Rendu de Camille ». */
   label: string
   content: string
+  /**
+   * Travail suivi en direct : l'élève observé. L'application relit son
+   * instantané régulièrement tant que la consultation reste ouverte.
+   * Absent pour un rendu ou un corrigé, qui ne bougent plus.
+   */
+  live?: { studentId: number }
 }
 
 export type OpenReadOnlyModel = (model: ReadOnlyModel) => void

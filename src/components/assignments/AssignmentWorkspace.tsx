@@ -6,11 +6,12 @@ import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { TabPanel, Tabs } from '../ui/Tabs'
 import { AssignmentEditor } from './AssignmentEditor'
+import { LiveTrackingPanel } from './LiveTrackingPanel'
 import { SubmissionsPanel } from './SubmissionsPanel'
 import type { EditAssignmentModel, OpenReadOnlyModel } from './types'
 
 /** Sections d'un devoir ouvert, un cran sous les onglets de la classe. */
-export type AssignmentTab = 'enonce' | 'rendus'
+export type AssignmentTab = 'enonce' | 'rendus' | 'suivi'
 
 interface AssignmentWorkspaceProps {
   client: ApiClient
@@ -25,6 +26,8 @@ interface AssignmentWorkspaceProps {
   /** Retour à la liste des devoirs, avec un message à annoncer. */
   onDone: (message: string | null) => void
   onSaved: (assignment: Assignment) => void
+  /** Le devoir a changé sans que l'on change de section (suivi ouvert ou fermé). */
+  onAssignmentChanged: (assignment: Assignment) => void
   onEditModel: EditAssignmentModel
   onOpenReadOnlyModel: OpenReadOnlyModel
 }
@@ -32,12 +35,13 @@ interface AssignmentWorkspaceProps {
 const TABS = [
   { value: 'enonce', label: 'Énoncé' },
   { value: 'rendus', label: 'Rendus' },
+  { value: 'suivi', label: 'Suivi' },
 ] as const
 
 /**
- * Le cadre d'un devoir, côté prof : son entête, puis deux sections,
- * l'énoncé et les rendus. Une création n'a pas encore de rendus, donc
- * pas d'onglets : seul le formulaire s'affiche.
+ * Le cadre d'un devoir, côté prof : son entête, puis trois sections,
+ * l'énoncé, les rendus et le suivi en direct. Une création n'a encore
+ * ni rendus ni suivi, donc pas d'onglets : seul le formulaire s'affiche.
  */
 export function AssignmentWorkspace({
   client,
@@ -48,6 +52,7 @@ export function AssignmentWorkspace({
   openSubmissionId,
   onDone,
   onSaved,
+  onAssignmentChanged,
   onEditModel,
   onOpenReadOnlyModel,
 }: AssignmentWorkspaceProps) {
@@ -122,6 +127,18 @@ export function AssignmentWorkspace({
                 client={client}
                 assignment={assignment}
                 openSubmissionId={openSubmissionId}
+                onOpenReadOnlyModel={onOpenReadOnlyModel}
+              />
+            </TabPanel>
+          )}
+
+          {/* Quitter cet onglet démonte le panneau : le suivi s'arrête de lui-même. */}
+          {tab === 'suivi' && (
+            <TabPanel idBase={idBase} value="suivi">
+              <LiveTrackingPanel
+                client={client}
+                assignment={assignment}
+                onTrackingChanged={onAssignmentChanged}
                 onOpenReadOnlyModel={onOpenReadOnlyModel}
               />
             </TabPanel>

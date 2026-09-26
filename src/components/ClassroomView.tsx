@@ -15,6 +15,7 @@ import type { ClassroomDetail, ClassroomMember, PublicProfile } from '../lib/cla
 import { ConfirmDialog } from './ConfirmDialog'
 import { Avatar } from './ui/Avatar'
 import { AssignmentsPanel } from './assignments/AssignmentsPanel'
+import type { AssignmentTab } from './assignments/AssignmentWorkspace'
 import { StudentAssignmentsPanel } from './assignments/StudentAssignmentsPanel'
 import type { EditAssignmentModel, OpenReadOnlyModel, OpenWorkDocument } from './assignments/types'
 import { LessonsPanel } from './lessons/LessonsPanel'
@@ -30,6 +31,8 @@ interface ClassroomViewProps {
   openAssignmentId?: string | null
   /** Rendu à rouvrir dans ce devoir (retour d'une consultation). */
   openSubmissionId?: string | null
+  /** Section du devoir rouvert, quand ce n'est pas l'énoncé. */
+  openAssignmentTab?: AssignmentTab | null
   /** Onglet d'arrivée, quand on vient d'un raccourci de l'accueil. */
   openTab?: ClassroomTab | null
   /** Ouvre l'outil MCD sur la base ou le corrigé d'un devoir. */
@@ -114,6 +117,7 @@ export function ClassroomView({
   initialStatus = null,
   openAssignmentId = null,
   openSubmissionId = null,
+  openAssignmentTab = null,
   openTab = null,
   onEditAssignmentModel,
   onOpenWorkDocument,
@@ -467,6 +471,7 @@ export function ClassroomView({
                 classroomName={classroom.name}
                 openAssignmentId={openAssignmentId}
                 openSubmissionId={openSubmissionId}
+                openAssignmentTab={openAssignmentTab}
                 onEditAssignmentModel={onEditAssignmentModel}
                 onOpenReadOnlyModel={onOpenReadOnlyModel}
               />
