@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import type { ApiClient, ApiResult, HttpMethod } from './apiClient'
 import { apiError } from './apiClient'
 import {
-  copyAssignmentBase,
   createAssignment,
   deleteAssignment,
   formatDueDate,
@@ -12,6 +11,7 @@ import {
   publishAssignment,
   releaseSolution,
   removeAssignmentImage,
+  startAssignmentWork,
   toLocalInput,
   unpublishAssignment,
   updateAssignment,
@@ -39,6 +39,19 @@ function scriptedClient(responses: ApiResult[]) {
 }
 
 const ok = (data: unknown): ApiResult => ({ ok: true, status: 200, data, body: { data } })
+/** Réponse 201 : le serveur vient de créer la ressource. */
+const created = (data: unknown): ApiResult => ({ ok: true, status: 201, data, body: { data } })
+
+/** Document de travail rattaché, tel que le serveur le rend. */
+const serverWork = {
+  id: '01DOC',
+  name: 'Modéliser une bibliothèque',
+  assignment_id: '01JB',
+  last_observed_at: null,
+  content: '{"format":"meriz-mcd"}',
+  created_at: '2026-09-21T10:00:00+00:00',
+  updated_at: '2026-09-21T10:00:00+00:00',
+}
 
 /** Devoir tel que le serveur le renvoie au prof. */
 const serverAssignment = {
@@ -174,31 +187,47 @@ describe('devoirs, appels', () => {
     expect((body as FormData).get('image')).toBe(file)
   })
 
-  it('copie la base dans un document personnel, sans corps de requête', async () => {
-    const { client, sent } = scriptedClient([
-      ok({
-        id: '01DOC',
-        name: 'Modéliser une bibliothèque',
-        content: '{"format":"meriz-mcd"}',
-        created_at: '2026-09-21T10:00:00+00:00',
-        updated_at: '2026-09-21T10:00:00+00:00',
-      }),
-    ])
+  it('commence un devoir, sans corps de requête', async () => {
+    const { client, sent } = scriptedClient([created(serverWork)])
 
-    const outcome = await copyAssignmentBase(client, '01JB')
+    const outcome = await startAssignmentWork(client, '01 JB')
 
-    expect(sent[0]).toEqual({ method: 'POST', path: '/assignments/01JB/copy', body: undefined })
-    expect(outcome.ok && outcome.value).toMatchObject({ id: '01DOC', content: '{"format":"meriz-mcd"}' })
+    expect(sent[0]).toEqual({ method: 'POST', path: '/assignments/01%20JB/start', body: undefined })
+    expect(outcome.ok && outcome.value.document).toMatchObject({
+      id: '01DOC',
+      content: '{"format":"meriz-mcd"}',
+    })
   })
 
-  it("remonte tel quel le refus d'une copie sans base", async () => {
+  it('distingue un travail tout neuf d’un travail déjà commencé', async () => {
+    const { client } = scriptedClient([created(serverWork), ok(serverWork)])
+
+    expect((await startAssignmentWork(client, '01JB')).ok && true).toBe(true)
+    const neuf = await startAssignmentWork(client, '01JB')
+    expect(neuf.ok && neuf.value.created).toBe(false)
+  })
+
+  it('lit le contenu neutre d’une page blanche tel quel', async () => {
+    const { client } = scriptedClient([created({ ...serverWork, content: '{}' })])
+
+    const outcome = await startAssignmentWork(client, '01JB')
+
+    expect(outcome.ok && outcome.value).toMatchObject({ created: true })
+    expect(outcome.ok && outcome.value.document.content).toBe('{}')
+  })
+
+  it('refuse une réponse qui n’est pas un document', async () => {
+    const { client } = scriptedClient([created({ id: '01DOC' })])
+
+    expect((await startAssignmentWork(client, '01JB')).ok).toBe(false)
+  })
+
+  it('remonte tel quel un refus du serveur', async () => {
     const error = apiError('validation', 422, 'Les informations saisies sont invalides.')
-    error.fieldErrors = { base_content: ["Ce devoir n'a pas de base. Commencez sur une page blanche."] }
+    error.fieldErrors = { content: ['Nombre maximal de documents atteint.'] }
     const { client } = scriptedClient([{ ok: false, error }])
 
-    const outcome = await copyAssignmentBase(client, '01JB')
-
-    expect(outcome).toEqual({ ok: false, error })
+    expect(await startAssignmentWork(client, '01JB')).toEqual({ ok: false, error })
   })
 
   it("retire l'image sur son chemin", async () => {

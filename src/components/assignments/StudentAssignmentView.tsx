@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { ApiClient } from '../../lib/apiClient'
-import { assignmentTypeLabel, copyAssignmentBase, formatDueDate } from '../../lib/assignmentsApi'
-import type { Assignment } from '../../lib/assignmentsApi'
-import { createCloudDocument, getCloudDocument } from '../../lib/documentsApi'
+import type { ApiClient, ApiError } from '../../lib/apiClient'
+import { assignmentTypeLabel, formatDueDate, startAssignmentWork } from '../../lib/assignmentsApi'
+import type { Assignment, StartedWork } from '../../lib/assignmentsApi'
+import { getCloudDocument, updateCloudDocument } from '../../lib/documentsApi'
 import { formatDate } from '../../lib/formatDate'
 import { getLastObservedAt } from '../../lib/liveApi'
 import { emptyEditorState } from '../../model/document'
 import { DEFAULT_MPD_SETTINGS } from '../../model/mpd'
-import { serializeModel } from '../../lib/persistence'
+import { parseModelFile, serializeModel } from '../../lib/persistence'
 import { formatSubmittedAt, getMySubmission, submitWork } from '../../lib/submissionsApi'
 import type { Submission } from '../../lib/submissionsApi'
 import type { WorkLinks } from '../../lib/workDocuments'
@@ -109,41 +109,73 @@ export function StudentAssignmentView({
     [workLinks, assignment.id, classroomId, onOpenWorkDocument],
   )
 
+  /**
+   * Le serveur donne à une page blanche un contenu neutre, que l'outil ne
+   * sait pas lire. On écrit donc aussitôt un vrai modèle, celui du rendu
+   * quand on en reprend un, sinon un modèle vide. Ce premier
+   * enregistrement est aussi ce qui rend l'élève observable.
+   *
+   * La décision se prend sur la lisibilité du contenu, jamais sur le
+   * code de la réponse : un travail déjà commencé n'est pas écrasé.
+   */
+  const ensureReadableWork = useCallback(
+    async (work: StartedWork, fallbackContent: string | null): Promise<ApiError | null> => {
+      if (parseModelFile(work.document.content).ok) {
+        return null
+      }
+      const content =
+        fallbackContent ?? serializeModel(emptyEditorState(), DEFAULT_MPD_SETTINGS, assignment.title)
+      const written = await updateCloudDocument(client, work.document.id, { content })
+      return written.ok ? null : written.error
+    },
+    [client, assignment.title],
+  )
+
+  /**
+   * Commencer : le serveur crée le travail rattaché au devoir, avec la
+   * base s'il y en a une. Rappelé plus tard, il rend le même document.
+   */
   const startWork = async () => {
     if (busy) return
     setBusy(true)
     setError(null)
-    // Une base à copier, sinon une page blanche : dans les deux cas, un
-    // document personnel que l'élève garde après le cours.
-    const created = assignment.hasBase
-      ? await copyAssignmentBase(client, assignment.id)
-      : await createCloudDocument(client, {
-          name: assignment.title,
-          content: serializeModel(emptyEditorState(), DEFAULT_MPD_SETTINGS, assignment.title),
-        })
-    setBusy(false)
-    if (!created.ok) {
-      setError(created.error.fieldErrors.base_content?.[0] ?? created.error.message)
+    const started = await startAssignmentWork(client, assignment.id)
+    if (!started.ok) {
+      setBusy(false)
+      setError(started.error.fieldErrors.content?.[0] ?? started.error.message)
       return
     }
-    await linkAndOpen(created.value.id)
+    const failure = await ensureReadableWork(started.value, null)
+    setBusy(false)
+    if (failure) {
+      setError(failure.message)
+      return
+    }
+    await linkAndOpen(started.value.document.id)
   }
 
-  /** Autre appareil, cache vidé : on repart du travail déjà rendu. */
+  /**
+   * Autre appareil, cache vidé : le serveur rend le travail rattaché, que
+   * l'on rouvre tel quel. S'il n'en existait aucun, le document neuf
+   * reçoit le contenu du rendu : rien n'est perdu.
+   */
   const resumeFromSubmission = async () => {
     if (busy || !submission) return
     setBusy(true)
     setError(null)
-    const created = await createCloudDocument(client, {
-      name: assignment.title,
-      content: submission.content,
-    })
-    setBusy(false)
-    if (!created.ok) {
-      setError(created.error.message)
+    const started = await startAssignmentWork(client, assignment.id)
+    if (!started.ok) {
+      setBusy(false)
+      setError(started.error.message)
       return
     }
-    await linkAndOpen(created.value.id)
+    const failure = await ensureReadableWork(started.value, submission.content)
+    setBusy(false)
+    if (failure) {
+      setError(failure.message)
+      return
+    }
+    await linkAndOpen(started.value.document.id)
   }
 
   const openWork = async () => {
@@ -269,7 +301,7 @@ export function StudentAssignmentView({
               ? 'Votre travail est un document personnel : il s’enregistre tout seul. Votre prof peut le regarder pendant ce devoir, mais le rendre reste votre geste.'
               : 'Votre travail est un document personnel : il s’enregistre tout seul, et n’est remis à votre prof qu’au clic sur Rendre.'
             : submission
-              ? 'Votre travail n’est pas ouvert sur cet appareil. Vous pouvez repartir de ce que vous avez déjà rendu.'
+              ? 'Votre travail n’est pas ouvert sur cet appareil. Vous pouvez reprendre le travail enregistré dans votre compte.'
               : assignment.hasBase
                 ? 'Votre prof a préparé une base. Vous en obtiendrez une copie à vous, modifiable.'
                 : 'Vous partirez d’une page blanche, dans l’outil de modélisation.'}

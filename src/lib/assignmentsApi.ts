@@ -237,18 +237,31 @@ export function fetchAssignmentImage(client: ApiClient, id: string): Promise<Out
   return client.requestBlob(assignmentPath(id, '/image'))
 }
 
+/** Travail de l'élève sur un devoir, tel que le serveur le rend. */
+export interface StartedWork {
+  document: CloudDocument
+  /** 201 : le travail vient d'être créé. 200 : il existait déjà. */
+  created: boolean
+}
+
 /**
- * Copie la base du devoir dans un document personnel : c'est le point de
- * départ du travail de l'élève. Le corrigé n'est jamais copié. Sans base,
- * le serveur refuse sur le champ base_content.
+ * Commencer un devoir : le serveur rend le document de travail de
+ * l'élève, rattaché au devoir, qu'il y ait une base à copier ou non. Le
+ * corrigé n'est jamais copié.
+ *
+ * C'est ce rattachement qui rend l'élève observable par son prof. La
+ * route s'appelle sans risque à chaque fois : rien n'est dupliqué, et le
+ * travail déjà commencé n'est jamais écrasé.
  */
-export async function copyAssignmentBase(client: ApiClient, id: string): Promise<Outcome<CloudDocument>> {
-  const result = await client.request('POST', assignmentPath(id, '/copy'))
+export async function startAssignmentWork(client: ApiClient, id: string): Promise<Outcome<StartedWork>> {
+  const result = await client.request('POST', assignmentPath(id, '/start'))
   if (!result.ok) {
     return result
   }
   const document = parseCloudDocument(result.data)
-  return document ? { ok: true, value: document } : { ok: false, error: unexpectedResponse(result.status) }
+  return document
+    ? { ok: true, value: { document, created: result.status === 201 } }
+    : { ok: false, error: unexpectedResponse(result.status) }
 }
 
 /* ------------------------------------------------------------------ */
