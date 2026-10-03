@@ -126,8 +126,16 @@ function editorChrome(target: EditorTarget): EditorChrome {
         readOnly: false,
       }
     case 'work':
-      // Le travail de l'élève est son document : il peut le renommer.
-      return { backLabel: 'Retour au devoir', canRename: true, documentActions: false, readOnly: false }
+      // Le titre est celui de l'exercice, donné par le prof : on l'affiche,
+      // on ne le renomme pas. Le serveur le réécrit de toute façon chaque
+      // fois que l'élève reprend le devoir.
+      return {
+        contentLabel: 'Devoir',
+        backLabel: 'Retour au devoir',
+        canRename: false,
+        documentActions: false,
+        readOnly: false,
+      }
     case 'review':
       return {
         contentLabel: target.label,
