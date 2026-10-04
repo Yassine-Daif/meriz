@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
 import type { OpenedDocument } from '../model/document'
-import { createHistory, historyReducer } from '../model/historyReducer'
 import { validate, validationErrors } from '../model/validate'
 import { mcdToMld } from '../model/mld'
 import { buildMpd } from '../model/mpd'
@@ -12,6 +11,7 @@ import { isEditableTarget } from '../lib/keyboard'
 import { EMPTY_SELECTION } from '../canvas/selection'
 import type { CanvasSelection } from '../canvas/selection'
 import type { ViewId } from './views'
+import { useModelDoc } from './useModelDoc'
 import { TopBar } from './TopBar'
 import { NavRail } from './NavRail'
 import { McdView } from './McdView'
@@ -72,11 +72,13 @@ export function Editor({
   onImportFile,
   readOnly = false,
 }: EditorProps) {
-  const [history, editAction] = useReducer(historyReducer, openedDocument.state, createHistory)
+  // Le modèle vit dans un document Yjs : c'est la source de vérité, et
+  // le socle de l'édition à plusieurs. L'éditeur n'en voit qu'un état
+  // JS ordinaire, exactement comme avant.
+  const { state, dispatch: editAction, canUndo, canRedo, undo, redo, adopt } = useModelDoc(openedDocument.state)
   // Une seule barrière pour tout l'éditeur : l'inspecteur, le dictionnaire,
   // la barre d'outils et les étiquettes de pattes passent tous par là.
   const dispatch = readOnly ? IGNORE_ACTION : editAction
-  const state = history.present
   const [selection, setSelection] = useState<CanvasSelection>(EMPTY_SELECTION)
   // La vue active est un état d'interface, jamais une donnée du modèle.
   const [activeView, setActiveView] = useState<ViewId>('mcd')
@@ -98,12 +100,17 @@ export function Editor({
   // garder le cadrage, le zoom et la vue en cours. L'adoption passe par
   // editAction et non par la barrière : observer n'est pas modifier,
   // mais il faut bien que l'image suive.
+  // On retient l'instantané déjà adopté : l'état du document Yjs n'est
+  // jamais la même référence que celui reçu, il faut donc comparer à la
+  // source, sinon l'effet se rappellerait sans fin.
+  const adoptedRef = useRef(openedDocument.state)
   useEffect(() => {
-    if (!readOnly || openedDocument.state === history.present) {
+    if (!readOnly || openedDocument.state === adoptedRef.current) {
       return
     }
-    editAction({ type: 'ADOPT', state: openedDocument.state })
-  }, [readOnly, openedDocument.state, history.present])
+    adoptedRef.current = openedDocument.state
+    adopt(openedDocument.state)
+  }, [readOnly, openedDocument.state, adopt])
 
   // Sauvegarde automatique : le saver ignore les états identiques, donc
   // ouvrir un document sans y toucher ne modifie pas sa date.
@@ -172,15 +179,15 @@ export function Editor({
       const key = event.key.toLowerCase()
       if (key === 'z' && !event.shiftKey) {
         event.preventDefault()
-        editAction({ type: 'UNDO' })
+        undo()
       } else if (key === 'y' || (key === 'z' && event.shiftKey)) {
         event.preventDefault()
-        editAction({ type: 'REDO' })
+        redo()
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [readOnly])
+  }, [readOnly, undo, redo])
 
   // Générer : le MCD est vérifié par la barre d'outils, on ouvre le résultat.
   const handleGenerate = useCallback(() => {
@@ -235,10 +242,10 @@ export function Editor({
           cloud={cloud}
           readOnly={readOnly}
           mcdVisible={activeView === 'mcd'}
-          canUndo={history.past.length > 0}
-          canRedo={history.future.length > 0}
-          onUndo={() => editAction({ type: 'UNDO' })}
-          onRedo={() => editAction({ type: 'REDO' })}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={undo}
+          onRedo={redo}
         />
 
         <div className="flex min-h-0 flex-1">
