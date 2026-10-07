@@ -7,6 +7,7 @@ import { serializeModel } from '../../lib/persistence'
 import { emptyEditorState } from '../../model/document'
 import { DEFAULT_MPD_SETTINGS } from '../../model/mpd'
 import { ConfirmDialog } from '../ConfirmDialog'
+import { GROUP_PROVENANCE } from '../documentProvenance'
 import { DocumentRow } from '../DocumentRow'
 import { Button } from '../ui/Button'
 import { Notice } from '../ui/Notice'
@@ -149,7 +150,7 @@ export function GroupDocumentsPanel({ client, group, onOpenGroupDocument, onStat
               onOpen={() => onOpenGroupDocument(group.id, group.name, document.id)}
               onRename={(name) => void rename(document, name)}
               onRequestDelete={() => setPendingDelete(document)}
-              provenance={{ label: 'Groupe', tone: 'sky' }}
+              provenance={GROUP_PROVENANCE}
             />
           ))}
         </ul>

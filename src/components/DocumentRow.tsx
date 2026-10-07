@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { DocumentMeta } from '../model/document'
 import { Badge } from './ui/Badge'
-import type { BadgeTone } from './ui/Badge'
 import { buttonClass } from './ui/buttonClass'
 import { formatDate } from '../lib/formatDate'
+import type { Provenance } from './documentProvenance'
 
 interface DocumentRowProps {
   meta: DocumentMeta
@@ -13,7 +13,7 @@ interface DocumentRowProps {
   onDuplicate?: () => void
   onRequestDelete: () => void
   /** Pastille de provenance (ex. « Perso »), écrite en toutes lettres. */
-  provenance?: { label: string; tone: BadgeTone }
+  provenance?: Provenance
 }
 
 const actionClass = buttonClass({ variant: 'secondary', size: 'sm' })
@@ -94,7 +94,7 @@ export function DocumentRow({ meta, onOpen, onRename, onDuplicate, onRequestDele
         <button
           type="button"
           onClick={onOpen}
-          aria-label={`Ouvrir ${meta.name}${provenance ? `, ${provenance.label}` : ''}`}
+          aria-label={`Ouvrir ${meta.name}${provenance ? `, ${provenance.spoken}` : ''}`}
           className="flex min-w-0 flex-1 items-center gap-3 rounded-control px-3 py-2 text-left transition-colors duration-150 hover:bg-accent-soft"
         >
           <span

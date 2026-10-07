@@ -2,6 +2,8 @@ import type { ApiClient } from './apiClient'
 import type { CloudCache } from './cloudCache'
 import { createCloudRepository } from './documentRepository'
 import type { DocumentRepository } from './documentRepository'
+import type { StorageLike } from './documentStore'
+import { createWorkLinks } from './workDocuments'
 
 /**
  * Espace de documents affiché selon la session : l'espace local (sans
@@ -34,6 +36,8 @@ export const SIGN_OUT_FLUSH_MS = 5000
 
 interface AccountControllerOptions {
   cache: CloudCache
+  /** Même stockage que le cache : les liens de devoir vivent par compte. */
+  storage: StorageLike
   /**
    * Client lié à un jeton. getToken renvoie null dès que le compte est
    * fermé : une requête tardive de l'ancien compte part sans jeton.
@@ -51,7 +55,12 @@ interface AccountControllerOptions {
  * - la boîte d'envoi d'un compte n'est reprise qu'après une connexion
  *   vérifiée par le serveur pour ce même compte.
  */
-export function createAccountController({ cache, createClient, onExpired }: AccountControllerOptions) {
+export function createAccountController({
+  cache,
+  storage,
+  createClient,
+  onExpired,
+}: AccountControllerOptions) {
   let current: { repository: DocumentRepository; deactivate: () => void } | null = null
 
   const close = () => {
@@ -71,7 +80,12 @@ export function createAccountController({ cache, createClient, onExpired }: Acco
         if (active) onExpired()
       },
     )
-    const repository = createCloudRepository({ client, cache, userId })
+    const repository = createCloudRepository({
+      client,
+      cache,
+      userId,
+      workLinks: createWorkLinks(storage, userId),
+    })
     current = {
       repository,
       deactivate: () => {

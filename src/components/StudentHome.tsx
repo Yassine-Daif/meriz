@@ -3,6 +3,7 @@ import type { ApiClient, ApiError } from '../lib/apiClient'
 import type { ApiUser } from '../lib/authApi'
 import type { DocumentRepository } from '../lib/documentRepository'
 import { useClassrooms } from '../lib/useClassrooms'
+import { useMyAssignments } from '../lib/useMyAssignments'
 import type { ClassroomOpening } from './ClassesPage'
 import { ClassroomGrid } from './ClassroomGrid'
 import { ClassShortcuts } from './ClassShortcuts'
@@ -57,6 +58,8 @@ export function StudentHome({
   announcement,
 }: StudentHomeProps) {
   const classrooms = useClassrooms(client)
+  // Les devoirs nomment la provenance d'un document de travail.
+  const { assignments } = useMyAssignments(client)
   const [actionError, setActionError] = useState<string | null>(null)
 
   const createDocument = async () => {
@@ -92,6 +95,7 @@ export function StudentHome({
             onOpenDocument={onOpenDocument}
             onNewDocument={onNewDocument}
             onShowAll={onShowWork}
+            assignments={assignments}
           />
 
           <section aria-labelledby="classes-titre">

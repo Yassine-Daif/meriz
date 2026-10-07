@@ -2,11 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { DocumentMeta } from '../model/document'
 import type { ApiError } from '../lib/apiClient'
 import type { DocumentRepository } from '../lib/documentRepository'
+import type { AssignmentIndex } from '../lib/workAssignments'
 import { ConfirmDialog } from './ConfirmDialog'
+import { deleteDocumentCopy } from './deleteDocumentCopy'
+import { provenanceFor } from './documentProvenance'
 import { DocumentRow } from './DocumentRow'
 import { ImportFileButton } from './ImportFileButton'
 import { Button } from './ui/Button'
-import type { BadgeTone } from './ui/Badge'
 import { buttonClass } from './ui/buttonClass'
 import { Notice } from './ui/Notice'
 
@@ -24,8 +26,11 @@ interface DocumentListProps {
   onImportFile: (file: File) => Promise<string | null>
   /** Message à annoncer à l'arrivée (ex. connexion réussie). */
   announcement?: string | null
-  /** Pastille de provenance de chaque document (ex. « Perso »). */
-  provenance?: { label: string; tone: BadgeTone }
+  /**
+   * Devoirs de l'élève : ils donnent son nom à la pastille « Devoir », et
+   * disent à la confirmation de suppression ce qu'elle doit annoncer.
+   */
+  assignments?: AssignmentIndex | null
 }
 
 interface StatusMessage {
@@ -47,7 +52,7 @@ export function DocumentList({
   onOpenExample,
   onImportFile,
   announcement = null,
-  provenance,
+  assignments,
 }: DocumentListProps) {
   const [documents, setDocuments] = useState<DocumentMeta[]>(() => repository.cachedList())
   const [loading, setLoading] = useState(cloud)
@@ -139,6 +144,16 @@ export function DocumentList({
     })
   }
 
+  // Ce que la confirmation doit dire : la nature du document décide, et le
+  // devoir n'est nommé que s'il est déjà connu.
+  const origin = pendingDelete?.origin
+  const deleteCopy = deleteDocumentCopy({
+    name: pendingDelete?.name ?? '',
+    cloud,
+    origin,
+    assignment: origin?.kind === 'assignment' ? (assignments?.get(origin.assignmentId) ?? null) : null,
+  })
+
   return (
     <section aria-labelledby="documents-titre">
       <div className="flex flex-wrap items-center gap-2">
@@ -229,7 +244,7 @@ export function DocumentList({
             <DocumentRow
               key={meta.id}
               meta={meta}
-              provenance={provenance}
+              provenance={provenanceFor(meta, assignments) ?? undefined}
               onOpen={() => void run(() => onOpenDocument(meta.id))}
               onRename={(name) => void handleRename(meta, name)}
               onDuplicate={() => void handleDuplicate(meta)}
@@ -241,11 +256,9 @@ export function DocumentList({
 
       <ConfirmDialog
         open={pendingDelete !== null}
-        title="Supprimer le document"
-        message={`Supprimer « ${pendingDelete?.name ?? ''} » ? Cette action est définitive${
-          cloud ? ' : le document disparaît de votre compte.' : ' : le document disparaît de ce navigateur.'
-        }`}
-        confirmLabel="Supprimer"
+        title={deleteCopy.title}
+        message={deleteCopy.message}
+        confirmLabel={deleteCopy.confirmLabel}
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}
       />

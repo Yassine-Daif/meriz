@@ -1,5 +1,6 @@
 import type { ApiClient, Outcome } from './apiClient'
 import { unexpectedResponse } from './apiClient'
+import { optionalText } from './authApi'
 
 /**
  * Appels des documents du compte connecté. Le serveur cloisonne les
@@ -11,6 +12,10 @@ import { unexpectedResponse } from './apiClient'
 export interface CloudDocumentMeta {
   id: string
   name: string
+  /** Devoir dont ce document porte le travail, null sinon. */
+  assignmentId: string | null
+  /** Groupe où vit ce document, null sinon. Jamais rempli dans la liste personnelle. */
+  groupId: string | null
   createdAt: string
   updatedAt: string
 }
@@ -39,7 +44,21 @@ export function parseCloudMeta(raw: unknown): CloudDocumentMeta | null {
   ) {
     return null
   }
-  return { id: raw.id, name: raw.name, createdAt: raw.created_at, updatedAt: raw.updated_at }
+  // Provenance : absente ou nulle donne null, pour rester lisible face à une
+  // réponse plus ancienne. Un autre type invalide la ligne.
+  const assignmentId = optionalText(raw.assignment_id)
+  const groupId = optionalText(raw.group_id)
+  if (assignmentId === undefined || groupId === undefined) {
+    return null
+  }
+  return {
+    id: raw.id,
+    name: raw.name,
+    assignmentId,
+    groupId,
+    createdAt: raw.created_at,
+    updatedAt: raw.updated_at,
+  }
 }
 
 export function parseCloudDocument(raw: unknown): CloudDocument | null {

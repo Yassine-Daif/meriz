@@ -1,5 +1,5 @@
-import type { DocumentMeta, OpenedDocument } from '../model/document'
-import { emptyEditorState } from '../model/document'
+import type { DocumentMeta, DocumentOrigin, OpenedDocument } from '../model/document'
+import { documentOrigin, emptyEditorState } from '../model/document'
 import type { McdEditorState } from '../model/mcdReducer'
 import { DEFAULT_MPD_SETTINGS } from '../model/mpd'
 import type { MpdSettings } from '../model/mpd'
@@ -16,6 +16,7 @@ import {
 import type { CloudDocumentMeta } from './documentsApi'
 import type { DocumentStore } from './documentStore'
 import { parseModelFile, serializeModel } from './persistence'
+import type { WorkLinks } from './workDocuments'
 
 /**
  * Dépôt de documents : une même interface pour l'espace local (sans
@@ -251,6 +252,9 @@ const CLOUD_UNREADABLE = apiError(
   "Le contenu de ce document est illisible. Il n'a pas été modifié sur le serveur.",
 )
 const EMPTY_NAME = apiError('validation', null, 'Le nom ne peut pas être vide.')
+/** Supprimé à la demande : on ne promet aucun retour, on propose le fichier. */
+const DELETED_MESSAGE =
+  "Ce document vient d'être supprimé. Il n'est plus enregistré. Enregistrez votre modèle en fichier si vous voulez le garder."
 
 function isTransient(error: ApiError): boolean {
   return error.kind === 'network' || error.kind === 'server' || error.kind === 'rate_limited'
@@ -262,6 +266,15 @@ function toMeta(document: CloudDocumentMeta): DocumentMeta {
     name: document.name,
     createdAt: document.createdAt,
     updatedAt: document.updatedAt,
+    origin: documentOrigin(document.assignmentId, document.groupId),
+  }
+}
+
+/** Provenance remise en colonnes, pour réécrire une ligne du cache. */
+function originColumns(origin: DocumentOrigin | undefined): { assignmentId: string | null; groupId: string | null } {
+  return {
+    assignmentId: origin?.kind === 'assignment' ? origin.assignmentId : null,
+    groupId: origin?.kind === 'group' ? origin.groupId : null,
   }
 }
 
@@ -292,20 +305,34 @@ interface CloudRepositoryOptions {
   cache: CloudCache
   /** Identifiant du compte, tel que renvoyé par le serveur. */
   userId: string
+  /** Liens devoir vers document de ce compte : une suppression les nettoie. */
+  workLinks: WorkLinks
 }
 
-export function createCloudRepository({ client, cache, userId }: CloudRepositoryOptions): DocumentRepository {
+export function createCloudRepository({
+  client,
+  cache,
+  userId,
+  workLinks,
+}: CloudRepositoryOptions): DocumentRepository {
   let alive = true
   const savers = new Set<{
     id: string
     retry: () => void
     flush: () => Promise<boolean>
     rename: (name: string) => void
+    discard: () => void
     dispose: () => void
   }>()
   const inFlight = new Set<string>()
   /** Documents disparus du serveur pendant qu'ils sont ouverts : récupérés à la fermeture. */
   const detached = new Set<string>()
+  /**
+   * Supprimés à la demande de l'utilisateur : plus rien ne doit les
+   * recréer, ni une frappe tardive, ni un envoi en attente, ni la
+   * récupération « (récupéré) » prévue pour une disparition subie.
+   */
+  const purged = new Set<string>()
 
   // Garde de compte : ce dépôt n'agit que tant qu'il est le dépôt du
   // propriétaire actuel du cache.
@@ -320,6 +347,10 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
   const sendPending = async (entry: { id: string; name: string; content: string }): Promise<'sent' | 'transient' | 'failed'> => {
     if (!isCurrent() || inFlight.has(entry.id)) {
       return 'transient'
+    }
+    // Supprimé à la demande : rien à envoyer, et surtout rien à recréer.
+    if (purged.has(entry.id)) {
+      return 'failed'
     }
     inFlight.add(entry.id)
     try {
@@ -349,7 +380,7 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
   const syncPending = async (): Promise<void> => {
     if (!isCurrent()) return
     for (const document of cache.pending()) {
-      if (detached.has(document.id) || document.content === null) continue
+      if (detached.has(document.id) || purged.has(document.id) || document.content === null) continue
       const result = await sendPending({ id: document.id, name: document.name, content: document.content })
       if (result === 'transient') return
     }
@@ -425,7 +456,7 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
 
     /** true quand plus rien n'attend. */
     const send = async (): Promise<boolean> => {
-      if (disposed || !isCurrent() || detached.has(id)) return false
+      if (disposed || !isCurrent() || detached.has(id) || purged.has(id)) return false
       if (unsent === null) {
         box.set({ kind: 'saved' })
         return true
@@ -495,7 +526,8 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
     const saver = {
       id,
       save: (state: McdEditorState, mpdSettings: MpdSettings) => {
-        if (disposed || !isCurrent()) return
+        // Supprimé à la demande : plus aucune frappe ne recrée sa ligne.
+        if (disposed || !isCurrent() || purged.has(id)) return
         const content = serializeModel(state, mpdSettings, name)
         if (content === lastQueued) return
         lastQueued = content
@@ -503,7 +535,13 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
         if (!shared) {
           const current = cache.get(id)
           storageRefused = !cache.putLocalEdit(
-            { id, name, createdAt, updatedAt: current?.updatedAt ?? document.meta.updatedAt },
+            {
+              id,
+              name,
+              createdAt,
+              updatedAt: current?.updatedAt ?? document.meta.updatedAt,
+              ...originColumns(document.meta.origin),
+            },
             content,
           )
         }
@@ -533,6 +571,16 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
       rename: (newName: string) => {
         name = newName
       },
+      /**
+       * Le document vient d'être supprimé à la demande de l'utilisateur.
+       * L'éditeur reste ouvert et abonné : il doit voir le message, sans
+       * qu'aucun envoi ne reparte. Aucune promesse de récupération.
+       */
+      discard: () => {
+        clearTimer()
+        unsent = null
+        box.set({ kind: 'error', message: DELETED_MESSAGE })
+      },
       getStatus: box.get,
       subscribe: box.subscribe,
       dispose: () => {
@@ -561,7 +609,10 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
       const listed = await listAllDocuments(client)
       if (!isCurrent()) return fail(STALE_ACCOUNT)
       if (listed.ok) {
-        cache.replaceList(listed.value)
+        // Le serveur exclut déjà les documents de groupe de la liste
+        // personnelle. Si l'un passait, il n'entrerait pas pour autant
+        // dans le cache personnel de ce compte.
+        cache.replaceList(listed.value.filter((meta) => meta.groupId === null))
         return ok({ documents: cachedList(), offline: null, pendingCount: pendingCount() })
       }
       if (isTransient(listed.error)) {
@@ -628,9 +679,23 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
 
     remove: async (id) => {
       if (!isCurrent()) return fail(STALE_ACCOUNT)
+      // Lu avant le DELETE : après, le cache ne dira plus de quel devoir
+      // ce document portait le travail.
+      const assignmentId = cache.get(id)?.assignmentId ?? null
+      purged.add(id)
       const deleted = await deleteCloudDocument(client, id)
-      if (!deleted.ok && deleted.error.kind !== 'not_found') return deleted
-      if (isCurrent()) cache.remove(id)
+      if (!deleted.ok && deleted.error.kind !== 'not_found') {
+        // Échec : rien n'a bougé, ni le cache, ni le lien, ni la file.
+        purged.delete(id)
+        return deleted
+      }
+      if (!isCurrent()) return ok(undefined)
+      cache.remove(id)
+      detached.delete(id)
+      if (assignmentId !== null) workLinks.clear(assignmentId)
+      for (const saver of savers) {
+        if (saver.id === id) saver.discard()
+      }
       return ok(undefined)
     },
 
@@ -667,6 +732,10 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
             name: entry.name,
             createdAt: cached?.createdAt ?? now,
             updatedAt: cached?.updatedAt ?? now,
+            // La boîte d'envoi ne transporte pas la provenance : elle
+            // revient avec la liste suivante.
+            assignmentId: cached?.assignmentId ?? null,
+            groupId: cached?.groupId ?? null,
           },
           entry.content,
         )

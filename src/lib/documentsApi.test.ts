@@ -86,6 +86,8 @@ describe('documentsApi, un document', () => {
     expect(got.ok && got.value).toEqual({
       id: 'd1',
       name: 'Doc d1',
+      assignmentId: null,
+      groupId: null,
       content: '{"format":"meriz-mcd"}',
       createdAt: '2026-09-17T10:00:00Z',
       updatedAt: '2026-09-17T11:00:00Z',
@@ -103,6 +105,43 @@ describe('documentsApi, un document', () => {
     const { client } = scriptedClient([{ ok: true, status: 200, data: { ...row('d1'), content: { objet: true } }, body: null }])
 
     const result = await getCloudDocument(client, 'd1')
+
+    expect(result.ok ? null : result.error.kind).toBe('unexpected')
+  })
+})
+
+describe('documentsApi, provenance', () => {
+  it("transporte le devoir et le groupe d'un document", async () => {
+    const { client } = scriptedClient([
+      page([{ ...row('a'), assignment_id: '01JDEVOIR' }, { ...row('b'), group_id: '01JGROUPE' }], 1),
+    ])
+
+    const result = await listAllDocuments(client)
+
+    expect(result.ok && result.value[0]).toMatchObject({ assignmentId: '01JDEVOIR', groupId: null })
+    expect(result.ok && result.value[1]).toMatchObject({ assignmentId: null, groupId: '01JGROUPE' })
+  })
+
+  it('reste lisible devant une réponse qui ne porte pas ces champs', async () => {
+    const { client } = scriptedClient([page([row('a')], 1)])
+
+    const result = await listAllDocuments(client)
+
+    expect(result.ok && result.value[0]).toMatchObject({ assignmentId: null, groupId: null })
+  })
+
+  it('traite null comme une absence de provenance', async () => {
+    const { client } = scriptedClient([page([{ ...row('a'), assignment_id: null, group_id: null }], 1)])
+
+    const result = await listAllDocuments(client)
+
+    expect(result.ok && result.value[0]).toMatchObject({ assignmentId: null, groupId: null })
+  })
+
+  it('refuse la liste si un identifiant de provenance a un autre type', async () => {
+    const { client } = scriptedClient([page([{ ...row('a'), assignment_id: 7 }], 1)])
+
+    const result = await listAllDocuments(client)
 
     expect(result.ok ? null : result.error.kind).toBe('unexpected')
   })

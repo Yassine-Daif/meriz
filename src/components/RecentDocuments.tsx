@@ -3,6 +3,8 @@ import type { DocumentMeta } from '../model/document'
 import type { ApiError } from '../lib/apiClient'
 import type { DocumentRepository } from '../lib/documentRepository'
 import { formatDate } from '../lib/formatDate'
+import type { AssignmentIndex } from '../lib/workAssignments'
+import { provenanceFor } from './documentProvenance'
 import { Badge } from './ui/Badge'
 import { Button } from './ui/Button'
 
@@ -14,6 +16,8 @@ interface RecentDocumentsProps {
   onShowAll: () => void
   /** Documents chargés : évite un second appel à qui veut les compter. */
   onLoaded?: (documents: DocumentMeta[]) => void
+  /** Devoirs de l'élève : ils nomment le devoir d'un document de travail. */
+  assignments?: AssignmentIndex | null
   limit?: number
 }
 
@@ -31,6 +35,7 @@ export function RecentDocuments({
   onNewDocument,
   onShowAll,
   onLoaded,
+  assignments,
   limit = 4,
 }: RecentDocumentsProps) {
   const [documents, setDocuments] = useState<DocumentMeta[]>(() => mostRecent(repository.cachedList(), limit))
@@ -70,56 +75,59 @@ export function RecentDocuments({
   }
 
   return (
-    <section aria-labelledby="recents-titre">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="recents-titre" className="text-lg font-semibold tracking-tight text-ink">
-          Documents récents
-        </h2>
-        <Button variant="ghost" size="sm" onClick={onShowAll}>
-          Tout voir dans Mon travail <span aria-hidden="true">→</span>
-        </Button>
-      </div>
-
-      <p role="status" aria-live="polite" className="text-sm text-danger empty:hidden">
-        {error}
-      </p>
-
-      {documents.length === 0 ? (
-        <div className="mt-3 rounded-card border border-dashed border-line-strong bg-surface p-6 text-center">
-          <p className="text-sm text-ink-soft">
-            {loaded ? 'Aucun document pour l’instant.' : 'Chargement de vos documents…'}
-          </p>
-          {loaded && (
-            <Button variant="primary" className="mt-3" onClick={() => void run(onNewDocument)} disabled={busy}>
-              Créer mon premier document
-            </Button>
-          )}
+      <section aria-labelledby="recents-titre">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="recents-titre" className="text-lg font-semibold tracking-tight text-ink">
+            Documents récents
+          </h2>
+          <Button variant="ghost" size="sm" onClick={onShowAll}>
+            Tout voir dans Mon travail <span aria-hidden="true">→</span>
+          </Button>
         </div>
-      ) : (
-        <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-          {documents.map((meta) => (
-            <li key={meta.id}>
-              <button
-                type="button"
-                onClick={() => void run(() => onOpenDocument(meta.id))}
-                disabled={busy}
-                aria-label={`Ouvrir ${meta.name}, Perso`}
-                className="flex w-full items-center gap-3 rounded-card border border-line bg-surface p-4 text-left shadow-soft transition duration-150 hover:shadow-lift disabled:cursor-wait motion-safe:hover:-translate-y-0.5"
-              >
-                <span
-                  aria-hidden="true"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-accent-soft font-mono text-xs font-semibold text-accent-ink"
+
+        <p role="status" aria-live="polite" className="text-sm text-danger empty:hidden">
+          {error}
+        </p>
+
+        {documents.length === 0 ? (
+          <div className="mt-3 rounded-card border border-dashed border-line-strong bg-surface p-6 text-center">
+            <p className="text-sm text-ink-soft">
+              {loaded ? 'Aucun document pour l’instant.' : 'Chargement de vos documents…'}
+            </p>
+            {loaded && (
+              <Button variant="primary" className="mt-3" onClick={() => void run(onNewDocument)} disabled={busy}>
+                Créer mon premier document
+              </Button>
+            )}
+          </div>
+        ) : (
+          <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+            {documents.map((meta) => {
+              const provenance = provenanceFor(meta, assignments)
+              return (
+              <li key={meta.id}>
+                <button
+                  type="button"
+                  onClick={() => void run(() => onOpenDocument(meta.id))}
+                  disabled={busy}
+                  aria-label={`Ouvrir ${meta.name}${provenance ? `, ${provenance.spoken}` : ''}`}
+                  className="flex w-full items-center gap-3 rounded-card border border-line bg-surface p-4 text-left shadow-soft transition duration-150 hover:shadow-lift disabled:cursor-wait motion-safe:hover:-translate-y-0.5"
                 >
-                  MCD
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-ink">{meta.name}</span>
-                  <span className="block text-xs text-ink-soft">Modifié le {formatDate(meta.updatedAt)}</span>
-                </span>
-                <Badge tone="apricot">Perso</Badge>
-              </button>
-            </li>
-          ))}
+                  <span
+                    aria-hidden="true"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-accent-soft font-mono text-xs font-semibold text-accent-ink"
+                  >
+                    MCD
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-ink">{meta.name}</span>
+                    <span className="block text-xs text-ink-soft">Modifié le {formatDate(meta.updatedAt)}</span>
+                  </span>
+                  {provenance && <Badge tone={provenance.tone}>{provenance.label}</Badge>}
+                </button>
+              </li>
+            )
+          })}
         </ul>
       )}
     </section>

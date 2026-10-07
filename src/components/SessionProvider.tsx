@@ -53,9 +53,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         : `${count} documents ont des modifications non envoyées : elles partiront à votre prochaine connexion sur ce compte.`
 
   const [controller] = useState(() => {
-    const cache = createCloudCache(browserStorage().storage)
+    // Le cache et les liens de devoir partagent le même stockage.
+    const { storage } = browserStorage()
+    const cache = createCloudCache(storage)
     return createAccountController({
       cache,
+      storage,
       createClient: (getToken, onUnauthorized) =>
         createApiClient({ baseUrl, getToken, onUnauthorized }),
       // Jeton refusé pendant l'usage : plusieurs requêtes peuvent le

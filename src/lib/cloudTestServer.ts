@@ -12,6 +12,10 @@ interface StoredDocument {
   id: string
   ownerId: string
   name: string
+  /** Devoir dont ce document porte le travail, null sinon. */
+  assignmentId: string | null
+  /** Groupe où vit ce document, null sinon. */
+  groupId: string | null
   content: string
   createdAt: string
   updatedAt: string
@@ -29,6 +33,8 @@ export function createCloudTestServer() {
   const tokens = new Map<string, string>()
   const requests: RecordedRequest[] = []
   let online = true
+  /** Panne simulée : un serveur qui laisserait filer un document de groupe. */
+  let leakGroupDocuments = false
   let sequence = 0
   let clock = 0
   const timestamp = () => new Date(Date.UTC(2026, 8, 17, 10, 0, 0) + ++clock * 1000).toISOString()
@@ -36,6 +42,8 @@ export function createCloudTestServer() {
   const publicDocument = (document: StoredDocument, withContent: boolean) => ({
     id: document.id,
     name: document.name,
+    assignment_id: document.assignmentId,
+    group_id: document.groupId,
     ...(withContent ? { content: document.content } : {}),
     created_at: document.createdAt,
     updated_at: document.updatedAt,
@@ -56,8 +64,13 @@ export function createCloudTestServer() {
       const params = new URLSearchParams(query)
       const perPage = Number(params.get('per_page') ?? 50)
       const page = Number(params.get('page') ?? 1)
+      // Copie fidèle de scopePersonal côté serveur : whereNull('group_id').
+      // Le travail d'un devoir est donc bien listé, le document de groupe non.
       const own = [...documents.values()]
-        .filter((document) => document.ownerId === userId)
+        .filter(
+          (document) =>
+            document.ownerId === userId && (leakGroupDocuments || document.groupId === null),
+        )
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
       const data = own.slice((page - 1) * perPage, page * perPage).map((d) => publicDocument(d, false))
       const lastPage = Math.max(1, Math.ceil(own.length / perPage))
@@ -69,6 +82,8 @@ export function createCloudTestServer() {
         id: `doc-${++sequence}`,
         ownerId: userId,
         name: input.name ?? '',
+        assignmentId: null,
+        groupId: null,
         content: input.content ?? '',
         createdAt: now,
         updatedAt: now,
@@ -115,6 +130,10 @@ export function createCloudTestServer() {
     setOnline: (value: boolean) => {
       online = value
     },
+    /** Pour éprouver la ceinture du dépôt : le serveur se met à fuir. */
+    setLeakGroupDocuments: (value: boolean) => {
+      leakGroupDocuments = value
+    },
     /** Client qui lit son jeton au moment de chaque requête. */
     clientFor: (getToken: () => string | null): ApiClient => ({
       isConfigured: true,
@@ -134,5 +153,49 @@ export function createCloudTestServer() {
       requestBlob: async () => ({ ok: false, error: apiError('unexpected', null, 'Binaire non simulé.') }),
     }),
     documentsOf: (userId: string) => [...documents.values()].filter((d) => d.ownerId === userId),
+
+    /**
+     * Travail d'un devoir, comme le ferait POST /assignments/{id}/start :
+     * idempotent sur le couple (devoir, élève). La route n'est pas simulée,
+     * le dépôt de documents ne l'appelle jamais.
+     */
+    startWork: (userId: string, assignmentId: string, content = '{}'): StoredDocument => {
+      const existing = [...documents.values()].find(
+        (d) => d.ownerId === userId && d.assignmentId === assignmentId,
+      )
+      if (existing) {
+        return existing
+      }
+      const now = timestamp()
+      const document: StoredDocument = {
+        id: `doc-${++sequence}`,
+        ownerId: userId,
+        name: `Travail ${assignmentId}`,
+        assignmentId,
+        groupId: null,
+        content,
+        createdAt: now,
+        updatedAt: now,
+      }
+      documents.set(document.id, document)
+      return document
+    },
+
+    /** Document d'un groupe : il n'apparaît jamais dans la liste personnelle. */
+    createGroupDocument: (userId: string, groupId: string, content = '{}'): StoredDocument => {
+      const now = timestamp()
+      const document: StoredDocument = {
+        id: `doc-${++sequence}`,
+        ownerId: userId,
+        name: `Modèle du groupe ${groupId}`,
+        assignmentId: null,
+        groupId,
+        content,
+        createdAt: now,
+        updatedAt: now,
+      }
+      documents.set(document.id, document)
+      return document
+    },
   }
 }

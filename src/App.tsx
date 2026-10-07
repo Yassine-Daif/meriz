@@ -786,6 +786,7 @@ export function App() {
               key={pageKey}
               client={account.client}
               repository={repository}
+              student={session.user.role !== 'teacher'}
               openAssignmentId={opening?.page === 'work' ? opening.assignmentId : null}
               onOpenDocument={openDocument}
               onNewDocument={newDocument}

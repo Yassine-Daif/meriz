@@ -14,7 +14,8 @@ import {
 } from './documentRepository'
 import type { DocumentRepository } from './documentRepository'
 import { createDocumentStore, createMemoryStorage } from './documentStore'
-import { parseModelFile } from './persistence'
+import { parseModelFile, serializeModel } from './persistence'
+import { createWorkLinks } from './workDocuments'
 
 const stateOf = (mcd: McdEditorState['mcd'], x = 0): McdEditorState => ({
   mcd,
@@ -31,7 +32,7 @@ function setup() {
   const signIn = (userId: string): DocumentRepository => {
     cache.reset(userId)
     token = server.tokenFor(userId)
-    return createCloudRepository({ client, cache, userId })
+    return createCloudRepository({ client, cache, userId, workLinks: createWorkLinks(storage, userId) })
   }
   return { server, storage, cache, client, signIn, signOut: () => { token = null } }
 }
@@ -183,7 +184,7 @@ describe('dépôt cloud, sauvegarde automatique', () => {
   })
 
   it("rouvre les modifications en attente plutôt que la version du serveur", async () => {
-    const { signIn, server, cache, client } = setup()
+    const { signIn, server, cache, client, storage } = setup()
     const repo = signIn('A')
     const { id, opened } = await openNew(repo)
     const saver = repo.createSaver(opened)
@@ -195,7 +196,7 @@ describe('dépôt cloud, sauvegarde automatique', () => {
 
     // Rechargement de la page : nouveau dépôt, même compte, même cache.
     server.setOnline(true)
-    const again = createCloudRepository({ client, cache, userId: 'A' })
+    const again = createCloudRepository({ client, cache, userId: 'A', workLinks: createWorkLinks(storage, 'A') })
     const reopened = await again.open(id)
 
     expect(reopened.ok && reopened.value).toMatchObject({ fromCache: true, pending: true })
@@ -391,5 +392,170 @@ describe('sauvegarde inerte', () => {
     expect(seen).toBe(0)
     stop()
     saver.dispose()
+  })
+})
+
+describe('dépôt cloud, provenance et suppression', () => {
+  /** Ouvre le travail d'un devoir, comme le ferait la page du devoir. */
+  async function startWork(setupResult: ReturnType<typeof setup>, repo: DocumentRepository) {
+    const work = setupResult.server.startWork(
+      'A',
+      '01JDEVOIR',
+      serializeModel(stateOf(clientCommande), DEFAULT_MPD_SETTINGS, 'Travail'),
+    )
+    createWorkLinks(setupResult.storage, 'A').set('01JDEVOIR', work.id)
+    await repo.list()
+    return work.id
+  }
+
+  it('la liste porte la provenance jusqu’aux métadonnées affichées', async () => {
+    const context = setup()
+    const repo = context.signIn('A')
+    const travail = await startWork(context, repo)
+    const perso = await repo.create('Essai perso', stateOf(clientCommande))
+
+    const listed = await repo.list()
+
+    expect(listed.ok).toBe(true)
+    if (!listed.ok) return
+    const byId = new Map(listed.value.documents.map((meta) => [meta.id, meta]))
+    expect(byId.get(travail)?.origin).toEqual({ kind: 'assignment', assignmentId: '01JDEVOIR' })
+    expect(perso.ok && byId.get(perso.value.id)?.origin).toEqual({ kind: 'personal' })
+  })
+
+  it('un document de groupe laissé filer par le serveur n’entre pas dans le cache personnel', async () => {
+    const context = setup()
+    const repo = context.signIn('A')
+    const groupe = context.server.createGroupDocument('A', '01JGROUPE')
+    context.server.setLeakGroupDocuments(true)
+
+    const listed = await repo.list()
+
+    expect(listed.ok && listed.value.documents.map((d) => d.id)).toEqual([])
+    expect(context.cache.get(groupe.id)).toBeNull()
+  })
+
+  it('supprimer un travail de devoir oublie le lien de ce devoir', async () => {
+    const context = setup()
+    const repo = context.signIn('A')
+    const travail = await startWork(context, repo)
+    const links = createWorkLinks(context.storage, 'A')
+    links.set('01JAUTRE', 'doc-autre')
+
+    expect((await repo.remove(travail)).ok).toBe(true)
+
+    expect(links.get('01JDEVOIR')).toBeNull()
+    // Le lien d'un autre devoir n'est pas touché.
+    expect(links.get('01JAUTRE')).toBe('doc-autre')
+    expect(context.server.documents.get(travail)).toBeUndefined()
+  })
+
+  it('supprimer un document personnel ne touche aucun lien de devoir', async () => {
+    const context = setup()
+    const repo = context.signIn('A')
+    const travail = await startWork(context, repo)
+    const perso = await repo.create('Essai perso', stateOf(clientCommande))
+    expect(perso.ok).toBe(true)
+    if (!perso.ok) return
+
+    expect((await repo.remove(perso.value.id)).ok).toBe(true)
+
+    expect(createWorkLinks(context.storage, 'A').get('01JDEVOIR')).toBe(travail)
+  })
+
+  it('un échec de suppression garde le document, son lien et sa modification en attente', async () => {
+    const context = setup()
+    const repo = context.signIn('A')
+    const travail = await startWork(context, repo)
+    const opened = await repo.open(travail)
+    expect(opened.ok).toBe(true)
+    if (!opened.ok) return
+    const saver = repo.createSaver(opened.value)
+    context.server.setOnline(false)
+    saver.save(stateOf(clientCommande, 3), DEFAULT_MPD_SETTINGS)
+    await vi.advanceTimersByTimeAsync(SEND_DELAY_MS)
+
+    const removed = await repo.remove(travail)
+
+    expect(removed.ok).toBe(false)
+    expect(context.cache.get(travail)?.pending).toBe(true)
+    expect(createWorkLinks(context.storage, 'A').get('01JDEVOIR')).toBe(travail)
+
+    // Le serveur revient : la modification part comme avant, rien n'a été purgé.
+    context.server.setOnline(true)
+    saver.retry()
+    await vi.advanceTimersByTimeAsync(SEND_DELAY_MS)
+    expect(contentModel(context.server.documents.get(travail)?.content ?? '')).toEqual(
+      stateOf(clientCommande, 3),
+    )
+    saver.dispose()
+  })
+
+  it('après une suppression, rien n’est renvoyé ni recréé sous « (récupéré) »', async () => {
+    const context = setup()
+    const repo = context.signIn('A')
+    const created = await repo.create('Doc', stateOf(clientCommande))
+    expect(created.ok).toBe(true)
+    if (!created.ok) return
+    const opened = await repo.open(created.value.id)
+    expect(opened.ok).toBe(true)
+    if (!opened.ok) return
+    const saver = repo.createSaver(opened.value)
+    context.server.setOnline(false)
+    saver.save(stateOf(clientCommande, 5), DEFAULT_MPD_SETTINGS)
+    await vi.advanceTimersByTimeAsync(SEND_DELAY_MS)
+    context.server.setOnline(true)
+
+    expect((await repo.remove(created.value.id)).ok).toBe(true)
+
+    // Ni l'envoi différé, ni la fermeture, ni une frappe tardive ne le recréent.
+    saver.save(stateOf(clientCommande, 6), DEFAULT_MPD_SETTINGS)
+    await vi.advanceTimersByTimeAsync(MAX_WAIT_MS)
+    await repo.syncPending()
+    saver.dispose()
+    await repo.syncPending()
+
+    expect(context.server.documentsOf('A')).toEqual([])
+    expect(context.cache.get(created.value.id)).toBeNull()
+    expect(repo.pendingCount()).toBe(0)
+  })
+
+  it('un éditeur ouvert sur le document supprimé passe en erreur et n’enregistre plus rien', async () => {
+    const context = setup()
+    const repo = context.signIn('A')
+    const created = await repo.create('Doc', stateOf(clientCommande))
+    expect(created.ok).toBe(true)
+    if (!created.ok) return
+    const opened = await repo.open(created.value.id)
+    expect(opened.ok).toBe(true)
+    if (!opened.ok) return
+    const saver = repo.createSaver(opened.value)
+
+    expect((await repo.remove(created.value.id)).ok).toBe(true)
+
+    const status = saver.getStatus()
+    expect(status.kind).toBe('error')
+    expect(status.kind === 'error' && status.message).toContain("vient d'être supprimé")
+    // Aucune promesse de retour.
+    expect(status.kind === 'error' && status.message).not.toContain('récupér')
+
+    saver.save(stateOf(clientCommande, 9), DEFAULT_MPD_SETTINGS)
+    await vi.advanceTimersByTimeAsync(MAX_WAIT_MS)
+    expect(await saver.flush()).toBe(true)
+    expect(context.server.documentsOf('A')).toEqual([])
+    saver.dispose()
+  })
+
+  it('une suppression déjà faite ailleurs nettoie le lien de la même façon', async () => {
+    const context = setup()
+    const repo = context.signIn('A')
+    const travail = await startWork(context, repo)
+    // Le serveur l'a déjà perdu : le DELETE répond 404.
+    context.server.documents.delete(travail)
+
+    expect((await repo.remove(travail)).ok).toBe(true)
+
+    expect(createWorkLinks(context.storage, 'A').get('01JDEVOIR')).toBeNull()
+    expect(context.cache.get(travail)).toBeNull()
   })
 })

@@ -61,16 +61,36 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function isCachedDocument(value: unknown): value is CachedDocument {
+/**
+ * Forme écrite avant le transport de la provenance : les deux champs
+ * manquent. Elle reste lisible, et aucune version de schéma n'est posée :
+ * un vidage du cache emporterait les modifications en attente, donc du
+ * travail hors ligne jamais envoyé.
+ */
+type StoredDocument = Omit<CachedDocument, 'assignmentId' | 'groupId'> &
+  Partial<Pick<CachedDocument, 'assignmentId' | 'groupId'>>
+
+function isOptionalId(value: unknown): boolean {
+  return value === undefined || value === null || typeof value === 'string'
+}
+
+function isStoredDocument(value: unknown): value is StoredDocument {
   return (
     isRecord(value) &&
     typeof value.id === 'string' &&
     typeof value.name === 'string' &&
     typeof value.createdAt === 'string' &&
     typeof value.updatedAt === 'string' &&
+    isOptionalId(value.assignmentId) &&
+    isOptionalId(value.groupId) &&
     (value.content === null || typeof value.content === 'string') &&
     typeof value.pending === 'boolean'
   )
+}
+
+/** Entrée d'une version d'avant : provenance inconnue, donc nulle. */
+function withOrigin(stored: StoredDocument): CachedDocument {
+  return { ...stored, assignmentId: stored.assignmentId ?? null, groupId: stored.groupId ?? null }
 }
 
 function isOutboxEntry(value: unknown): value is OutboxEntry {
@@ -127,7 +147,7 @@ export function createCloudCache(storage: StorageLike): CloudCache {
     }
     try {
       const raw: unknown = JSON.parse(text)
-      return isCachedDocument(raw) ? raw : null
+      return isStoredDocument(raw) ? withOrigin(raw) : null
     } catch {
       return null
     }
@@ -186,6 +206,9 @@ export function createCloudCache(storage: StorageLike): CloudCache {
       for (const meta of metas) {
         const cached = getDoc(meta.id)
         if (cached?.pending) {
+          // Seule la provenance suit : le nom et le contenu en attente sont
+          // plus récents que ce que le serveur connaît.
+          putDoc({ ...cached, assignmentId: meta.assignmentId, groupId: meta.groupId })
           continue
         }
         // Contenu gardé seulement s'il correspond toujours à la version du serveur.

@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { createCloudCache, OUTBOX_PREFIX } from './cloudCache'
+import { CACHE_PREFIX, createCloudCache, OUTBOX_PREFIX } from './cloudCache'
 import { createDocumentStore, createMemoryStorage } from './documentStore'
 
 const meta = (id: string, updatedAt = '2026-09-17T10:00:00Z') => ({
   id,
   name: `Doc ${id}`,
+  assignmentId: null,
+  groupId: null,
   createdAt: '2026-09-17T09:00:00Z',
   updatedAt,
 })
@@ -140,5 +142,80 @@ describe("cloudCache, boîte d'envoi cloisonnée par compte", () => {
     cache.putLocalEdit(meta('x'), '{}')
 
     expect(cache.stashPendingToOutbox()).toBe(0)
+  })
+})
+
+describe('cloudCache, provenance des documents', () => {
+  it('garde le devoir et le groupe posés par la liste du serveur', () => {
+    const cache = createCloudCache(createMemoryStorage())
+    cache.reset('A')
+
+    cache.replaceList([
+      { ...meta('travail'), assignmentId: '01JDEVOIR' },
+      { ...meta('perso') },
+    ])
+
+    expect(cache.get('travail')).toMatchObject({ assignmentId: '01JDEVOIR', groupId: null })
+    expect(cache.get('perso')).toMatchObject({ assignmentId: null, groupId: null })
+  })
+
+  it('pose la provenance sur une entrée en attente sans toucher son nom ni son contenu', () => {
+    const cache = createCloudCache(createMemoryStorage())
+    cache.reset('A')
+    cache.putLocalEdit({ ...meta('travail'), name: 'Nom local' }, '{"local":true}')
+
+    cache.replaceList([{ ...meta('travail'), name: 'Nom du serveur', assignmentId: '01JDEVOIR' }])
+
+    expect(cache.get('travail')).toMatchObject({
+      name: 'Nom local',
+      content: '{"local":true}',
+      pending: true,
+      assignmentId: '01JDEVOIR',
+    })
+  })
+
+  it('relit une entrée écrite par une version d’avant, provenance inconnue donc nulle', () => {
+    const storage = createMemoryStorage()
+    const cache = createCloudCache(storage)
+    cache.reset('A')
+    // Forme d'avant le transport de la provenance : les deux champs manquent.
+    storage.setItem(
+      `${CACHE_PREFIX}doc:ancien`,
+      JSON.stringify({
+        id: 'ancien',
+        name: 'Doc ancien',
+        createdAt: '2026-09-17T09:00:00Z',
+        updatedAt: '2026-09-17T10:00:00Z',
+        content: '{"hors":"ligne"}',
+        pending: true,
+      }),
+    )
+
+    expect(cache.get('ancien')).toMatchObject({ assignmentId: null, groupId: null })
+  })
+
+  it('ne perd jamais le contenu en attente d’une entrée écrite par une version d’avant', () => {
+    const storage = createMemoryStorage()
+    const cache = createCloudCache(storage)
+    cache.reset('A')
+    storage.setItem(
+      `${CACHE_PREFIX}doc:ancien`,
+      JSON.stringify({
+        id: 'ancien',
+        name: 'Doc ancien',
+        createdAt: '2026-09-17T09:00:00Z',
+        updatedAt: '2026-09-17T10:00:00Z',
+        content: '{"jamais":"envoye"}',
+        pending: true,
+      }),
+    )
+
+    // Aucune version de schéma : le travail hors ligne part encore dans la
+    // boîte d'envoi, au lieu d'être jeté avec le cache.
+    expect(cache.pending().map((d) => d.id)).toEqual(['ancien'])
+    expect(cache.stashPendingToOutbox()).toBe(1)
+    expect(cache.takeOutbox('A')).toEqual([
+      { id: 'ancien', name: 'Doc ancien', content: '{"jamais":"envoye"}' },
+    ])
   })
 })

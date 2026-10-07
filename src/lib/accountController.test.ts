@@ -16,7 +16,8 @@ const stateOf = (x: number): McdEditorState => ({ mcd: clientCommande, layout: {
 
 function setup() {
   const server = createCloudTestServer()
-  const cache = createCloudCache(createMemoryStorage())
+  const storage = createMemoryStorage()
+  const cache = createCloudCache(storage)
   const onExpired = vi.fn()
   // Comme le vrai client : un 401 reçu avec un jeton prévient la session.
   const createClient = (getToken: () => string | null, onUnauthorized: () => void): ApiClient => {
@@ -33,8 +34,8 @@ function setup() {
       requestBlob: async () => ({ ok: false, error: apiError('unexpected', null, 'Binaire non simulé.') }),
     }
   }
-  const controller = createAccountController({ cache, createClient, onExpired })
-  return { server, cache, controller, onExpired }
+  const controller = createAccountController({ cache, storage, createClient, onExpired })
+  return { server, cache, storage, controller, onExpired }
 }
 
 function repositoryOf(space: AccountSpace): DocumentRepository {

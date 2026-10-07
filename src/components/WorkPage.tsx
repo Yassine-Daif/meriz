@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { ApiClient, ApiError } from '../lib/apiClient'
 import type { DocumentRepository } from '../lib/documentRepository'
+import { useMyAssignments } from '../lib/useMyAssignments'
 import { ClassWorkPanel } from './assignments/ClassWorkPanel'
 import type { OpenReadOnlyModel, OpenWorkDocument } from './assignments/types'
 import { DocumentList } from './DocumentList'
@@ -17,6 +18,8 @@ const TABS = [
 interface WorkPageProps {
   client: ApiClient
   repository: DocumentRepository
+  /** Élève : ses devoirs nomment la provenance de son travail. Un prof n'en a pas. */
+  student: boolean
   /** Devoir à rouvrir d'emblée (retour de l'outil MCD). */
   openAssignmentId: string | null
   onOpenDocument: (id: string) => Promise<ApiError | null>
@@ -34,6 +37,7 @@ interface WorkPageProps {
 export function WorkPage({
   client,
   repository,
+  student,
   openAssignmentId,
   onOpenDocument,
   onNewDocument,
@@ -44,6 +48,7 @@ export function WorkPage({
 }: WorkPageProps) {
   // Revenir de l'outil sur un devoir ramène à l'onglet qui l'a ouvert.
   const [tab, setTab] = useState<WorkTab>(openAssignmentId === null ? 'personal' : 'class')
+  const { assignments } = useMyAssignments(client, student)
 
   return (
     <PageShell
@@ -58,7 +63,7 @@ export function WorkPage({
             repository={repository}
             cloud
             heading="Documents personnels"
-            provenance={{ label: 'Perso', tone: 'apricot' }}
+            assignments={assignments}
             onOpenDocument={onOpenDocument}
             onNewDocument={onNewDocument}
             onOpenExample={onOpenExample}
