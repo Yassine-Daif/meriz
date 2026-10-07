@@ -1,6 +1,7 @@
 import { useCallback, useState, useSyncExternalStore } from 'react'
 import type { McdAction, McdEditorState } from '../model/mcdReducer'
 import { createModelDoc } from '../model/modelDoc'
+import type { ModelDocOptions, ModelSync } from '../model/modelDoc'
 
 /**
  * Le modèle de l'éditeur, porté par un document Yjs. Le composant ne
@@ -24,10 +25,14 @@ export interface ModelDocHandle {
   redo: () => void
   /** Instantané venu d'ailleurs (observation en direct). */
   adopt: (state: McdEditorState) => void
+  /** Branchement du réseau, pour la co-édition. */
+  sync: ModelSync
 }
 
-export function useModelDoc(initial: McdEditorState): ModelDocHandle {
-  const [modelDoc] = useState(() => createModelDoc(initial))
+export function useModelDoc(initial: McdEditorState, options?: ModelDocOptions): ModelDocHandle {
+  // Les réglages sont lus au montage : l'éditeur est remonté par sa clé
+  // quand le document change, donc ils ne changent jamais en cours de vie.
+  const [modelDoc] = useState(() => createModelDoc(initial, options))
   const state = useSyncExternalStore(modelDoc.subscribe, modelDoc.snapshot)
 
   const dispatch = useCallback((action: McdAction) => modelDoc.apply(action), [modelDoc])
@@ -45,5 +50,6 @@ export function useModelDoc(initial: McdEditorState): ModelDocHandle {
     undo,
     redo,
     adopt,
+    sync: modelDoc.sync,
   }
 }

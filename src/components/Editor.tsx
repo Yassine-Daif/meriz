@@ -12,6 +12,11 @@ import { EMPTY_SELECTION } from '../canvas/selection'
 import type { CanvasSelection } from '../canvas/selection'
 import type { ViewId } from './views'
 import { useModelDoc } from './useModelDoc'
+import { useCollaboration } from './useCollaboration'
+import { useSharedSeed } from './useSharedSeed'
+import type { CollaborationInfo } from './useCollaboration'
+import { CodeView } from './CodeView'
+import { CollaborationBanner } from './CollaborationBanner'
 import { TopBar } from './TopBar'
 import { NavRail } from './NavRail'
 import { McdView } from './McdView'
@@ -51,6 +56,16 @@ interface EditorProps {
    * s'exporte, mais ne se modifie pas et rien n'est enregistré.
    */
   readOnly?: boolean
+  /**
+   * Co-édition : le document est partagé avec d'autres par son canal de
+   * présence. Absent, l'éditeur ne se connecte à rien.
+   */
+  collaboration?: CollaborationInfo
+  /**
+   * Passer de l'observation à la correction à deux. Offert au prof dès
+   * qu'il observe un travail suivi.
+   */
+  onStartCollaboration?: () => void
 }
 
 /** Consultation seule : aucune action n'atteint le modèle. */
@@ -71,15 +86,56 @@ export function Editor({
   onNewDocument,
   onImportFile,
   readOnly = false,
+  collaboration,
+  onStartCollaboration,
 }: EditorProps) {
+  /*
+   * Qui ensemence le document Yjs. L'invité d'une co-édition et le
+   * membre d'un groupe naissent vides et se remplissent par la
+   * synchronisation : semer des deux côtés doublerait le modèle. Le
+   * membre, lui, adopte ensuite le contenu du serveur si personne ne
+   * l'a fait, voir `useSharedSeed`.
+   */
+  const role = collaboration?.role
+  const guest = role === 'guest'
+  const member = role === 'member'
+
   // Le modèle vit dans un document Yjs : c'est la source de vérité, et
   // le socle de l'édition à plusieurs. L'éditeur n'en voit qu'un état
   // JS ordinaire, exactement comme avant.
-  const { state, dispatch: editAction, canUndo, canRedo, undo, redo, adopt } = useModelDoc(openedDocument.state)
+  const { state, dispatch: editAction, canUndo, canRedo, undo, redo, adopt, sync } = useModelDoc(
+    openedDocument.state,
+    { seed: !guest && !member },
+  )
+  // Modèle vide : c'est ce qui dit qu'un document de groupe attend
+  // encore son contenu, et ce qui décide de la confirmation de fermeture.
+  const modelIsEmpty =
+    state.mcd.properties.length === 0 &&
+    state.mcd.entities.length === 0 &&
+    state.mcd.associations.length === 0
+  const [selection, setSelection] = useState<CanvasSelection>(EMPTY_SELECTION)
+
+  // Ma sélection part aux autres : des identifiants, rien du contenu.
+  const sharedSelection = useMemo(
+    () => [...selection.nodeIds, ...selection.edgeIds],
+    [selection],
+  )
+  const collab = useCollaboration({
+    sync,
+    info: collaboration ?? null,
+    selection: sharedSelection,
+  })
+
+  /**
+   * L'invité n'écrit que tant que le lien tient : sans canal, ses
+   * modifications n'arriveraient nulle part et personne ne les
+   * enregistrerait. Le propriétaire, lui, édite toujours.
+   */
+  const linkLost = guest && collab.state !== 'live'
+  const locked = readOnly || linkLost
   // Une seule barrière pour tout l'éditeur : l'inspecteur, le dictionnaire,
   // la barre d'outils et les étiquettes de pattes passent tous par là.
-  const dispatch = readOnly ? IGNORE_ACTION : editAction
-  const [selection, setSelection] = useState<CanvasSelection>(EMPTY_SELECTION)
+  const dispatch = locked ? IGNORE_ACTION : editAction
   // La vue active est un état d'interface, jamais une donnée du modèle.
   const [activeView, setActiveView] = useState<ViewId>('mcd')
   // Réglages MPD, seule partie éditable du MPD : dialecte + surcharges
@@ -112,14 +168,30 @@ export function Editor({
     adopt(openedDocument.state)
   }, [readOnly, openedDocument.state, adopt])
 
+  /*
+   * Document d'un groupe : il naît vide et se remplit par la
+   * synchronisation ou par l'adoption. Enregistrer avant que ce soit
+   * tranché écraserait le travail du groupe par un modèle vide, donc on
+   * attend. Hors groupe, `ready` est vrai d'emblée.
+   */
+  const { ready } = useSharedSeed({
+    active: member,
+    initial: openedDocument.state,
+    empty: modelIsEmpty,
+    state: collab.state,
+    clientId: sync.awareness.clientID,
+    peerIds: collab.others.map((other) => other.clientId),
+    adopt,
+  })
+
   // Sauvegarde automatique : le saver ignore les états identiques, donc
   // ouvrir un document sans y toucher ne modifie pas sa date.
   useEffect(() => {
-    if (readOnly) {
+    if (locked || !ready) {
       return
     }
     saver.save(state, mpdSettings)
-  }, [state, mpdSettings, saver, readOnly])
+  }, [state, mpdSettings, saver, locked, ready])
 
   useEffect(() => {
     setSyncStatus(saver.getStatus())
@@ -129,12 +201,8 @@ export function Editor({
   // Fermeture de la page avec un modèle non vide : confirmation native
   // du navigateur (imposée par la plateforme, pas de boîte personnalisée
   // possible ici). La sauvegarde automatique limite déjà la casse.
-  const modelIsEmpty =
-    state.mcd.properties.length === 0 &&
-    state.mcd.entities.length === 0 &&
-    state.mcd.associations.length === 0
   useEffect(() => {
-    if (modelIsEmpty || readOnly) {
+    if (modelIsEmpty || locked) {
       return
     }
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -142,7 +210,7 @@ export function Editor({
     }
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
-  }, [modelIsEmpty, readOnly])
+  }, [modelIsEmpty, locked])
 
   // Ctrl+A dans la vue MCD : tout sélectionner (hors champs de saisie).
   useEffect(() => {
@@ -169,7 +237,7 @@ export function Editor({
   // Annuler/rétablir au clavier, partout dans l'éditeur, sauf dans un
   // champ de saisie : la frappe s'y annule nativement.
   useEffect(() => {
-    if (readOnly) {
+    if (locked) {
       return
     }
     const onKeyDown = (event: KeyboardEvent) => {
@@ -187,7 +255,7 @@ export function Editor({
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [readOnly, undo, redo])
+  }, [locked, undo, redo])
 
   // Générer : le MCD est vérifié par la barre d'outils, on ouvre le résultat.
   const handleGenerate = useCallback(() => {
@@ -240,7 +308,8 @@ export function Editor({
           syncStatus={syncStatus}
           onRetrySync={saver.retry}
           cloud={cloud}
-          readOnly={readOnly}
+          readOnly={locked}
+          participants={collaboration ? collab.participants : undefined}
           mcdVisible={activeView === 'mcd'}
           canUndo={canUndo}
           canRedo={canRedo}
@@ -253,7 +322,7 @@ export function Editor({
 
           <main id="contenu" className="flex min-h-0 min-w-0 flex-1 flex-col">
             {activeView === 'dictionnaire' && (
-              <DictionaryView mcd={state.mcd} dispatch={dispatch} readOnly={readOnly} />
+              <DictionaryView mcd={state.mcd} dispatch={dispatch} readOnly={locked} />
             )}
 
             <McdView
@@ -265,7 +334,25 @@ export function Editor({
               onSelectElement={selectElement}
               onGenerate={handleGenerate}
               isActive={activeView === 'mcd'}
-              readOnly={readOnly}
+              others={collab.others}
+              onPointerFlow={collaboration ? collab.reportCursor : undefined}
+              // Entre pairs d'un groupe, personne n'est prof de personne.
+              teacherTag={role !== 'member'}
+              banner={
+                collaboration || onStartCollaboration ? (
+                  <CollaborationBanner
+                    state={collab.state}
+                    // Sans contexte collaboratif, on ne fait que lire : c'est
+                    // l'observation d'un travail suivi, qui n'ouvre aucun canal.
+                    mode={collaboration ? 'edit' : 'observe'}
+                    participants={collab.participants}
+                    others={collab.others}
+                    role={role ?? 'owner'}
+                    onStart={onStartCollaboration}
+                  />
+                ) : undefined
+              }
+              readOnly={locked}
             />
 
             {activeView === 'mld' && <MldView tables={mldTables} hasErrors={hasErrors} />}
@@ -283,6 +370,15 @@ export function Editor({
 
             {activeView === 'sql' && (
               <SqlView tables={mpdTables} dialect={mpdSettings.dialect} hasErrors={hasErrors} />
+            )}
+
+            {activeView === 'code' && (
+              <CodeView
+                mcd={state.mcd}
+                tables={mldTables}
+                settings={mpdSettings}
+                hasErrors={hasErrors}
+              />
             )}
 
             {activeView === 'apprendre' && <LearnView onSelectView={setActiveView} />}

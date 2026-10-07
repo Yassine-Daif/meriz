@@ -8,7 +8,7 @@ import { TabPanel, Tabs } from '../ui/Tabs'
 import { AssignmentEditor } from './AssignmentEditor'
 import { LiveTrackingPanel } from './LiveTrackingPanel'
 import { SubmissionsPanel } from './SubmissionsPanel'
-import type { EditAssignmentModel, OpenReadOnlyModel } from './types'
+import type { EditAssignmentModel, OpenLiveCoedition, OpenReadOnlyModel } from './types'
 
 /** Sections d'un devoir ouvert, un cran sous les onglets de la classe. */
 export type AssignmentTab = 'enonce' | 'rendus' | 'suivi'
@@ -30,6 +30,8 @@ interface AssignmentWorkspaceProps {
   onAssignmentChanged: (assignment: Assignment) => void
   onEditModel: EditAssignmentModel
   onOpenReadOnlyModel: OpenReadOnlyModel
+  /** Corriger en direct le travail d'un élève, en co-édition. */
+  onStartLiveCoedition: OpenLiveCoedition
 }
 
 const TABS = [
@@ -55,8 +57,16 @@ export function AssignmentWorkspace({
   onAssignmentChanged,
   onEditModel,
   onOpenReadOnlyModel,
+  onStartLiveCoedition,
 }: AssignmentWorkspaceProps) {
   const [tab, setTab] = useState<AssignmentTab>(initialTab)
+  /*
+   * Ouvrir l'onglet Suivi ouvre le suivi, mais une fermeture à la main
+   * se respecte : le panneau se démonte en changeant d'onglet, donc la
+   * mémoire vit ici. Quitter le devoir la remet à zéro, puisque ce cadre
+   * est remonté par clé à chaque devoir.
+   */
+  const [trackingClosedByHand, setTrackingClosedByHand] = useState(false)
   const idBase = useId()
 
   const editor = (
@@ -140,6 +150,9 @@ export function AssignmentWorkspace({
                 assignment={assignment}
                 onTrackingChanged={onAssignmentChanged}
                 onOpenReadOnlyModel={onOpenReadOnlyModel}
+                onStartLiveCoedition={onStartLiveCoedition}
+                autoOpen={!trackingClosedByHand}
+                onTrackingClosed={() => setTrackingClosedByHand(true)}
               />
             </TabPanel>
           )}

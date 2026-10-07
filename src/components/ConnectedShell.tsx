@@ -8,7 +8,7 @@ import { Notice } from './ui/Notice'
 import { SkipLink } from './ui/SkipLink'
 import { ThemeToggle } from './ui/ThemeToggle'
 
-export type ConnectedPage = 'home' | 'classes' | 'corrections' | 'work' | 'profile'
+export type ConnectedPage = 'home' | 'classes' | 'groups' | 'corrections' | 'work' | 'profile'
 
 interface ConnectedShellProps {
   user: ApiUser
@@ -31,6 +31,14 @@ const ICONS: Record<ConnectedPage, ReactNode> = {
       <path d="M16 12.6c2.4-.2 4 1.2 4.5 4" />
     </>
   ),
+  groups: (
+    <>
+      <circle cx="8" cy="10" r="2.6" />
+      <circle cx="16" cy="10" r="2.6" />
+      <path d="M3 19c.5-2.6 2.4-4 5-4s4.5 1.4 5 4" />
+      <path d="M11 19c.5-2.6 2.4-4 5-4s4.5 1.4 5 4" />
+    </>
+  ),
   corrections: (
     <>
       <path d="M8 4.5h8a1.5 1.5 0 0 1 1.5 1.5v13a1.5 1.5 0 0 1-1.5 1.5H8A1.5 1.5 0 0 1 6.5 19V6A1.5 1.5 0 0 1 8 4.5" />
@@ -50,6 +58,7 @@ const ICONS: Record<ConnectedPage, ReactNode> = {
 const ITEMS: { page: ConnectedPage; label: string; teacherOnly?: boolean }[] = [
   { page: 'home', label: 'Accueil' },
   { page: 'classes', label: 'Mes classes' },
+  { page: 'groups', label: 'Mes groupes' },
   { page: 'corrections', label: 'À corriger', teacherOnly: true },
   { page: 'work', label: 'Mon travail' },
   { page: 'profile', label: 'Profil' },

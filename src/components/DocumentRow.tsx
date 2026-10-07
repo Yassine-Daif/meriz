@@ -9,7 +9,8 @@ interface DocumentRowProps {
   meta: DocumentMeta
   onOpen: () => void
   onRename: (name: string) => void
-  onDuplicate: () => void
+  /** Absent : aucun bouton de duplication. */
+  onDuplicate?: () => void
   onRequestDelete: () => void
   /** Pastille de provenance (ex. « Perso »), écrite en toutes lettres. */
   provenance?: { label: string; tone: BadgeTone }
@@ -123,9 +124,11 @@ export function DocumentRow({ meta, onOpen, onRename, onDuplicate, onRequestDele
         >
           Renommer
         </button>
-        <button type="button" onClick={onDuplicate} aria-label={`Dupliquer ${meta.name}`} className={actionClass}>
-          Dupliquer
-        </button>
+        {onDuplicate && (
+          <button type="button" onClick={onDuplicate} aria-label={`Dupliquer ${meta.name}`} className={actionClass}>
+            Dupliquer
+          </button>
+        )}
         <button
           type="button"
           onClick={onRequestDelete}

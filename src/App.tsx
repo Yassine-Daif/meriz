@@ -30,7 +30,12 @@ import { ClassesPage } from './components/ClassesPage'
 import type { ClassroomOpening } from './components/ClassesPage'
 import { CorrectionsPage } from './components/CorrectionsPage'
 import type { CorrectionOpening } from './components/CorrectionsPage'
-import type { ReadOnlyModel } from './components/assignments/types'
+import type { LiveCoedition, ReadOnlyModel } from './components/assignments/types'
+import { GroupsPage } from './components/groups/GroupsPage'
+import type { GroupOpening } from './components/groups/GroupsPage'
+import type { CollaborationInfo } from './components/useCollaboration'
+import type { CollabUser } from './model/collabProvider'
+import type { SessionState } from './lib/sessionState'
 import { ConnectedShell } from './components/ConnectedShell'
 import type { ConnectedPage } from './components/ConnectedShell'
 import { StudentHome } from './components/StudentHome'
@@ -63,7 +68,14 @@ type EditorTarget =
       field: AssignmentField
       title: string
     }
-  | { kind: 'work'; classroomId: string; assignmentId: string; origin: EditorOrigin }
+  | {
+      kind: 'work'
+      classroomId: string
+      assignmentId: string
+      origin: EditorOrigin
+      /** Devoir au suivi ouvert : le travail se partage avec le prof. */
+      live: boolean
+    }
   | {
       kind: 'review'
       classroomId: string
@@ -72,12 +84,67 @@ type EditorTarget =
       submissionId: string | null
       label: string
       origin: EditorOrigin
-      /** Travail suivi en direct : l'élève observé, sinon null. */
-      live: { studentId: number } | null
+      /** Travail suivi en direct : l'élève observé et son document. */
+      live: { studentId: number; documentId: string } | null
+    }
+  /** Un document partagé d'un groupe, travaillé entre pairs. */
+  | {
+      kind: 'group'
+      groupId: string
+      groupName: string
+      documentId: string
+    }
+  /** Le travail d'un élève, corrigé à deux par son prof. */
+  | {
+      kind: 'coedit'
+      classroomId: string
+      assignmentId: string
+      studentId: number
+      documentId: string
+      label: string
+      origin: EditorOrigin
     }
 
 /** La page d'où l'outil a été ouvert, celle où fermer doit ramener. */
 type EditorOrigin = 'classes' | 'corrections' | 'work'
+
+/**
+ * Le contexte collaboratif d'une cible, ou rien. L'élève partage son
+ * travail quand le devoir est suivi, le prof entre dans le canal
+ * seulement pour corriger à deux, et les membres d'un groupe se
+ * retrouvent sur ses documents partagés. Une simple lecture n'y entre
+ * pas :
+ * l'élève n'a pas à voir arriver quelqu'un chaque fois qu'on le regarde,
+ * la date de lecture suffit à le lui dire.
+ */
+function collaborationFor(
+  target: EditorTarget,
+  session: SessionState,
+  documentId: string | null,
+): CollaborationInfo | undefined {
+  if (session.status !== 'signed-in' || documentId === null) {
+    return undefined
+  }
+  const user = session.user
+  const me: CollabUser = {
+    id: user.id,
+    name: user.name,
+    firstName: user.firstName,
+    role: user.role,
+    avatarBg: user.avatarBg,
+    avatarFg: user.avatarFg,
+  }
+  if (target.kind === 'work' && target.live) {
+    return { documentId, me, role: 'owner' }
+  }
+  if (target.kind === 'coedit') {
+    return { documentId: target.documentId, me, role: 'guest' }
+  }
+  if (target.kind === 'group') {
+    return { documentId: target.documentId, me, role: 'member' }
+  }
+  return undefined
+}
 
 /**
  * Ce qu'une page doit rouvrir en arrivant. Seule la page visée lit sa
@@ -87,6 +154,7 @@ type Opening =
   | { page: 'classes'; classroom: ClassroomOpening }
   | { page: 'corrections'; correction: CorrectionOpening }
   | { page: 'work'; assignmentId: string }
+  | { page: 'groups'; group: GroupOpening }
 
 /** Modèle ouvert, sa sauvegarde automatique, et l'espace d'où il vient. */
 interface OpenedSession {
@@ -143,6 +211,30 @@ function editorChrome(target: EditorTarget): EditorChrome {
         canRename: false,
         documentActions: false,
         readOnly: true,
+      }
+    case 'group':
+      /*
+       * Document du groupe : tout membre y écrit et l'enregistre. Le nom
+       * est commun, donc il se renomme depuis la liste du groupe, pas
+       * depuis la barre, et les actions de documents personnels n'ont
+       * rien à faire ici.
+       */
+      return {
+        contentLabel: `Groupe « ${target.groupName} »`,
+        backLabel: 'Retour au groupe',
+        canRename: false,
+        documentActions: false,
+        readOnly: false,
+      }
+    case 'coedit':
+      // Correction à deux : le prof écrit dans le modèle partagé, mais
+      // c'est l'élève qui l'enregistre, et le titre reste le sien.
+      return {
+        contentLabel: target.label,
+        backLabel: 'Retour au suivi',
+        canRename: false,
+        documentActions: false,
+        readOnly: false,
       }
   }
 }
@@ -215,7 +307,10 @@ export function App() {
   /** Ouvre un document de l'espace, pour lui-même ou comme travail sur un devoir. */
   const openStoredDocument = useCallback(
     async (id: string, target: EditorTarget): Promise<ApiError | null> => {
-      const result = await repository.open(id)
+      // Un document de groupe est partagé : il ne passe pas par le cache
+      // personnel, sinon il s'afficherait dans « Mes documents » et
+      // pourrait être recréé en document personnel.
+      const result = await repository.open(id, target.kind === 'group')
       if (!result.ok) {
         return result.error
       }
@@ -235,10 +330,24 @@ export function App() {
     [openStoredDocument],
   )
 
+  /** Un document partagé d'un groupe : co-édité entre pairs. */
+  const openGroupDocument = useCallback(
+    (groupId: string, groupName: string, documentId: string) => {
+      void openStoredDocument(documentId, { kind: 'group', groupId, groupName, documentId })
+    },
+    [openStoredDocument],
+  )
+
   /** Le document de travail d'un élève sur un devoir : retour au devoir en fermant. */
   const openWorkDocument = useCallback(
-    (classroomId: string, assignmentId: string, documentId: string) =>
-      openStoredDocument(documentId, { kind: 'work', classroomId, assignmentId, origin: editorOrigin }),
+    (classroomId: string, assignmentId: string, documentId: string, live = false) =>
+      openStoredDocument(documentId, {
+        kind: 'work',
+        classroomId,
+        assignmentId,
+        origin: editorOrigin,
+        live,
+      }),
     [openStoredDocument, editorOrigin],
   )
 
@@ -357,6 +466,46 @@ export function App() {
     [spaceKey, cloud, editorOrigin],
   )
 
+  /**
+   * Corriger à deux le travail d'un élève. Le document part **vide** :
+   * il se remplit par la synchronisation Yjs. Semer ici le contenu déjà
+   * affiché doublerait tout le modèle à la fusion.
+   *
+   * Rien n'est enregistré de ce côté : c'est l'élève propriétaire qui
+   * persiste l'état partagé, par sa route habituelle.
+   */
+  const openCollaboration = useCallback(
+    (model: LiveCoedition) => {
+      const now = new Date().toISOString()
+      const document: OpenedDocument = {
+        meta: { id: `${model.documentId}:coedit`, name: model.name, createdAt: now, updatedAt: now },
+        state: emptyEditorState(),
+        mpdSettings: DEFAULT_MPD_SETTINGS,
+      }
+      lastLiveContent.current = null
+      setHomeAnnouncement(null)
+      setOpened((previous) => {
+        previous?.saver.dispose()
+        return {
+          spaceKey,
+          document,
+          saver: createInertSaver(),
+          cloud,
+          target: {
+            kind: 'coedit',
+            classroomId: model.classroomId,
+            assignmentId: model.assignmentId,
+            studentId: model.studentId,
+            documentId: model.documentId,
+            label: model.label,
+            origin: editorOrigin,
+          },
+        }
+      })
+    },
+    [spaceKey, cloud, editorOrigin],
+  )
+
   /* ---------------- Observation en direct ---------------- */
 
   // Dernier contenu adopté, pour ne remplacer l'état que s'il a changé.
@@ -441,7 +590,17 @@ export function App() {
     if (!target || target.kind === 'document') {
       return
     }
-    const origin = target.kind === 'work' || target.kind === 'review' ? target.origin : 'classes'
+    if (target.kind === 'group') {
+      navigate('groups', {
+        page: 'groups',
+        group: { id: target.groupId, initial: null, message: null, tab: 'documents' },
+      })
+      return
+    }
+    const origin =
+      target.kind === 'work' || target.kind === 'review' || target.kind === 'coedit'
+        ? target.origin
+        : 'classes'
     if (origin === 'corrections' && target.kind === 'review' && target.submissionId !== null) {
       navigate('corrections', {
         page: 'corrections',
@@ -465,8 +624,12 @@ export function App() {
         message: null,
         assignmentId: target.assignmentId,
         submissionId: target.kind === 'review' ? (target.submissionId ?? undefined) : undefined,
-        // Un travail observé ramène au suivi, là où le prof l'a ouvert.
-        assignmentTab: target.kind === 'review' && target.live !== null ? 'suivi' : undefined,
+        // Un travail observé ou corrigé à deux ramène au suivi, là où le
+        // prof l'a ouvert.
+        assignmentTab:
+          target.kind === 'coedit' || (target.kind === 'review' && target.live !== null)
+            ? 'suivi'
+            : undefined,
       },
     })
   }, [current, navigate])
@@ -599,6 +762,15 @@ export function App() {
               onEditAssignmentModel={openAssignmentModel}
               onOpenWorkDocument={openWorkDocument}
               onOpenReadOnlyModel={openReadOnlyModel}
+              onStartLiveCoedition={openCollaboration}
+            />
+          )}
+          {page === 'groups' && (
+            <GroupsPage
+              key={pageKey}
+              client={account.client}
+              opening={opening?.page === 'groups' ? opening.group : null}
+              onOpenGroupDocument={openGroupDocument}
             />
           )}
           {page === 'corrections' && (
@@ -662,6 +834,29 @@ export function App() {
     )
   }
   const chrome = editorChrome(current.target)
+  /*
+   * Co-édition : seul un travail rattaché à un devoir suivi ouvre un
+   * canal. L'élève y entre comme propriétaire, le prof d'abord en
+   * spectateur, puis en correcteur s'il le décide. Un document
+   * personnel, lui, ne se connecte à rien.
+   */
+  const collaboration = collaborationFor(current.target, session, account.kind === 'cloud'
+    ? current.document.meta.id
+    : null)
+  const startCollaboration =
+    current.target.kind === 'review' && current.target.live !== null
+      ? () => {
+          const target = current.target as Extract<EditorTarget, { kind: 'review' }>
+          openCollaboration({
+            classroomId: target.classroomId,
+            assignmentId: target.assignmentId,
+            studentId: target.live!.studentId,
+            documentId: target.live!.documentId,
+            name: current.document.meta.name,
+            label: target.label,
+          })
+        }
+      : undefined
   return (
     <>
       <Editor
@@ -678,6 +873,8 @@ export function App() {
         backLabel={chrome.backLabel}
         onNewDocument={chrome.documentActions ? () => void newDocument() : undefined}
         onImportFile={chrome.documentActions ? importFile : undefined}
+        collaboration={collaboration}
+        onStartCollaboration={startCollaboration}
       />
       {importDialog}
     </>

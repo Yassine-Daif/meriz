@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { ApiClient, ApiError } from '../lib/apiClient'
 import type { ApiUser } from '../lib/authApi'
+import { copyText } from '../lib/clipboard'
 import { formatJoinCode } from '../lib/classroomsApi'
 import type { DocumentRepository } from '../lib/documentRepository'
 import { useClassrooms } from '../lib/useClassrooms'
@@ -93,12 +94,12 @@ export function TeacherHome({
   }
 
   const copyCode = async (code: string) => {
-    try {
-      await navigator.clipboard.writeText(formatJoinCode(code))
-      setStatus(`Code ${formatJoinCode(code)} copié dans le presse-papiers.`)
-    } catch {
-      setStatus('Copie impossible dans ce navigateur : recopiez le code affiché.')
-    }
+    const copied = await copyText(formatJoinCode(code))
+    setStatus(
+      copied
+        ? `Code ${formatJoinCode(code)} copié dans le presse-papiers.`
+        : 'Copie impossible dans ce navigateur : recopiez le code affiché.',
+    )
   }
 
   const createSection = (

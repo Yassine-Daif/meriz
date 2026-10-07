@@ -11,13 +11,19 @@ import {
   removeMember,
   renameClassroom,
 } from '../lib/classroomsApi'
-import type { ClassroomDetail, ClassroomMember, PublicProfile } from '../lib/classroomsApi'
+import type { ClassroomDetail, ClassroomMember } from '../lib/classroomsApi'
+import { copyText } from '../lib/clipboard'
 import { ConfirmDialog } from './ConfirmDialog'
-import { Avatar } from './ui/Avatar'
+import { PersonCard } from './PersonCard'
 import { AssignmentsPanel } from './assignments/AssignmentsPanel'
 import type { AssignmentTab } from './assignments/AssignmentWorkspace'
 import { StudentAssignmentsPanel } from './assignments/StudentAssignmentsPanel'
-import type { EditAssignmentModel, OpenReadOnlyModel, OpenWorkDocument } from './assignments/types'
+import type {
+  EditAssignmentModel,
+  OpenLiveCoedition,
+  OpenReadOnlyModel,
+  OpenWorkDocument,
+} from './assignments/types'
 import { LessonsPanel } from './lessons/LessonsPanel'
 import { StudentLessonsPanel } from './lessons/StudentLessonsPanel'
 import { TabPanel, Tabs } from './ui/Tabs'
@@ -41,6 +47,8 @@ interface ClassroomViewProps {
   onOpenWorkDocument: OpenWorkDocument
   /** Ouvre l'outil MCD en consultation (rendu d'un élève, corrigé libéré). */
   onOpenReadOnlyModel: OpenReadOnlyModel
+  /** Corriger en direct le travail d'un élève, en co-édition. */
+  onStartLiveCoedition: OpenLiveCoedition
   /** Vue déjà connue (création, adhésion) : affichée sans attendre. */
   initial: ClassroomDetail | null
   /** La classe n'est plus accessible (quittée, supprimée) : retour à la liste. */
@@ -67,43 +75,6 @@ function formatDate(iso: string | null): string {
 }
 
 /**
- * Une personne telle qu'autrui la voit. Pour que les cartes gardent la
- * même taille, seul l'essentiel reste visible : pastille, nom, date
- * d'arrivée et contact partagé. La présentation, plus longue, se déplie
- * à la demande.
- */
-function PersonCard({ person, extra }: { person: PublicProfile; extra?: string }) {
-  return (
-    <div className="flex min-w-0 items-start gap-3">
-      <Avatar person={person} size="md" />
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-ink">{displayName(person)}</p>
-        {extra && <p className="mt-0.5 text-xs text-ink-soft">{extra}</p>}
-        {person.contact && (
-          <p className="mt-0.5 text-xs text-ink-soft">
-            Contact : <span className="font-mono">{person.contact}</span>
-          </p>
-        )}
-        {person.bio && (
-          <details className="group mt-1.5">
-            <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-control text-xs font-medium text-accent-ink [&::-webkit-details-marker]:hidden">
-              <span
-                aria-hidden="true"
-                className="transition-transform duration-150 group-open:rotate-90 motion-reduce:transition-none"
-              >
-                ▸
-              </span>
-              Présentation
-            </summary>
-            <p className="mt-1 text-sm leading-6 text-ink-soft">{person.bio}</p>
-          </details>
-        )}
-      </div>
-    </div>
-  )
-}
-
-/**
  * Une classe. Pour tous : nom, prof et camarades, sans email. Pour le
  * prof de la classe : code à partager, dates d'arrivée, et la gestion
  * (renommer, nouveau code, retirer, supprimer), chaque action
@@ -122,6 +93,7 @@ export function ClassroomView({
   onEditAssignmentModel,
   onOpenWorkDocument,
   onOpenReadOnlyModel,
+  onStartLiveCoedition,
 }: ClassroomViewProps) {
   const [classroom, setClassroom] = useState<ClassroomDetail | null>(initial)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -169,12 +141,12 @@ export function ClassroomView({
   }
 
   const copyCode = async (code: string) => {
-    try {
-      await navigator.clipboard.writeText(formatJoinCode(code))
-      setStatus({ kind: 'info', text: `Code ${formatJoinCode(code)} copié dans le presse-papiers.` })
-    } catch {
-      setStatus({ kind: 'error', text: 'Copie impossible dans ce navigateur : recopiez le code affiché.' })
-    }
+    const copied = await copyText(formatJoinCode(code))
+    setStatus(
+      copied
+        ? { kind: 'info', text: `Code ${formatJoinCode(code)} copié dans le presse-papiers.` }
+        : { kind: 'error', text: 'Copie impossible dans ce navigateur : recopiez le code affiché.' },
+    )
   }
 
   const confirm = async () => {
@@ -474,6 +446,7 @@ export function ClassroomView({
                 openAssignmentTab={openAssignmentTab}
                 onEditAssignmentModel={onEditAssignmentModel}
                 onOpenReadOnlyModel={onOpenReadOnlyModel}
+                onStartLiveCoedition={onStartLiveCoedition}
               />
             ) : (
               <StudentAssignmentsPanel

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { MldTable } from '../model/mld'
+import { copyText } from '../lib/clipboard'
 import { relationalLine } from '../model/mld'
 import { EmptyGeneration, ErrorsBanner } from './GenerationNotices'
 
@@ -30,12 +31,8 @@ export function MldView({ tables, hasErrors }: MldViewProps) {
 
   const handleCopy = async () => {
     const text = [mldrHeader(new Date()), ...tables.map(relationalLine)].join('\n')
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopyStatus('Notation copiée dans le presse-papiers.')
-    } catch {
-      setCopyStatus('Erreur : copie impossible dans ce navigateur.')
-    }
+    const copied = await copyText(text)
+    setCopyStatus(copied ? 'Notation copiée dans le presse-papiers.' : 'Erreur : copie impossible dans ce navigateur.')
   }
 
   return (

@@ -6,6 +6,8 @@ import { FileActions } from './FileActions'
 import { DocumentNameField } from './DocumentNameField'
 import { SyncStatus } from './SyncStatus'
 import { UiScaleControl } from './UiScaleControl'
+import type { CollabUser } from '../model/collabProvider'
+import { Avatar } from './ui/Avatar'
 import { Badge } from './ui/Badge'
 import { Lockup } from './ui/Lockup'
 import { ThemeToggle } from './ui/ThemeToggle'
@@ -30,6 +32,8 @@ interface TopBarProps {
   cloud: boolean
   /** Consultation seule : ni historique, ni état d'envoi. */
   readOnly?: boolean
+  /** Co-édition : qui d'autre est là, en pastilles. */
+  participants?: CollabUser[]
   mcdVisible: boolean
   canUndo: boolean
   canRedo: boolean
@@ -70,6 +74,7 @@ export function TopBar({
   onRetrySync,
   cloud,
   readOnly = false,
+  participants,
   mcdVisible,
   canUndo,
   canRedo,
@@ -147,6 +152,16 @@ export function TopBar({
         onImportFile={onImportFile}
       />
       {!readOnly && <SyncStatus status={syncStatus} onRetry={onRetrySync} cloud={cloud} />}
+      {participants && participants.length > 0 && (
+        <div
+          aria-label="Participants"
+          className="flex items-center gap-1"
+        >
+          {participants.map((person) => (
+            <Avatar key={person.id} person={person} size="sm" labelled />
+          ))}
+        </div>
+      )}
       <div className="ml-auto flex flex-wrap items-center gap-3">
         <AccountStatus compact />
         <ThemeToggle />

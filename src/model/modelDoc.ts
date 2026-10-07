@@ -1,4 +1,5 @@
 import * as Y from 'yjs'
+import { Awareness } from 'y-protocols/awareness'
 import type { Association, AttributeType, Cardinality, Entity, Leg, Mcd, Property, PropertyRef } from './mcd'
 import type { McdLayout, Position } from './layout'
 import type { McdAction, McdEditorState } from './mcdReducer'
@@ -28,6 +29,8 @@ import { mcdReducer } from './mcdReducer'
 const LOCAL_ORIGIN = 'meriz-local'
 /** Origine d'un instantané venu d'ailleurs : rien à annuler. */
 const ADOPT_ORIGIN = 'meriz-adopt'
+/** Origine d'une mise à jour reçue d'un pair : rien à annuler non plus. */
+const REMOTE_ORIGIN = 'meriz-remote'
 
 /** Profondeur d'historique, comme avant Yjs. */
 const HISTORY_LIMIT = 100
@@ -40,6 +43,33 @@ const HISTORY_LIMIT = 100
  */
 const MERGE_WINDOW_MS = Number.MAX_SAFE_INTEGER
 
+/** Réglages à la création du document. */
+export interface ModelDocOptions {
+  /**
+   * Faux : le document naît vide, prêt à recevoir la synchronisation
+   * d'un pair. Vrai par défaut, l'état fourni est inscrit.
+   */
+  seed?: boolean
+}
+
+/**
+ * Branchement du réseau. Le fournisseur de co-édition est le seul à
+ * toucher à ces fils : le reste de l'application ne voit toujours que
+ * des objets JS ordinaires.
+ */
+export interface ModelSync {
+  /** Ce que nous avons déjà, pour qu'un pair n'envoie que le manque. */
+  stateVector: () => Uint8Array
+  /** Ce qui manque à qui nous a envoyé son vecteur. */
+  diffSince: (vector: Uint8Array) => Uint8Array
+  /** Mise à jour reçue : appliquée hors de l'historique local. */
+  applyRemote: (update: Uint8Array) => void
+  /** Chaque écriture locale, binaire, à diffuser telle quelle. */
+  onLocalUpdate: (listener: (update: Uint8Array) => void) => () => void
+  /** Présence Yjs : curseurs et sélections des participants. */
+  awareness: Awareness
+}
+
 export interface ModelDoc {
   /** Le modèle en objets JS ordinaires, mis en cache entre deux changements. */
   snapshot: () => McdEditorState
@@ -51,6 +81,8 @@ export interface ModelDoc {
   /** Instantané venu d'ailleurs (observation en direct) : rien à annuler. */
   adopt: (state: McdEditorState) => void
   subscribe: (listener: () => void) => () => void
+  /** Branchement du réseau, pour le fournisseur de co-édition. */
+  sync: ModelSync
   destroy: () => void
 }
 
@@ -65,6 +97,33 @@ export interface ModelDoc {
  */
 
 type YNode = Y.Map<unknown>
+
+/**
+ * Deux pairs qui ensemencent le même contenu avant de s'être parlé
+ * insèrent chacun leurs éléments, et la fusion d'un CRDT de séquence
+ * garde les deux. Le cas arrive sur un document de groupe, où personne
+ * n'est propriétaire, par exemple quand le direct est en panne et que
+ * chacun part du contenu du serveur.
+ *
+ * On ne supprime rien : effacer dépendrait de l'ordre vu au moment de
+ * décider, et deux pairs pressés effaceraient des copies différentes,
+ * donc tout. On lit seulement la première occurrence de chaque
+ * identifiant, et l'écriture suit la même règle. Les copies en trop
+ * restent invisibles, elles ne sont ni affichées ni enregistrées, et
+ * elles disparaissent avec la session.
+ */
+function firstOfEachId(list: Y.Array<YNode>): YNode[] {
+  const seen = new Set<string>()
+  const nodes: YNode[] = []
+  for (const node of list) {
+    const id = node.get('id') as string
+    if (!seen.has(id)) {
+      seen.add(id)
+      nodes.push(node)
+    }
+  }
+  return nodes
+}
 
 function readProperty(node: YNode): Property {
   const property: Property = {
@@ -83,8 +142,14 @@ function readRef(node: YNode): PropertyRef {
   return { propertyId: node.get('propertyId') as string, isIdentifier: node.get('isIdentifier') === true }
 }
 
+/*
+ * Les références de propriétés portent aussi leur `propertyId` sous
+ * `id` (voir REF_SHAPE), donc `firstOfEachId` les dédoublonne comme le
+ * reste.
+ */
+
 function readRefs(node: YNode): PropertyRef[] {
-  return (node.get('attributes') as Y.Array<YNode>).map(readRef)
+  return firstOfEachId(node.get('attributes') as Y.Array<YNode>).map(readRef)
 }
 
 function readCardinality(node: YNode): Cardinality {
@@ -114,15 +179,22 @@ function readAssociation(node: YNode): Association {
     id: node.get('id') as string,
     name: node.get('name') as string,
     attributes: readRefs(node),
-    legs: (node.get('legs') as Y.Array<YNode>).map(readLeg),
+    legs: firstOfEachId(node.get('legs') as Y.Array<YNode>).map(readLeg),
   }
 }
 
-function readMcd(root: YNode): Mcd {
+/** Les trois listes du modèle, chacune une racine du document. */
+interface McdRoots {
+  properties: Y.Array<YNode>
+  entities: Y.Array<YNode>
+  associations: Y.Array<YNode>
+}
+
+function readMcd(roots: McdRoots): Mcd {
   return {
-    properties: (root.get('properties') as Y.Array<YNode>).map(readProperty),
-    entities: (root.get('entities') as Y.Array<YNode>).map(readEntity),
-    associations: (root.get('associations') as Y.Array<YNode>).map(readAssociation),
+    properties: firstOfEachId(roots.properties).map(readProperty),
+    entities: firstOfEachId(roots.entities).map(readEntity),
+    associations: firstOfEachId(roots.associations).map(readAssociation),
   }
 }
 
@@ -177,9 +249,15 @@ function reconcileList<T>(array: Y.Array<YNode>, items: readonly T[], shape: Lis
     }
   }
 
+  // La première occurrence d'un identifiant gagne, comme pour le
+  // dédoublonnage : une écriture locale ne doit pas atterrir sur un nœud
+  // promis à l'effacement.
   const surviving = new Map<string, YNode>()
   for (const node of array) {
-    surviving.set(node.get('id') as string, node)
+    const id = node.get('id') as string
+    if (!surviving.has(id)) {
+      surviving.set(id, node)
+    }
   }
 
   items.forEach((item, position) => {
@@ -320,6 +398,11 @@ function reconcileLayout(map: Y.Map<Position>, layout: McdLayout): void {
  * Les actions continues (frappe dans un champ, déplacement aux flèches)
  * se fondent en une seule étape tant qu'elles visent la même cible. La
  * règle est celle d'avant Yjs, mot pour mot.
+ *
+ * Un geste de souris, lui, porte un jeton : toutes ses images partagent
+ * alors une seule étape, quelles que soient les cibles touchées, et
+ * annuler recule du geste entier. Le préfixe évite toute collision avec
+ * l'identifiant d'un nœud.
  */
 function actionSignature(action: McdAction): string | null {
   switch (action.type) {
@@ -331,7 +414,9 @@ function actionSignature(action: McdAction): string | null {
     case 'SET_LEG_ROLE':
       return `${action.type}:${action.legId}`
     case 'MOVE_NODE':
-      return `${action.type}:${action.id}`
+      return action.gesture === undefined ? `${action.type}:${action.id}` : `GESTURE:${action.gesture}`
+    case 'MOVE_NODES':
+      return action.gesture === undefined ? null : `GESTURE:${action.gesture}`
     default:
       return null
   }
@@ -339,33 +424,48 @@ function actionSignature(action: McdAction): string | null {
 
 /* ------------------------------------------------------------------ */
 
-export function createModelDoc(initial: McdEditorState): ModelDoc {
+export function createModelDoc(initial: McdEditorState, options: ModelDocOptions = {}): ModelDoc {
   const doc = new Y.Doc()
-  const mcdRoot = doc.getMap('mcd') as YNode
-  const layoutMap = doc.getMap('layout') as Y.Map<Position>
+  /*
+   * Chaque liste est une racine du document, nommée. C'est ce qui rend
+   * la co-édition possible : une racine est la même chez tous les pairs,
+   * sans que personne ait à la créer. Des listes rangées dans une Y.Map
+   * seraient créées par chacun, et la fusion n'en garderait qu'une, donc
+   * jetterait le modèle de l'autre.
+   */
+  const roots: McdRoots = {
+    properties: doc.getArray<YNode>('properties'),
+    entities: doc.getArray<YNode>('entities'),
+    associations: doc.getArray<YNode>('associations'),
+  }
+  const layoutMap = doc.getMap<Position>('layout')
+  const awareness = new Awareness(doc)
 
-  doc.transact(() => {
-    mcdRoot.set('properties', new Y.Array<YNode>())
-    mcdRoot.set('entities', new Y.Array<YNode>())
-    mcdRoot.set('associations', new Y.Array<YNode>())
-    write(initial)
-  }, ADOPT_ORIGIN)
+  // Document rempli par le réseau : il naît vide et se remplit à la
+  // synchronisation. Deux pairs qui sèmeraient le même contenu
+  // insèreraient chacun leurs éléments, et la fusion doublerait tout.
+  if (options.seed !== false) {
+    doc.transact(() => write(initial), ADOPT_ORIGIN)
+  }
 
   function write(state: McdEditorState): void {
-    reconcileList(mcdRoot.get('properties') as Y.Array<YNode>, state.mcd.properties, PROPERTY_SHAPE)
-    reconcileList(mcdRoot.get('entities') as Y.Array<YNode>, state.mcd.entities, ENTITY_SHAPE)
-    reconcileList(mcdRoot.get('associations') as Y.Array<YNode>, state.mcd.associations, ASSOCIATION_SHAPE)
+    reconcileList(roots.properties, state.mcd.properties, PROPERTY_SHAPE)
+    reconcileList(roots.entities, state.mcd.entities, ENTITY_SHAPE)
+    reconcileList(roots.associations, state.mcd.associations, ASSOCIATION_SHAPE)
     reconcileLayout(layoutMap, state.layout)
   }
 
-  const undoManager = new Y.UndoManager([mcdRoot, layoutMap], {
-    trackedOrigins: new Set([LOCAL_ORIGIN]),
-    captureTimeout: MERGE_WINDOW_MS,
-  })
+  const undoManager = new Y.UndoManager(
+    [roots.properties, roots.entities, roots.associations, layoutMap],
+    {
+      trackedOrigins: new Set([LOCAL_ORIGIN]),
+      captureTimeout: MERGE_WINDOW_MS,
+    },
+  )
 
   // Deux moitiés mises en cache à part : un déplacement de nœud ne doit
   // pas faire revalider le modèle, comme avant Yjs.
-  let cachedMcd: Mcd = readMcd(mcdRoot)
+  let cachedMcd: Mcd = readMcd(roots)
   let cachedLayout: McdLayout = readLayout(layoutMap)
   let cachedState: McdEditorState = { mcd: cachedMcd, layout: cachedLayout }
   let mcdDirty = false
@@ -375,10 +475,12 @@ export function createModelDoc(initial: McdEditorState): ModelDoc {
 
   const listeners = new Set<() => void>()
 
-  mcdRoot.observeDeep(() => {
-    mcdDirty = true
-    changed = true
-  })
+  for (const root of [roots.properties, roots.entities, roots.associations]) {
+    root.observeDeep(() => {
+      mcdDirty = true
+      changed = true
+    })
+  }
   layoutMap.observe(() => {
     layoutDirty = true
     changed = true
@@ -400,7 +502,7 @@ export function createModelDoc(initial: McdEditorState): ModelDoc {
       return cachedState
     }
     if (mcdDirty) {
-      cachedMcd = readMcd(mcdRoot)
+      cachedMcd = readMcd(roots)
       mcdDirty = false
     }
     if (layoutDirty) {
@@ -461,7 +563,27 @@ export function createModelDoc(initial: McdEditorState): ModelDoc {
       return () => listeners.delete(listener)
     },
 
+    sync: {
+      stateVector: () => Y.encodeStateVector(doc),
+      diffSince: (vector) => Y.encodeStateAsUpdate(doc, vector),
+      applyRemote: (update) => {
+        Y.applyUpdate(doc, update, REMOTE_ORIGIN)
+      },
+      onLocalUpdate: (listener) => {
+        const handler = (update: Uint8Array, origin: unknown) => {
+          // Ce qui vient du réseau ne repart pas sur le réseau.
+          if (origin !== REMOTE_ORIGIN) {
+            listener(update)
+          }
+        }
+        doc.on('update', handler)
+        return () => doc.off('update', handler)
+      },
+      awareness,
+    },
+
     destroy: () => {
+      awareness.destroy()
       undoManager.destroy()
       doc.destroy()
     },

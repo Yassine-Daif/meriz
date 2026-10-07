@@ -33,8 +33,13 @@ export type McdAction =
   | { type: 'ADD_ENTITY'; position: Position }
   | { type: 'ADD_ASSOCIATION'; position: Position }
   | { type: 'ADD_LEG'; associationId: string; entityId: string }
-  | { type: 'MOVE_NODE'; id: string; position: Position }
-  | { type: 'MOVE_NODES'; moves: { id: string; position: Position }[] }
+  /*
+   * `gesture` n'appartient pas au modèle : c'est le jeton du geste en
+   * cours, qui sert au seul découpage de l'historique. Le réducteur
+   * l'ignore, et il ne part jamais dans le fichier enregistré.
+   */
+  | { type: 'MOVE_NODE'; id: string; position: Position; gesture?: string }
+  | { type: 'MOVE_NODES'; moves: { id: string; position: Position }[]; gesture?: string }
   | { type: 'DELETE_ENTITY'; id: string }
   | { type: 'DELETE_ASSOCIATION'; id: string }
   | { type: 'DELETE_LEG'; id: string }
@@ -205,7 +210,8 @@ export function mcdReducer(state: McdEditorState, action: McdAction): McdEditorS
     }
 
     case 'MOVE_NODES': {
-      // Glisser groupé : une seule action, donc une seule étape d'undo.
+      // Glisser groupé : une seule action, et toutes les images d'un
+      // même geste se fondent en une seule étape d'undo.
       const layout = { ...state.layout }
       for (const move of action.moves) {
         layout[move.id] = move.position

@@ -7,7 +7,12 @@ import { ClassroomGrid } from './ClassroomGrid'
 import { ClassroomView } from './ClassroomView'
 import type { ClassroomTab } from './ClassroomView'
 import type { AssignmentTab } from './assignments/AssignmentWorkspace'
-import type { EditAssignmentModel, OpenReadOnlyModel, OpenWorkDocument } from './assignments/types'
+import type {
+  EditAssignmentModel,
+  OpenLiveCoedition,
+  OpenReadOnlyModel,
+  OpenWorkDocument,
+} from './assignments/types'
 import { CreateClassForm } from './CreateClassForm'
 import { JoinClassForm } from './JoinClassForm'
 import { PageShell } from './PageShell'
@@ -37,6 +42,8 @@ interface ClassesPageProps {
   onOpenWorkDocument: OpenWorkDocument
   /** Ouvre l'outil MCD en consultation (rendu d'un élève, corrigé libéré). */
   onOpenReadOnlyModel: OpenReadOnlyModel
+  /** Corriger en direct le travail d'un élève, en co-édition. */
+  onStartLiveCoedition: OpenLiveCoedition
   /** Client lié au compte connecté. */
   client: ApiClient
   /** Classe à ouvrir d'emblée (depuis l'accueil). */
@@ -55,6 +62,7 @@ export function ClassesPage({
   onEditAssignmentModel,
   onOpenWorkDocument,
   onOpenReadOnlyModel,
+  onStartLiveCoedition,
 }: ClassesPageProps) {
   const classrooms = useClassrooms(client)
   const { reload } = classrooms
@@ -92,6 +100,7 @@ export function ClassesPage({
           onEditAssignmentModel={onEditAssignmentModel}
           onOpenWorkDocument={onOpenWorkDocument}
           onOpenReadOnlyModel={onOpenReadOnlyModel}
+          onStartLiveCoedition={onStartLiveCoedition}
           onGone={(message) => backToList(message)}
           initialStatus={selected.message}
         />

@@ -19,6 +19,7 @@
     "pusher-js": "^8.6.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "y-protocols": "^1.0.7",
     "yjs": "^13.6.33"
   },
   "devDependencies": {

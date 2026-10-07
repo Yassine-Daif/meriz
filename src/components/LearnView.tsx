@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { MoreInfo } from './ui/MoreInfo'
 import type { ViewId } from './views'
 
 interface LearnViewProps {
@@ -14,7 +15,8 @@ const SECTIONS: readonly { id: string; title: string }[] = [
   { id: 'types', title: '6. Les types de données' },
   { id: 'transformation', title: '7. Du MCD au SQL' },
   { id: 'sql', title: '8. Le SQL et les bases' },
-  { id: 'pratique', title: '9. Prendre en main Meriz' },
+  { id: 'code', title: '9. Du MCD au code' },
+  { id: 'pratique', title: '10. Prendre en main Meriz' },
 ]
 
 /** Mini carte d'entité, dans le style réel du canvas. */
@@ -53,15 +55,6 @@ function CardinalityPill({ value }: { value: string }) {
     <span className="rounded-sm border border-line-strong bg-surface px-1 font-mono text-[11px]">
       {value}
     </span>
-  )
-}
-
-function MoreInfo({ summary, children }: { summary: string; children: ReactNode }) {
-  return (
-    <details className="mt-2 rounded-lg border border-line bg-shell/60 px-3 py-2 text-sm">
-      <summary className="cursor-pointer text-xs font-medium text-ink-soft">{summary}</summary>
-      <div className="mt-2 flex flex-col gap-2 text-sm leading-6 text-ink-soft">{children}</div>
-    </details>
   )
 }
 
@@ -115,6 +108,9 @@ const GLOSSARY: readonly [string, string][] = [
   ['Clé étrangère', 'Une colonne qui référence la clé primaire d’une autre table et matérialise le lien.'],
   ['Jointure', 'L’opération SQL qui recolle deux tables en suivant une clé étrangère (INNER JOIN).'],
   ['DDL et DML', 'Les deux familles SQL : définir la structure (CREATE, ALTER, DROP) et manipuler les données (SELECT, INSERT, UPDATE, DELETE).'],
+  ['Framework', 'Un cadre de travail tout prêt pour construire une application, comme Laravel ou Symfony en PHP.'],
+  ['Migration', 'Un fichier du projet qui crée ou modifie les tables. Une commande le joue, et la base suit.'],
+  ['Modèle, ou entité', 'La classe qui représente une table dans le code et porte ses liens. On dit modèle chez Laravel, entité chez Symfony.'],
 ]
 
 /**
@@ -486,7 +482,98 @@ INNER JOIN Client ON Commande.numeroClient = Client.numeroClient;`}
             </MoreInfo>
           </Section>
 
-          <Section id="pratique" title="9. Prendre en main Meriz, pas à pas">
+          <Section id="code" title="9. Du MCD au code de ton framework">
+            <p>
+              Dernière sortie de la chaîne, et la plus proche d'un vrai projet. Depuis le même
+              MCD, la vue <strong>Code</strong> écrit le code de ta base pour deux outils au
+              choix, <strong>Laravel</strong> ou <strong>Symfony</strong>. Chaque fichier
+              porte le dossier où le poser dans ton projet, et se copie d'un bouton.
+            </p>
+            <p>
+              Laravel et Symfony sont deux <strong>frameworks</strong> PHP, c'est-à-dire des
+              cadres de travail tout prêts pour construire une application web. On les
+              rencontre partout, en cours comme en entreprise. Ils donnent le squelette du
+              projet et des outils pour les tâches habituelles, dont la base de données.
+            </p>
+            <p>
+              Et c'est là le point important : avec eux, on ne crée pas ses tables à la main
+              dans phpMyAdmin. Tout passe par des <strong>fichiers rangés dans le projet</strong>,
+              de deux sortes.
+            </p>
+            <ul className="list-inside list-disc">
+              <li>
+                Une <strong>migration</strong> est un fichier qui crée les tables. Une commande
+                le joue, et la base se construit toute seule, à l'identique partout.
+              </li>
+              <li>
+                Un <strong>modèle</strong> (chez Laravel) ou une <strong>entité</strong> (chez
+                Symfony) est une classe qui représente une table dans le code, et qui porte ses
+                liens : une commande appartient à un client, un client a plusieurs commandes.
+              </li>
+            </ul>
+            <p>
+              Sur notre exemple, la cardinalité (1,1) côté Commande devient une méthode de
+              relation chez Laravel :
+            </p>
+            <pre className="overflow-x-auto rounded-lg border border-line bg-shell p-3 font-mono text-[12px] leading-5 text-ink-soft">
+              {`class Commande extends Model
+{
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class, 'numero_client', 'numero_client');
+    }
+}`}
+            </pre>
+            <p>Et la même idée, écrite autrement, chez Symfony :</p>
+            <pre className="overflow-x-auto rounded-lg border border-line bg-shell p-3 font-mono text-[12px] leading-5 text-ink-soft">
+              {`class Commande
+{
+    #[ORM\\ManyToOne(targetEntity: Client::class, inversedBy: 'commandes')]
+    #[ORM\\JoinColumn(name: 'numero_client', referencedColumnName: 'numero_client')]
+    private ?Client $client = null;
+}`}
+            </pre>
+            <p>
+              Deux écritures, une seule origine : la cardinalité que tu as posée sur la patte.
+              C'est la même chaîne que depuis le début, MCD, MLD, MPD, SQL, avec une sortie de
+              plus. Une étape plus avancée, qui relie ce que tu apprends en Merise au code que
+              les développeurs écrivent vraiment.
+            </p>
+            <p>
+              Reste honnête sur ce que tu obtiens : Meriz pose la <strong>structure des
+              données</strong>, pas toute l'application. Les règles de ton projet, les
+              vérifications des informations saisies et les tests restent à écrire. C'est un
+              point de départ solide, à relire et à adapter.
+            </p>
+            <MoreInfo summary="En savoir plus : pourquoi des fichiers plutôt que phpMyAdmin">
+              <p>
+                Parce que la structure voyage alors avec le code. Ton binôme récupère le
+                projet, lance une commande, et obtient exactement les mêmes tables que toi.
+                Sur le serveur, même histoire. Chaque changement laisse une trace, dans un
+                nouveau fichier, et l'on sait qui a ajouté quelle colonne et quand.
+              </p>
+              <p>
+                À la main dans phpMyAdmin, rien de tout cela : la base d'un poste finit par
+                différer de celle du voisin, et personne ne sait plus pourquoi.
+              </p>
+            </MoreInfo>
+            <MoreInfo summary="En savoir plus : ce que Meriz décide pour toi">
+              <p>
+                Les noms suivent les habitudes du framework, donc ils peuvent différer du
+                script de la vue SQL : tables au pluriel, colonnes en minuscules avec des
+                tirets bas, classes avec une majuscule à chaque mot.
+              </p>
+              <p>
+                Les relations sont déduites de tes cardinalités : une patte à maximum 1 donne
+                un lien vers un seul objet, une patte à maximum n donne une collection. Et ce
+                que l'outil ne sait pas faire, par exemple suivre un identifiant qui tient sur
+                deux colonnes, est laissé en commentaire plutôt que produit à moitié.
+              </p>
+            </MoreInfo>
+            <TryButton onSelectView={onSelectView} view="code" label="Essaie dans la vue Code →" />
+          </Section>
+
+          <Section id="pratique" title="10. Prendre en main Meriz, pas à pas">
             <ol className="list-inside list-decimal">
               <li>Vue MCD : « Ajouter une entité », nomme-la Client dans le panneau de droite.</li>
               <li>Ajoute ses propriétés, coche « clé » sur numeroClient.</li>
@@ -496,6 +583,9 @@ INNER JOIN Client ON Commande.numeroClient = Client.numeroClient;`}
               <li>Bouton Vérifier (l'engrenage) : corrige ce qu'il signale.</li>
               <li>Bouton Générer (la coche) : le MLD, le MPD et le SQL apparaissent.</li>
               <li>Vue SQL : exporte le script, puis importe-le dans MySQL ou PostgreSQL.</li>
+              <li>
+                Vue Code : choisis Laravel ou Symfony, et copie les fichiers dans ton projet.
+              </li>
             </ol>
             <TryButton onSelectView={onSelectView} />
           </Section>

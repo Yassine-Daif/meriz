@@ -18,7 +18,7 @@ import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { Notice } from '../ui/Notice'
-import type { OpenReadOnlyModel } from './types'
+import type { OpenLiveCoedition, OpenReadOnlyModel } from './types'
 
 /** Cadence du suivi : assez vif pour voir une classe travailler. */
 const REFRESH_MS = 3000
@@ -29,12 +29,23 @@ interface LiveTrackingPanelProps {
   /** Le devoir a changé : le suivi vient d'être ouvert ou fermé. */
   onTrackingChanged: (assignment: Assignment) => void
   onOpenReadOnlyModel: OpenReadOnlyModel
+  /** Corriger en direct le travail d'un élève, en co-édition. */
+  onStartLiveCoedition: OpenLiveCoedition
+  /** Faux après une fermeture à la main : on ne rouvre pas dans son dos. */
+  autoOpen: boolean
+  /** Le prof vient de fermer le suivi lui-même. */
+  onTrackingClosed: () => void
 }
 
 /**
  * Suivi en direct d'un devoir, côté prof. La liste dit qui travaille et
- * depuis quand, jamais ce qui est écrit. Ouvrir un travail le montre en
- * lecture seule dans l'outil, et laisse une trace que l'élève verra.
+ * depuis quand, jamais ce qui est écrit. Elle s'affiche d'emblée : venir
+ * dans cette section ouvre le suivi, et les élèves le lisent dans leur
+ * devoir.
+ *
+ * Sur chaque élève, deux modes au choix. Lire son travail en lecture
+ * seule, sans rien pouvoir y toucher. Ou corriger en direct avec lui,
+ * dans le même modèle, ce qu'il voit alors en toutes lettres.
  *
  * Le rafraîchissement ne tourne que tant que cette section est ouverte
  * et la page au premier plan : quitter l'onglet démonte le panneau.
@@ -44,12 +55,17 @@ export function LiveTrackingPanel({
   assignment,
   onTrackingChanged,
   onOpenReadOnlyModel,
+  onStartLiveCoedition,
+  autoOpen,
+  onTrackingClosed,
 }: LiveTrackingPanelProps) {
   const [workers, setWorkers] = useState<LiveWorker[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
-  const [opening, setOpening] = useState<number | null>(null)
+  // Quel bouton de quelle ligne attend : chacun porte son propre état.
+  const [opening, setOpening] = useState<{ studentId: number; mode: 'observe' | 'coedit' } | null>(null)
+  const [autoOpening, setAutoOpening] = useState(false)
   const tracking = assignment.liveTracking
 
   // Le dernier relevé remplace le précédent : la liste ne repasse jamais
@@ -80,44 +96,83 @@ export function LiveTrackingPanel({
     return () => poller.stop()
   }, [tracking, refresh])
 
-  const toggle = async () => {
+  const openTracking = useCallback(async () => {
     setPending(true)
     setStatus(null)
-    const result = tracking
-      ? await disableLiveTracking(client, assignment.id)
-      : await enableLiveTracking(client, assignment.id)
+    const result = await enableLiveTracking(client, assignment.id)
     setPending(false)
     if (!result.ok) {
       setStatus(result.error.message)
       return
     }
-    setStatus(
-      result.value.liveTracking
-        ? 'Suivi ouvert. Vos élèves en sont informés dans leur devoir.'
-        : 'Suivi fermé. Vous ne voyez plus les travaux en cours.',
-    )
+    setStatus('Suivi ouvert. Vos élèves en sont informés dans leur devoir.')
+    onTrackingChanged(result.value)
+  }, [client, assignment.id, onTrackingChanged])
+
+  const closeTracking = async () => {
+    setPending(true)
+    setStatus(null)
+    const result = await disableLiveTracking(client, assignment.id)
+    setPending(false)
+    if (!result.ok) {
+      setStatus(result.error.message)
+      return
+    }
+    setStatus('Suivi fermé. Vous ne voyez plus les travaux en cours.')
+    onTrackingClosed()
     onTrackingChanged(result.value)
   }
+
+  /*
+   * Venir dans cette section ouvre le suivi : la classe au travail
+   * s'affiche sans clic en plus. Une seule tentative par montage, c'est
+   * le rôle du garde : React en mode strict ne poste pas deux fois, et un
+   * échec n'est pas retenté en boucle. Rien n'est annulé au nettoyage,
+   * sinon le suivi ouvert côté serveur ne s'appliquerait jamais ici.
+   */
+  const autoOpenedRef = useRef(false)
+  useEffect(() => {
+    if (tracking || !autoOpen || autoOpenedRef.current) {
+      return
+    }
+    autoOpenedRef.current = true
+    setAutoOpening(true)
+    void openTracking().finally(() => setAutoOpening(false))
+  }, [tracking, autoOpen, openTracking])
 
   // Un seul instantané demandé à la fois : le bouton reste inerte le temps
   // que l'outil s'ouvre.
   const openingRef = useRef(false)
-  const observe = async (worker: LiveWorker) => {
+
+  /**
+   * L'instantané du travail d'un élève, ou null si rien n'est lisible.
+   * Les deux modes en ont besoin : la lecture seule affiche son contenu,
+   * la correction à deux n'en garde que le document, porteur du canal.
+   */
+  const takeSnapshot = async (worker: LiveWorker, mode: 'observe' | 'coedit') => {
     if (openingRef.current) {
-      return
+      return null
     }
     openingRef.current = true
-    setOpening(worker.student.id)
+    setOpening({ studentId: worker.student.id, mode })
     setStatus(null)
     const result = await getLiveSnapshot(client, assignment.id, worker.student.id)
     openingRef.current = false
     setOpening(null)
-    if (!result.ok) {
-      setStatus(
-        result.error.kind === 'not_found'
-          ? `${displayName(worker.student)} n’a pas encore commencé ce devoir.`
-          : result.error.message,
-      )
+    if (result.ok) {
+      return result.value
+    }
+    setStatus(
+      result.error.kind === 'not_found'
+        ? `${displayName(worker.student)} n’a pas encore commencé ce devoir.`
+        : result.error.message,
+    )
+    return null
+  }
+
+  const observe = async (worker: LiveWorker) => {
+    const snapshot = await takeSnapshot(worker, 'observe')
+    if (snapshot === null) {
       return
     }
     const name = displayName(worker.student)
@@ -128,9 +183,43 @@ export function LiveTrackingPanel({
       key: `${assignment.id}:live:${worker.student.id}`,
       name: `${assignment.title} : ${name}`,
       label: `Travail de ${name}, en direct`,
-      content: result.value.content,
-      live: { studentId: worker.student.id },
+      content: snapshot.content,
+      live: { studentId: worker.student.id, documentId: snapshot.documentId },
     })
+  }
+
+  /*
+   * Corriger en direct : le modèle n'est pas repris d'ici. Le document du
+   * prof naît vide et se remplit par la synchronisation, sinon la fusion
+   * doublerait tout le modèle.
+   */
+  const correct = async (worker: LiveWorker) => {
+    const snapshot = await takeSnapshot(worker, 'coedit')
+    if (snapshot === null) {
+      return
+    }
+    const name = displayName(worker.student)
+    onStartLiveCoedition({
+      classroomId: assignment.classroomId,
+      assignmentId: assignment.id,
+      studentId: worker.student.id,
+      documentId: snapshot.documentId,
+      name: `${assignment.title} : ${name}`,
+      label: `Travail de ${name}, correction à deux`,
+    })
+  }
+
+  if (!tracking && autoOpening) {
+    return (
+      <section aria-labelledby="suivi-titre" className="mt-4">
+        <h4 id="suivi-titre" className="text-base font-semibold text-ink">
+          Suivi en direct
+        </h4>
+        <p role="status" className="mt-1 text-sm text-ink-soft">
+          Ouverture du suivi…
+        </p>
+      </section>
+    )
   }
 
   if (!tracking) {
@@ -155,7 +244,7 @@ export function LiveTrackingPanel({
           <div className="mt-3">
             <Button
               variant="primary"
-              onClick={() => void toggle()}
+              onClick={() => void openTracking()}
               loading={pending}
               loadingLabel="Ouverture…"
             >
@@ -177,7 +266,7 @@ export function LiveTrackingPanel({
         <p className="text-sm text-ink-soft">
           Actualisé toutes les trois secondes, tant que cette page reste ouverte devant vous.
         </p>
-        <Button size="sm" onClick={() => void toggle()} loading={pending} loadingLabel="Fermeture…">
+        <Button size="sm" onClick={() => void closeTracking()} loading={pending} loadingLabel="Fermeture…">
           Fermer le suivi
         </Button>
       </div>
@@ -214,7 +303,7 @@ export function LiveTrackingPanel({
             return (
               <li
                 key={worker.student.id}
-                className="flex w-full items-center gap-3 rounded-card border border-line bg-surface p-4 shadow-soft"
+                className="flex w-full flex-wrap items-center gap-3 rounded-card border border-line bg-surface p-4 shadow-soft"
               >
                 <Avatar person={worker.student} size="md" />
                 <span className="min-w-0 flex-1">
@@ -228,12 +317,23 @@ export function LiveTrackingPanel({
                 <Button
                   size="sm"
                   disabled={!worker.hasStarted}
-                  loading={opening === worker.student.id}
+                  loading={opening?.studentId === worker.student.id && opening.mode === 'observe'}
                   loadingLabel="Ouverture…"
                   onClick={() => void observe(worker)}
-                  aria-label={`Observer le travail de ${name}`}
+                  aria-label={`Observer le travail de ${name} en lecture seule`}
                 >
-                  Observer
+                  Observer en lecture seule
+                </Button>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  disabled={!worker.hasStarted}
+                  loading={opening?.studentId === worker.student.id && opening.mode === 'coedit'}
+                  loadingLabel="Ouverture…"
+                  onClick={() => void correct(worker)}
+                  aria-label={`Corriger en direct le travail de ${name}`}
+                >
+                  Corriger en direct
                 </Button>
               </li>
             )

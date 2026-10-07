@@ -108,7 +108,7 @@ export function buildMpd(tables: MldTable[], settings: MpdSettings): MpdTable[] 
  * ALTER TABLE l'ordre des CREATE importe moins, mais celui des DROP
  * reste sensible.
  */
-function sortForCreation(tables: MpdTable[]): MpdTable[] {
+export function sortForCreation(tables: MpdTable[]): MpdTable[] {
   const remaining = new Map(tables.map((table) => [table.id, table]))
   const dependencies = new Map<string, string[]>(
     tables.map((table) => [

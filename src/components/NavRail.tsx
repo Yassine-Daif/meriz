@@ -55,6 +55,13 @@ const icons: Record<ViewId, ReactNode> = {
       <path d="m13 5-2.5 14" />
     </svg>
   ),
+  code: (
+    <svg {...iconProps}>
+      <path d="M10 3h5.5L20 7.5V21H10Z" />
+      <path d="M15.5 3v5H20" />
+      <path d="M6 6.5V19a1.5 1.5 0 0 0 1.5 1.5H10" />
+    </svg>
+  ),
   apprendre: (
     <svg {...iconProps}>
       <path d="m12 4-9.5 4.5L12 13l9.5-4.5Z" />

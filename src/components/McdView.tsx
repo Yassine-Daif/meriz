@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import type { Dispatch, KeyboardEvent, PointerEvent, SetStateAction } from 'react'
+import type { Dispatch, KeyboardEvent, PointerEvent, ReactNode, SetStateAction } from 'react'
 import type { McdAction, McdEditorState } from '../model/mcdReducer'
+import type { RemotePresence } from '../model/collabProvider'
 import type { ValidationProblem } from '../model/validate'
 import { McdCanvas } from '../canvas/McdCanvas'
 import type { CanvasSelection } from '../canvas/selection'
@@ -29,6 +30,14 @@ interface McdViewProps {
    * position du canvas survivent), simplement masquée.
    */
   isActive: boolean
+  /** Curseurs des autres participants, en co-édition. */
+  others?: RemotePresence[]
+  /** Ma position de pointeur, pour que les autres me voient. */
+  onPointerFlow?: (position: { x: number; y: number } | null) => void
+  /** Faux entre pairs d'un groupe : aucune étiquette prof sur les curseurs. */
+  teacherTag?: boolean
+  /** Bande de co-édition, posée sous la barre d'outils. */
+  banner?: ReactNode
   /** Consultation seule : le modèle se parcourt, il ne se modifie pas. */
   readOnly?: boolean
 }
@@ -46,6 +55,10 @@ export function McdView({
   onSelectElement,
   onGenerate,
   isActive,
+  others,
+  onPointerFlow,
+  teacherTag,
+  banner,
   readOnly = false,
 }: McdViewProps) {
   const [panelWidth, setPanelWidth] = useState(300)
@@ -83,6 +96,7 @@ export function McdView({
       className={isActive ? 'flex min-h-0 flex-1 flex-col' : 'hidden'}
     >
       <McdToolbar dispatch={dispatch} problems={problems} onGenerate={onGenerate} readOnly={readOnly} />
+      {banner}
       <div className="flex min-h-0 flex-1">
         <McdCanvas
           state={state}
@@ -90,6 +104,9 @@ export function McdView({
           selection={selection}
           onSelectionChange={onSelectionChange}
           isActive={isActive}
+          others={others}
+          onPointerFlow={onPointerFlow}
+          teacherTag={teacherTag}
           readOnly={readOnly}
         />
         <div

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import {
@@ -7,6 +7,7 @@ import {
   Background,
   ReactFlow,
   SelectionMode,
+  useReactFlow,
 } from '@xyflow/react'
 import type { Connection, EdgeChange, NodeChange, OnNodeDrag } from '@xyflow/react'
 import { mcdToFlow } from './mcdToFlow'
@@ -17,6 +18,9 @@ import { LegEdge } from './LegEdge'
 import type { McdAction, McdEditorState } from '../model/mcdReducer'
 import type { CanvasSelection } from './selection'
 import { McdDispatchContext } from './dispatchContext'
+import { useGestureStream } from './gestureStream'
+import { RemoteCursors } from './RemoteCursors'
+import type { RemotePresence } from '../model/collabProvider'
 import { useTheme } from '../lib/useTheme'
 
 // Déclarés hors composant pour garder des références stables.
@@ -30,6 +34,12 @@ interface McdCanvasProps {
   onSelectionChange: Dispatch<SetStateAction<CanvasSelection>>
   /** Vue MCD affichée ou non : masquée, ses raccourcis Suppr sont coupés. */
   isActive: boolean
+  /** Curseurs des autres participants, en co-édition. */
+  others?: RemotePresence[]
+  /** Ma position de pointeur, pour que les autres me voient. */
+  onPointerFlow?: (position: { x: number; y: number } | null) => void
+  /** Faux entre pairs d'un groupe : aucune étiquette prof sur les curseurs. */
+  teacherTag?: boolean
   /**
    * Consultation seule : on parcourt, on zoome, on sélectionne pour lire,
    * mais rien ne se déplace, ne se relie ni ne se supprime.
@@ -51,24 +61,68 @@ export function McdCanvas({
   selection,
   onSelectionChange,
   isActive,
+  others,
+  onPointerFlow,
+  teacherTag = true,
   readOnly = false,
 }: McdCanvasProps) {
   const theme = useTheme()
+  const { screenToFlowPosition } = useReactFlow()
+  // Un geste de souris se diffuse pendant qu'il se fait, et ne compte
+  // que pour une seule étape d'annulation.
+  const gesture = useGestureStream(dispatch)
+  const paneRef = useRef<HTMLElement | null>(null)
+
+  /*
+   * Position du pointeur, pour que les autres voient où l'on est. On
+   * écoute en phase de capture, sur l'élément : React Flow arrête la
+   * propagation de ces évènements, donc un gestionnaire React posé plus
+   * haut ne les verrait jamais passer.
+   */
+  useEffect(() => {
+    const pane = paneRef.current
+    if (!onPointerFlow || pane === null) {
+      return
+    }
+    const onMove = (event: PointerEvent) => {
+      onPointerFlow(screenToFlowPosition({ x: event.clientX, y: event.clientY }))
+    }
+    const onLeave = () => onPointerFlow(null)
+    pane.addEventListener('pointermove', onMove, true)
+    pane.addEventListener('pointerleave', onLeave, true)
+    return () => {
+      pane.removeEventListener('pointermove', onMove, true)
+      pane.removeEventListener('pointerleave', onLeave, true)
+    }
+  }, [onPointerFlow, screenToFlowPosition])
   const [nodes, setNodes] = useState<McdFlowNode[]>([])
   const [edges, setEdges] = useState<LegFlowEdge[]>([])
 
-  // Resynchronise la vue depuis le modèle. Un nœud en cours de glisser
-  // garde sa position locale, plus fraîche que le layout.
+  /*
+   * Resynchronise la vue depuis le modèle. Un nœud en cours de glisser
+   * garde sa position locale, plus fraîche que le layout.
+   *
+   * La mesure d'un nœud se conserve d'un relevé à l'autre : les objets
+   * sont neufs à chaque fois, et un nœud qui perdrait sa taille au
+   * milieu d'un glisser ne serait plus déplaçable pour React Flow.
+   */
   useEffect(() => {
     const derived = mcdToFlow(state.mcd, state.layout)
     setNodes((current) => {
       const byId = new Map(current.map((node) => [node.id, node]))
       return derived.nodes.map((node) => {
         const existing = byId.get(node.id)
+        const measured = existing?.measured ? { measured: existing.measured } : {}
         if (existing?.dragging) {
-          return { ...node, position: existing.position, dragging: true, selected: existing.selected }
+          return {
+            ...node,
+            ...measured,
+            position: existing.position,
+            dragging: true,
+            selected: existing.selected,
+          }
         }
-        return { ...node, selected: selection.nodeIds.has(node.id) }
+        return { ...node, ...measured, selected: selection.nodeIds.has(node.id) }
       })
     })
     setEdges(derived.edges.map((edge) => ({ ...edge, selected: selection.edgeIds.has(edge.id) })))
@@ -79,8 +133,20 @@ export function McdCanvas({
       setNodes((current) => applyNodeChanges(changes, current))
       for (const change of changes) {
         if (change.type === 'position' && change.position && change.dragging !== true) {
-          // Déplacement clavier (flèches) : position finale immédiate.
-          dispatch({ type: 'MOVE_NODE', id: change.id, position: change.position })
+          /*
+           * Deux cas arrivent ici. Les flèches du clavier, sans geste en
+           * cours : position finale immédiate, fondue par cible comme
+           * avant. Et la fin d'un glisser de souris, que React Flow
+           * écrit juste avant d'appeler onNodeDragStop : le jeton la
+           * rattache alors au geste, donc un glisser groupé reste une
+           * seule étape d'annulation.
+           */
+          dispatch({
+            type: 'MOVE_NODE',
+            id: change.id,
+            position: change.position,
+            gesture: gesture.token() ?? undefined,
+          })
         } else if (change.type === 'select') {
           onSelectionChange((previous) => {
             const nodeIds = new Set(previous.nodeIds)
@@ -94,19 +160,42 @@ export function McdCanvas({
         }
       }
     },
-    [dispatch, onSelectionChange],
+    [dispatch, gesture, onSelectionChange],
   )
 
-  // Fin de glisser souris : les positions sont validées dans le layout
-  // en une seule action (une seule étape d'undo, même en glisser groupé).
-  const onNodeDragStop = useCallback<OnNodeDrag<McdFlowNode>>(
+  const onNodeDragStart = useCallback<OnNodeDrag<McdFlowNode>>(() => {
+    gesture.begin()
+  }, [gesture])
+
+  /*
+   * Pendant le glisser, les positions intermédiaires partent à cadence
+   * tenue : l'autre participant voit le mouvement, au lieu d'attendre
+   * le lâcher. Celui qui glisse garde sa fluidité, parce que l'effet de
+   * resynchronisation préserve la position locale d'un nœud en cours de
+   * glisser.
+   */
+  const onNodeDrag = useCallback<OnNodeDrag<McdFlowNode>>(
     (_event, _node, draggedNodes) => {
-      dispatch({
+      gesture.push({
         type: 'MOVE_NODES',
         moves: draggedNodes.map((dragged) => ({ id: dragged.id, position: dragged.position })),
+        gesture: gesture.token() ?? gesture.begin(),
       })
     },
-    [dispatch],
+    [gesture],
+  )
+
+  // Lâcher : les positions exactes, et le geste se referme. L'attente
+  // est jetée, sinon une image en retard reposerait le nœud à côté.
+  const onNodeDragStop = useCallback<OnNodeDrag<McdFlowNode>>(
+    (_event, _node, draggedNodes) => {
+      gesture.commit({
+        type: 'MOVE_NODES',
+        moves: draggedNodes.map((dragged) => ({ id: dragged.id, position: dragged.position })),
+        gesture: gesture.token() ?? undefined,
+      })
+    },
+    [gesture],
   )
 
   const onEdgesChange = useCallback(
@@ -207,7 +296,7 @@ export function McdCanvas({
   )
 
   return (
-    <section aria-label="Zone de dessin du MCD" className="min-h-0 min-w-0 flex-1 bg-canvas">
+    <section ref={paneRef} aria-label="Zone de dessin du MCD" className="min-h-0 min-w-0 flex-1 bg-canvas">
       <McdDispatchContext.Provider value={dispatch}>
       <ReactFlow<McdFlowNode, LegFlowEdge>
         nodes={nodes}
@@ -216,6 +305,8 @@ export function McdCanvas({
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onNodeDragStart={onNodeDragStart}
+        onNodeDrag={onNodeDrag}
         onNodeDragStop={onNodeDragStop}
         onConnect={readOnly ? undefined : onConnect}
         onNodesDelete={onNodesDelete}
@@ -241,6 +332,7 @@ export function McdCanvas({
         proOptions={{ hideAttribution: true }}
       >
         <Background gap={16} />
+        {others && others.length > 0 && <RemoteCursors others={others} teacherTag={teacherTag} />}
       </ReactFlow>
       </McdDispatchContext.Provider>
       <ConfirmDialog

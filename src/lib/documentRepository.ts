@@ -56,6 +56,11 @@ export interface OpenResult {
   fromCache: boolean
   /** Des modifications de cette version attendent encore l'envoi. */
   pending: boolean
+  /**
+   * Document partagé, celui d'un groupe : il ne passe pas par le cache
+   * personnel, et il n'est jamais recréé en document personnel.
+   */
+  shared: boolean
 }
 
 export interface DocumentRepository {
@@ -63,7 +68,8 @@ export interface DocumentRepository {
   /** Liste immédiate, sans réseau. */
   cachedList: () => DocumentMeta[]
   list: () => Promise<Outcome<ListResult>>
-  open: (id: string) => Promise<Outcome<OpenResult>>
+  /** `shared` : document d'un groupe, hors du cache personnel. */
+  open: (id: string, shared?: boolean) => Promise<Outcome<OpenResult>>
   create: (name: string, state?: McdEditorState, mpdSettings?: MpdSettings) => Promise<Outcome<DocumentMeta>>
   rename: (id: string, name: string) => Promise<Outcome<DocumentMeta>>
   duplicate: (id: string) => Promise<Outcome<DocumentMeta>>
@@ -167,7 +173,9 @@ export function createLocalRepository(store: DocumentStore): DocumentRepository 
     list: async () => ok({ documents: store.listDocuments(), offline: null, pendingCount: 0 }),
     open: async (id) => {
       const document = store.loadDocument(id)
-      return document ? ok({ document, fromCache: false, pending: false }) : fail(LOCAL_UNREADABLE)
+      return document
+        ? ok({ document, fromCache: false, pending: false, shared: false })
+        : fail(LOCAL_UNREADABLE)
     },
     create: async (name, state, mpdSettings) => {
       const meta = store.createDocument(name, state, mpdSettings)
@@ -361,7 +369,16 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
    */
   const loadContent = async (
     id: string,
+    shared: boolean,
   ): Promise<Outcome<{ meta: DocumentMeta; content: string; source: 'pending' | 'server' | 'cache' }>> => {
+    if (shared) {
+      // Document du groupe : le serveur est la seule source, et rien n'en
+      // reste dans le cache personnel de ce compte.
+      const fetched = await getCloudDocument(client, id)
+      if (!isCurrent()) return fail(STALE_ACCOUNT)
+      if (!fetched.ok) return fail(fetched.error)
+      return ok({ meta: toMeta(fetched.value), content: fetched.value.content, source: 'server' })
+    }
     const cached = cache.get(id)
     if (cached?.pending && cached.content !== null) {
       return ok({ meta: toMeta(cached), content: cached.content, source: 'pending' })
@@ -379,7 +396,7 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
   }
 
   const createSaver = (opened: OpenResult): DocumentSaver => {
-    const { document } = opened
+    const { document, shared } = opened
     const id = document.meta.id
     const createdAt = document.meta.createdAt
     let name = document.meta.name
@@ -425,7 +442,7 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
       if (disposed || !isCurrent()) return false
 
       if (result.ok) {
-        cache.markSynced(id, content, result.value.updatedAt)
+        if (!shared) cache.markSynced(id, content, result.value.updatedAt)
         retryIndex = 0
         if (unsent === content) {
           unsent = null
@@ -448,6 +465,20 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
         return false
       }
       if (result.error.kind === 'not_found') {
+        if (shared) {
+          /*
+           * Document du groupe disparu : supprimé par un membre, ou le
+           * groupe entier effacé. Rien à récupérer en document personnel,
+           * ce travail n'appartenait pas à un seul compte.
+           */
+          detached.add(id)
+          box.set({
+            kind: 'error',
+            message:
+              "Ce document du groupe n'existe plus : un membre l'a supprimé, ou le groupe a été supprimé. Enregistrez votre modèle en fichier si vous voulez le garder.",
+          })
+          return false
+        }
         // Supprimé ailleurs pendant l'édition : on garde tout en cache, et
         // le document sera recréé une seule fois, à la fermeture.
         detached.add(id)
@@ -469,11 +500,13 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
         if (content === lastQueued) return
         lastQueued = content
         unsent = content
-        const current = cache.get(id)
-        storageRefused = !cache.putLocalEdit(
-          { id, name, createdAt, updatedAt: current?.updatedAt ?? document.meta.updatedAt },
-          content,
-        )
+        if (!shared) {
+          const current = cache.get(id)
+          storageRefused = !cache.putLocalEdit(
+            { id, name, createdAt, updatedAt: current?.updatedAt ?? document.meta.updatedAt },
+            content,
+          )
+        }
         if (detached.has(id)) return
         const now = Date.now()
         firstChangeAt ??= now
@@ -537,11 +570,11 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
       return fail(listed.error)
     },
 
-    open: async (id) => {
+    open: async (id, shared = false) => {
       if (!isCurrent()) return fail(STALE_ACCOUNT)
-      const loaded = await loadContent(id)
+      const loaded = await loadContent(id, shared)
       if (!loaded.ok) {
-        if (loaded.error.kind === 'not_found') cache.remove(id)
+        if (loaded.error.kind === 'not_found' && !shared) cache.remove(id)
         return loaded
       }
       const document = fromContent(loaded.value.meta, loaded.value.content)
@@ -550,6 +583,7 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
         document,
         fromCache: loaded.value.source !== 'server',
         pending: loaded.value.source === 'pending',
+        shared,
       })
     },
 
@@ -581,7 +615,8 @@ export function createCloudRepository({ client, cache, userId }: CloudRepository
 
     duplicate: async (id) => {
       if (!isCurrent()) return fail(STALE_ACCOUNT)
-      const loaded = await loadContent(id)
+      // Dupliquer ne concerne que les documents personnels.
+      const loaded = await loadContent(id, false)
       if (!loaded.ok) return loaded
       const name = `${loaded.value.meta.name} (copie)`
       const created = await createCloudDocument(client, { name, content: withName(loaded.value.content, name) })

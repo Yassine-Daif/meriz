@@ -7,7 +7,7 @@ import { Button } from '../ui/Button'
 import { Notice } from '../ui/Notice'
 import { AssignmentWorkspace } from './AssignmentWorkspace'
 import type { AssignmentTab } from './AssignmentWorkspace'
-import type { EditAssignmentModel, OpenReadOnlyModel } from './types'
+import type { EditAssignmentModel, OpenLiveCoedition, OpenReadOnlyModel } from './types'
 
 interface AssignmentsPanelProps {
   client: ApiClient
@@ -21,6 +21,8 @@ interface AssignmentsPanelProps {
   openAssignmentTab: AssignmentTab | null
   onEditAssignmentModel: EditAssignmentModel
   onOpenReadOnlyModel: OpenReadOnlyModel
+  /** Corriger en direct le travail d'un élève, en co-édition. */
+  onStartLiveCoedition: OpenLiveCoedition
 }
 
 /** Ce que l'on regarde : la liste, un devoir ouvert, ou un nouveau. */
@@ -60,6 +62,7 @@ export function AssignmentsPanel({
   openAssignmentTab,
   onEditAssignmentModel,
   onOpenReadOnlyModel,
+  onStartLiveCoedition,
 }: AssignmentsPanelProps) {
   const [assignments, setAssignments] = useState<AssignmentSummary[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -135,6 +138,7 @@ export function AssignmentsPanel({
         }}
         onEditModel={onEditAssignmentModel}
         onOpenReadOnlyModel={onOpenReadOnlyModel}
+        onStartLiveCoedition={onStartLiveCoedition}
       />
     )
   }

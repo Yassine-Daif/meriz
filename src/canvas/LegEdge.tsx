@@ -1,10 +1,15 @@
 import { useContext, useState } from 'react'
-import type { PointerEvent } from 'react'
+import type { Dispatch, PointerEvent } from 'react'
 import { BaseEdge, EdgeLabelRenderer, useReactFlow } from '@xyflow/react'
 import type { EdgeProps } from '@xyflow/react'
 import type { LegFlowEdge } from './mcdToFlow'
 import { McdDispatchContext } from './dispatchContext'
+import { useGestureStream } from './gestureStream'
+import type { McdAction } from '../model/mcdReducer'
 import type { Position } from '../model/layout'
+
+/** Hors contexte de dispatch : rien à écrire, et une identité stable. */
+const IGNORE_ACTION: Dispatch<McdAction> = () => {}
 
 /**
  * Lien patte : trait entre une association et une entité, avec une
@@ -16,6 +21,9 @@ export function LegEdge({ id, sourceX, sourceY, targetX, targetY, data, selected
   const dispatch = useContext(McdDispatchContext)
   const { screenToFlowPosition } = useReactFlow()
   const [dragPosition, setDragPosition] = useState<Position | null>(null)
+  // Même geste que pour un nœud : diffusé pendant qu'il se fait, et une
+  // seule étape d'annulation au bout.
+  const gesture = useGestureStream(dispatch ?? IGNORE_ACTION)
 
   // Position par défaut : aux trois quarts du chemin, côté entité.
   const defaultLabel = {
@@ -34,12 +42,20 @@ export function LegEdge({ id, sourceX, sourceY, targetX, targetY, data, selected
     event.stopPropagation()
     event.currentTarget.setPointerCapture(event.pointerId)
     setDragPosition(label)
+    gesture.begin()
   }
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
       return
     }
-    setDragPosition(screenToFlowPosition({ x: event.clientX, y: event.clientY }))
+    const position = screenToFlowPosition({ x: event.clientX, y: event.clientY })
+    setDragPosition(position)
+    gesture.push({
+      type: 'MOVE_NODE',
+      id,
+      position,
+      gesture: gesture.token() ?? gesture.begin(),
+    })
   }
   const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
     if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
@@ -49,7 +65,12 @@ export function LegEdge({ id, sourceX, sourceY, targetX, targetY, data, selected
     if (dragPosition && dispatch) {
       // La position de l'étiquette vit dans le layout, indexée par
       // l'id de la patte : même canal que les nœuds, même undo.
-      dispatch({ type: 'MOVE_NODE', id, position: dragPosition })
+      gesture.commit({
+        type: 'MOVE_NODE',
+        id,
+        position: dragPosition,
+        gesture: gesture.token() ?? undefined,
+      })
     }
     setDragPosition(null)
   }

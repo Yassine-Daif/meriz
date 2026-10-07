@@ -1,6 +1,7 @@
 import { useId, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { MpdTable, SqlDialect } from '../model/mpd'
+import { copyText } from '../lib/clipboard'
 import { mpdToSql, SQL_DIALECTS } from '../model/mpd'
 import { saveFileAs } from '../lib/download'
 import { EmptyGeneration, ErrorsBanner } from './GenerationNotices'
@@ -48,12 +49,8 @@ export function SqlView({ tables, dialect, hasErrors }: SqlViewProps) {
   const dialectLabel = SQL_DIALECTS.find((d) => d.id === dialect)?.label ?? dialect
 
   const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(sql)
-      setCopyStatus('Script copié dans le presse-papiers.')
-    } catch {
-      setCopyStatus('Erreur : copie impossible dans ce navigateur.')
-    }
+    const copied = await copyText(sql)
+    setCopyStatus(copied ? 'Script copié dans le presse-papiers.' : 'Erreur : copie impossible dans ce navigateur.')
   }
 
   const handleExport = async () => {
