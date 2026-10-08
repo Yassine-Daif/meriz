@@ -31,12 +31,26 @@ export interface CollabCursor {
   y: number
 }
 
+/**
+ * Liaison en cours de tracé : d'où part le trait qu'un participant est en
+ * train de tirer. Son arrivée, c'est son curseur, déjà publié.
+ */
+export interface CollabDraftLink {
+  /** Ancrage sur le bloc de départ, en coordonnées du modèle. */
+  from: CollabCursor
+}
+
 /** Ce qu'un participant montre de lui : où il est, ce qu'il a choisi. */
 export interface CollabPresence {
   user: CollabUser
   cursor: CollabCursor | null
   /** Identifiants des nœuds et pattes sélectionnés. */
   selection: string[]
+  /**
+   * Liaison en cours, éphémère. Elle ne passe jamais par le modèle :
+   * c'est de l'affichage, comme un curseur. Null : personne ne tire rien.
+   */
+  draft: CollabDraftLink | null
 }
 
 export interface RemotePresence extends CollabPresence {
@@ -64,8 +78,12 @@ export interface CollabProvider {
   receive: (event: string, payload: unknown) => void
   /** Un participant a quitté le canal : son curseur s'effface. */
   forget: (userId: number) => void
-  /** Ma position et ma sélection, à publier. */
-  publish: (presence: { cursor: CollabCursor | null; selection: string[] }) => void
+  /** Ma position, ma sélection et mon tracé en cours, à publier. */
+  publish: (presence: {
+    cursor: CollabCursor | null
+    selection: string[]
+    draft?: CollabDraftLink | null
+  }) => void
   /** Les autres, à dessiner. */
   others: () => RemotePresence[]
   onPresence: (listener: () => void) => () => void
@@ -111,6 +129,14 @@ function readCursor(raw: unknown): CollabCursor | null {
   return { x: raw.x, y: raw.y }
 }
 
+function readDraft(raw: unknown): CollabDraftLink | null {
+  if (!isRecord(raw)) {
+    return null
+  }
+  const from = readCursor(raw.from)
+  return from === null ? null : { from }
+}
+
 function readSelection(raw: unknown): string[] {
   return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === 'string') : []
 }
@@ -151,7 +177,7 @@ export function createCollabProvider({ sync, transport, me }: CollabProviderOpti
         transport.send('yjs-update', { kind: 'update', update: toBase64(update) })
       })
       awareness.on('update', onAwarenessChange)
-      awareness.setLocalState({ user: me, cursor: null, selection: [] })
+      awareness.setLocalState({ user: me, cursor: null, selection: [], draft: null })
       // « Voilà ce que j'ai » : chacun répondra par ce qui me manque.
       transport.send('yjs-update', { kind: 'hello', vector: toBase64(sync.stateVector()) })
     },
@@ -231,9 +257,9 @@ export function createCollabProvider({ sync, transport, me }: CollabProviderOpti
       }
     },
 
-    publish: ({ cursor, selection }) => {
+    publish: ({ cursor, selection, draft = null }) => {
       if (running) {
-        awareness.setLocalState({ user: me, cursor, selection })
+        awareness.setLocalState({ user: me, cursor, selection, draft })
       }
     },
 
@@ -250,6 +276,7 @@ export function createCollabProvider({ sync, transport, me }: CollabProviderOpti
             user,
             cursor: readCursor(raw.cursor),
             selection: readSelection(raw.selection),
+            draft: readDraft(raw.draft),
           })
         }
       }

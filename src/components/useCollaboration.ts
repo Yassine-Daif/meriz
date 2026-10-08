@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createCollabProvider } from '../model/collabProvider'
-import type { CollabCursor, CollabUser, RemotePresence } from '../model/collabProvider'
+import type {
+  CollabCursor,
+  CollabDraftLink,
+  CollabProvider,
+  CollabUser,
+  RemotePresence,
+} from '../model/collabProvider'
 import type { ModelSync } from '../model/modelDoc'
 import type { ChannelState } from '../lib/echoClient'
 import { openPresenceChannel } from '../lib/presenceChannel'
@@ -50,6 +56,11 @@ export interface CollaborationHandle {
   others: RemotePresence[]
   /** Ma position de pointeur, en coordonnées du modèle. */
   reportCursor: (cursor: CollabCursor | null) => void
+  /**
+   * La liaison que je suis en train de tirer, pour que les autres la
+   * voient se dessiner. Null : j'ai lâché, ou je n'ai rien commencé.
+   */
+  reportDraftLink: (from: CollabCursor | null) => void
 }
 
 export interface UseCollaborationOptions {
@@ -80,7 +91,9 @@ export function useCollaboration({
   // reste du temps elle attend son tour.
   const cursorRef = useRef<CollabCursor | null>(null)
   const selectionRef = useRef<string[]>(selection)
-  const publishRef = useRef<((presence: { cursor: CollabCursor | null; selection: string[] }) => void) | null>(null)
+  // Le tracé en cours part avec le curseur, dans le même message.
+  const draftRef = useRef<CollabDraftLink | null>(null)
+  const publishRef = useRef<CollabProvider['publish'] | null>(null)
 
   const documentId = info?.documentId ?? null
   const meId = info?.me.id ?? null
@@ -136,7 +149,11 @@ export function useCollaboration({
            */
           if (next === 'live') {
             provider.start()
-            provider.publish({ cursor: cursorRef.current, selection: selectionRef.current })
+            provider.publish({
+              cursor: cursorRef.current,
+              selection: selectionRef.current,
+              draft: draftRef.current,
+            })
           } else {
             // Le lien reviendra avec une nouvelle poignée de main, donc
             // une nouvelle synchronisation : on repart propre.
@@ -152,6 +169,9 @@ export function useCollaboration({
       channel = null
       setParticipants([])
       setOthers([])
+      // Un tracé ne survit jamais à une fermeture : onglet caché, lien
+      // perdu ou démontage, il repart de rien.
+      draftRef.current = null
     }
 
     /**
@@ -175,7 +195,11 @@ export function useCollaboration({
 
     // La position du pointeur et la sélection partent à cadence tenue.
     const ticker = window.setInterval(() => {
-      provider.publish({ cursor: cursorRef.current, selection: selectionRef.current })
+      provider.publish({
+        cursor: cursorRef.current,
+        selection: selectionRef.current,
+        draft: draftRef.current,
+      })
     }, CURSOR_INTERVAL_MS)
 
     return () => {
@@ -198,10 +222,15 @@ export function useCollaboration({
     cursorRef.current = cursor
   }, [])
 
+  const reportDraftLink = useCallback((from: CollabCursor | null) => {
+    draftRef.current = from === null ? null : { from }
+  }, [])
+
   return {
     state: documentId === null ? 'off' : state,
     participants: meId === null ? [] : participants,
     others,
     reportCursor,
+    reportDraftLink,
   }
 }

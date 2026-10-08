@@ -171,8 +171,8 @@ export function DocumentsHome({
               <h2 className="text-base font-semibold text-ink">L'essentiel du canvas</h2>
               <ul className="mt-3 flex flex-col gap-2 text-sm leading-6 text-ink-soft">
                 <li>
-                  <span className="font-medium text-ink">Relier :</span> tirez un trait depuis le point d'une
-                  association vers une entité, ou utilisez « Relier à une entité » dans l'inspecteur.
+                  <span className="font-medium text-ink">Relier :</span> tirez un trait depuis un rond du bord
+                  d'une association vers une entité, ou utilisez « Relier à une entité » dans l'inspecteur.
                 </li>
                 <li>
                   <span className="font-medium text-ink">Sélection multiple :</span> tracez une zone à la souris, ou{' '}

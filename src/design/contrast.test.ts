@@ -71,6 +71,12 @@ const PAIRS: [string, string, number][] = [
   ['focus', 'shell', 3],
   ['mark', 'surface', 3],
   ['mark', 'canvas', 3],
+  // Un rond de liaison est posé à cheval sur le bord d'un bloc : son
+  // disque et son cercle doivent se voir sur la zone de dessin comme sur
+  // le fond d'une association, et le bord du bloc aussi.
+  ['line-strong', 'canvas', 3],
+  ['line-strong', 'accent-soft', 3],
+  ['mark', 'accent-soft', 3],
 ]
 
 describe.each([

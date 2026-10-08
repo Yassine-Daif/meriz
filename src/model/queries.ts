@@ -51,6 +51,24 @@ export function findLeg(
 }
 
 /**
+ * Une patte va toujours d'une association vers une entité, jamais
+ * l'inverse, et jamais entre deux objets de même nature.
+ *
+ * Le sens ne se devine pas à la forme d'un point de connexion : c'est
+ * une règle Merise, donc elle vit dans le modèle, où un test la couvre.
+ */
+export function canCreateLeg(
+  mcd: Mcd,
+  sourceId: string | null,
+  targetId: string | null,
+): boolean {
+  if (sourceId === null || targetId === null) {
+    return false
+  }
+  return findAssociation(mcd, sourceId) !== undefined && findEntity(mcd, targetId) !== undefined
+}
+
+/**
  * Résout des références d'attributs vers leurs propriétés. Une
  * référence vers une propriété inexistante est ignorée ici : c'est
  * la validation qui la signale.

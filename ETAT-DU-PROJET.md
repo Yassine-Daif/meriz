@@ -28,7 +28,7 @@ Les treize étapes prévues sont livrées. La stabilisation a réglé les quatre
 |---|---|---|
 | Modèle de données | Fait | `src/model/mcd.ts`, structure pure, sérialisable, aucune coordonnée de dessin. |
 | Dictionnaire central | Fait | Propriétés définies une fois, placées au plus une fois, règle vérifiée par la validation. |
-| Canvas MCD | Fait | React Flow contrôlé, glisser fluide, sélection multiple, suppression protégée. |
+| Canvas MCD | Fait | React Flow contrôlé, glisser fluide, sélection multiple, suppression protégée. Les pattes se raccrochent au rond le plus proche à chaque image, et le tracé en cours se voit chez les autres. |
 | Édition et inspecteur | Fait | Formulaires entité, association et patte. Création de patte au clavier ajoutée. |
 | Validation | Fait | Deux niveaux, dix-sept invariants documentés, problèmes cliquables. |
 | Vue MLD | Fait | Dérivée en direct du MCD, jamais vide après rechargement. |
@@ -48,9 +48,15 @@ Les treize étapes prévues sont livrées. La stabilisation a réglé les quatre
 
 **Dictionnaire central.** La règle d'unicité Merise est appliquée à deux endroits : le reducer refuse silencieusement un `PLACE_PROPERTY` sur une propriété déjà placée, et `validate` signale en erreur tout placement multiple. `DictionaryView` liste nom, type, taille, utilisation et placement, avec tri et suppression protégée.
 
-**Canvas MCD.** `McdCanvas` tient un état local de vue pendant le glisser, et la position n'entre dans le layout qu'au `onNodeDragStop`, en une seule action `MOVE_NODES`. Les entités n'exposent que des handles `target` et les associations des handles `source` : une patte ne peut pas être créée dans le mauvais sens.
+**Canvas MCD.** `McdCanvas` tient un état local de vue pendant le glisser, et la position n'entre dans le layout qu'au `onNodeDragStop`, en une seule action `MOVE_NODES`.
 
-**Édition et inspecteur.** L'inspecteur édite un seul élément sélectionné. Le formulaire d'association contient désormais un bloc « Relier à une entité » (`LegConnector.tsx`) : liste des entités, bouton Relier, annonce accessible, focus rendu à la liste. Le sens association vers entité est garanti par l'action `ADD_LEG`.
+Une patte s'accroche à l'un des quatre ronds posés sur le bord d'un bloc. Le côté est choisi par `anchors.ts`, à partir des positions vivantes de l'état local et des tailles mesurées, et recalculé à chaque image : le trait ne décroche donc jamais du bloc qu'on déplace, même vite, et il ne traverse ni la carte d'une entité ni la capsule d'une association. La règle compare la pente du segment à la diagonale du bloc, pas les seuls écarts, sinon une carte large recevrait un mauvais côté. Le modèle, lui, ne connaît aucun côté : `mcdToFlow` n'en pose plus, et un test le verrouille.
+
+On tire depuis un rond d'une association et on lâche n'importe où sur une entité : un calque invisible couvre toute sa surface et ne reçoit le pointeur que pendant un tracé, donc le corps du bloc reste la poignée de déplacement. Les entités n'exposent que des ronds `target` et les associations des ronds `source`, et la règle `canCreateLeg` vérifie le sens dans le modèle, à la fois dans `isValidConnection` et dans `onConnect`.
+
+Pendant qu'un participant tire une liaison, son tracé part dans la présence, comme son curseur : les autres voient un trait tireté à sa couleur, dessiné par `RemoteDraftLinks`. Ce tracé n'entre jamais dans le modèle, et la patte créée au lâcher ne compte que pour une seule étape d'annulation.
+
+**Édition et inspecteur.** L'inspecteur édite un seul élément sélectionné. Le formulaire d'association contient désormais un bloc « Relier à une entité » (`LegConnector.tsx`) : liste des entités, bouton Relier, annonce accessible, focus rendu à la liste. Le sens association vers entité est garanti par l'action `ADD_LEG` et par `canCreateLeg`, couverte par un test.
 
 **Validation.** `validate.ts` produit erreurs et avertissements en français. Chaque problème porte un `elementId` qui le rend cliquable vers l'élément fautif.
 

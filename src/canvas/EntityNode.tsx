@@ -1,5 +1,7 @@
-import { Handle, Position } from '@xyflow/react'
+import { Handle } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
+import { ANCHOR_SIDES } from './anchors'
+import { SIDE_POSITIONS } from './sidePositions'
 import type { EntityFlowNode } from './mcdToFlow'
 
 /**
@@ -8,7 +10,7 @@ import type { EntityFlowNode } from './mcdToFlow'
  * et portent un badge « clé » : l'information ne repose jamais sur la
  * couleur seule.
  */
-export function EntityNode({ data, selected }: NodeProps<EntityFlowNode>) {
+export function EntityNode({ data, selected, isConnectable }: NodeProps<EntityFlowNode>) {
   const { entity, attributes } = data
   return (
     <div
@@ -43,10 +45,35 @@ export function EntityNode({ data, selected }: NodeProps<EntityFlowNode>) {
           </li>
         ))}
       </ul>
-      <Handle id="left" type="target" position={Position.Left} className="meriz-handle" />
-      <Handle id="right" type="target" position={Position.Right} className="meriz-handle" />
-      <Handle id="top" type="target" position={Position.Top} className="meriz-handle" />
-      <Handle id="bottom" type="target" position={Position.Bottom} className="meriz-handle" />
+      {/*
+       * Les quatre ronds du bord sont les points d'accroche d'une patte.
+       * Une patte en vise un seul, choisi à chaque image par anchors.ts,
+       * donc les identifiants doivent venir de la même liste que lui.
+       */}
+      {ANCHOR_SIDES.map((side) => (
+        <Handle
+          key={side}
+          id={side}
+          type="target"
+          position={SIDE_POSITIONS[side]}
+          className="meriz-handle"
+          isConnectable={isConnectable}
+        />
+      ))}
+      {/*
+       * Calque de lâcher : pendant qu'une liaison se tire, toute la surface
+       * de l'entité accepte le lâcher, pour ne pas avoir à viser un rond au
+       * pixel près. Il n'amorce jamais rien, donc au repos React Flow lui
+       * coupe le pointeur et le corps reste la poignée de déplacement.
+       */}
+      <Handle
+        id="bloc"
+        type="target"
+        position={SIDE_POSITIONS.top}
+        className="meriz-drop"
+        isConnectable={isConnectable}
+        isConnectableStart={false}
+      />
     </div>
   )
 }

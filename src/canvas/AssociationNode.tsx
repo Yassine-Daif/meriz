@@ -1,13 +1,15 @@
-import { Handle, Position } from '@xyflow/react'
+import { Handle } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
+import { ANCHOR_SIDES } from './anchors'
+import { SIDE_POSITIONS } from './sidePositions'
 import type { AssociationFlowNode } from './mcdToFlow'
 
 /**
  * Nœud association : ovale sobre, légèrement teinté d'accent (jamais
- * un lien). Affiche le nom et les attributs portés s'il y en a. Les
- * handles sont le point de départ du geste « relier » vers une entité.
+ * un lien). Affiche le nom et les attributs portés s'il y en a. Ses
+ * quatre ronds amorcent le geste « relier » vers une entité.
  */
-export function AssociationNode({ data, selected }: NodeProps<AssociationFlowNode>) {
+export function AssociationNode({ data, selected, isConnectable }: NodeProps<AssociationFlowNode>) {
   const { association, attributes } = data
   return (
     <div
@@ -31,10 +33,17 @@ export function AssociationNode({ data, selected }: NodeProps<AssociationFlowNod
           ))}
         </ul>
       )}
-      <Handle id="left" type="source" position={Position.Left} className="meriz-handle" />
-      <Handle id="right" type="source" position={Position.Right} className="meriz-handle" />
-      <Handle id="top" type="source" position={Position.Top} className="meriz-handle" />
-      <Handle id="bottom" type="source" position={Position.Bottom} className="meriz-handle" />
+      {/* Les quatre ronds du bord, points de départ d'une patte. */}
+      {ANCHOR_SIDES.map((side) => (
+        <Handle
+          key={side}
+          id={side}
+          type="source"
+          position={SIDE_POSITIONS[side]}
+          className="meriz-handle"
+          isConnectable={isConnectable}
+        />
+      ))}
     </div>
   )
 }

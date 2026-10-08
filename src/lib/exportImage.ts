@@ -35,7 +35,15 @@ export function exportToPng(nodes: Node[], viewportElement: HTMLElement): Promis
       height: `${height}px`,
       transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
     },
-    // La grille de fond n'appartient pas au schéma : exclue de l'image.
-    filter: (domNode) => !domNode.classList?.contains('react-flow__background'),
+    /*
+     * N'appartiennent pas au schéma : la grille de fond, les ronds de
+     * liaison avec le calque de lâcher, et le calque de présence. Ce sont
+     * des poignées d'édition ; les curseurs et les tracés des autres
+     * participants, eux, n'ont rien à faire dans une image enregistrée.
+     */
+    filter: (domNode) =>
+      !domNode.classList?.contains('react-flow__background') &&
+      !domNode.classList?.contains('react-flow__handle') &&
+      !domNode.classList?.contains('react-flow__viewport-portal'),
   })
 }

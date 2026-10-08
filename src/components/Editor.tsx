@@ -336,6 +336,7 @@ export function Editor({
               isActive={activeView === 'mcd'}
               others={collab.others}
               onPointerFlow={collaboration ? collab.reportCursor : undefined}
+              onDraftLink={collaboration ? collab.reportDraftLink : undefined}
               // Entre pairs d'un groupe, personne n'est prof de personne.
               teacherTag={role !== 'member'}
               banner={

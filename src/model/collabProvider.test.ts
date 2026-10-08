@@ -386,6 +386,66 @@ describe('co-édition, présence', () => {
 
     expect(seul.provider.others()).toEqual([])
   })
+
+  it('porte la liaison en cours de tracé', () => {
+    const { eleve, prof } = duo()
+
+    prof.provider.publish({
+      cursor: { x: 50, y: 60 },
+      selection: [],
+      draft: { from: { x: 10, y: 20 } },
+    })
+
+    const vu = eleve.provider.others()[0]!
+    expect(vu.draft).toEqual({ from: { x: 10, y: 20 } })
+    // L'arrivée du trait, c'est le curseur : rien à publier de plus.
+    expect(vu.cursor).toEqual({ x: 50, y: 60 })
+  })
+
+  it('sans tracé, le champ reste nul', () => {
+    const { eleve, prof } = duo()
+
+    prof.provider.publish({ cursor: { x: 1, y: 2 }, selection: [] })
+
+    expect(eleve.provider.others()[0]!.draft).toBeNull()
+  })
+
+  it('efface le tracé au lâcher', () => {
+    const { eleve, prof } = duo()
+    prof.provider.publish({ cursor: { x: 5, y: 5 }, selection: [], draft: { from: { x: 0, y: 0 } } })
+    expect(eleve.provider.others()[0]!.draft).not.toBeNull()
+
+    prof.provider.publish({ cursor: { x: 5, y: 5 }, selection: [], draft: null })
+
+    expect(eleve.provider.others()[0]!.draft).toBeNull()
+  })
+
+  it('efface le tracé de qui s’en va en pleine traînée', () => {
+    const { eleve, prof } = duo()
+    prof.provider.publish({ cursor: { x: 5, y: 5 }, selection: [], draft: { from: { x: 0, y: 0 } } })
+
+    eleve.provider.forget(PROF.id)
+
+    expect(eleve.provider.others()).toEqual([])
+  })
+
+  it('efface le tracé quand le pair s’arrête proprement', () => {
+    const { eleve, prof } = duo()
+    prof.provider.publish({ cursor: { x: 5, y: 5 }, selection: [], draft: { from: { x: 0, y: 0 } } })
+
+    prof.provider.stop()
+
+    expect(eleve.provider.others()).toEqual([])
+  })
+
+  it('ne montre jamais son propre tracé', () => {
+    const canal = bus()
+    const seul = canal.owner(stateOf(clientCommande))
+    seul.provider.start()
+    seul.provider.publish({ cursor: { x: 1, y: 1 }, selection: [], draft: { from: { x: 2, y: 2 } } })
+
+    expect(seul.provider.others()).toEqual([])
+  })
 })
 
 describe('co-édition, robustesse', () => {
@@ -457,5 +517,29 @@ describe('co-édition, robustesse', () => {
     // Un pair qui publierait n'importe quoi ne doit pas être dessiné.
     prof.doc.sync.awareness.setLocalState({ user: { id: 'pas un nombre' }, cursor: null, selection: [] })
     expect(eleve.provider.others()).toEqual([])
+  })
+
+  it('ignore un tracé malformé sans jeter le reste de la présence', () => {
+    const canal = bus()
+    const eleve = canal.owner(stateOf(clientCommande))
+    const prof = canal.guest()
+    eleve.provider.start()
+    prof.provider.start()
+
+    for (const draft of ['oui', {}, { from: { x: 'ici', y: 2 } }, null]) {
+      prof.doc.sync.awareness.setLocalState({
+        user: PROF,
+        cursor: { x: 7, y: 8 },
+        selection: ['ent-client'],
+        draft,
+      })
+
+      const vu = eleve.provider.others()[0]!
+      expect(vu.draft).toBeNull()
+      // Le reste de la présence survit à un champ illisible.
+      expect(vu.user).toEqual(PROF)
+      expect(vu.cursor).toEqual({ x: 7, y: 8 })
+      expect(vu.selection).toEqual(['ent-client'])
+    }
   })
 })

@@ -34,6 +34,8 @@ interface McdViewProps {
   others?: RemotePresence[]
   /** Ma position de pointeur, pour que les autres me voient. */
   onPointerFlow?: (position: { x: number; y: number } | null) => void
+  /** La liaison que je tire, pour que les autres la voient. */
+  onDraftLink?: (from: { x: number; y: number } | null) => void
   /** Faux entre pairs d'un groupe : aucune étiquette prof sur les curseurs. */
   teacherTag?: boolean
   /** Bande de co-édition, posée sous la barre d'outils. */
@@ -57,6 +59,7 @@ export function McdView({
   isActive,
   others,
   onPointerFlow,
+  onDraftLink,
   teacherTag,
   banner,
   readOnly = false,
@@ -106,6 +109,7 @@ export function McdView({
           isActive={isActive}
           others={others}
           onPointerFlow={onPointerFlow}
+          onDraftLink={onDraftLink}
           teacherTag={teacherTag}
           readOnly={readOnly}
         />

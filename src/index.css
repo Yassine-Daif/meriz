@@ -222,26 +222,65 @@
 }
 
 /*
- * Points de liaison du MCD : ronds bien visibles, qui gonflent au survol
- * pour faciliter la visée, avec un curseur crayon (le geste « dessiner
- * une patte »).
+ * Points de liaison du MCD : des ronds sobres, posés à cheval sur le bord
+ * du bloc. Un disque au ton des traits du schéma, un liseré de la surface,
+ * puis un cercle d'un pixel au ton des contours. C'est ce cercle qui rend
+ * le rond net partout : le liseré se perd sur une association teintée
+ * d'accent, le cercle, lui, tient sur la zone de dessin comme sur ce fond,
+ * dans les deux thèmes.
+ *
+ * Au survol, le rond passe à 14 px et s'entoure d'un halo : la visée
+ * devient facile sans que le repos devienne bruyant. La boîte mesurée par
+ * React Flow ne change pas pour autant, elle n'est relevée qu'au montage,
+ * donc grossir un rond ne déplace aucune patte.
+ *
+ * Le curseur crayon dit le geste : « dessiner une patte ».
  */
 .react-flow__handle.meriz-handle {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   background: var(--c-mark);
   border: 2px solid var(--c-surface);
+  box-shadow: 0 0 0 1px var(--c-line-strong);
   transition:
     width 0.15s ease,
     height 0.15s ease,
-    background 0.15s ease;
+    box-shadow 0.15s ease;
   cursor:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24'%3E%3Cpath fill='%234338ca' stroke='white' stroke-width='1.5' d='M3 21l1.2-4.2L16.5 4.5a2.12 2.12 0 0 1 3 3L7.2 19.8 3 21z'/%3E%3C/svg%3E")
       2 16,
     crosshair;
 }
 .react-flow__handle.meriz-handle:hover {
-  width: 19px;
-  height: 19px;
-  background: var(--c-accent-hover);
+  width: 14px;
+  height: 14px;
+  box-shadow:
+    0 0 0 1px var(--c-line-strong),
+    0 0 0 6px color-mix(in srgb, var(--c-mark) 20%, transparent);
+}
+
+/*
+ * Consultation seule : rien ne se relie, donc aucun rond ne s'affiche. On
+ * efface sans retirer du flux. Un `display: none` mettrait la boîte du
+ * handle à zéro, et comme elle n'est relevée qu'au montage, toutes les
+ * pattes s'accrocheraient au coin haut-gauche du bloc.
+ */
+.react-flow__handle.meriz-handle:not(.connectable) {
+  opacity: 0;
+}
+
+/*
+ * Calque de lâcher : pendant qu'une liaison se tire, toute la surface de
+ * l'entité accepte le lâcher. Invisible, et il épouse les coins du bloc
+ * par héritage du rayon.
+ */
+.react-flow__handle.meriz-drop {
+  inset: 0;
+  width: auto;
+  height: auto;
+  transform: none;
+  background: transparent;
+  border: 0;
+  border-radius: inherit;
+  box-shadow: none;
 }

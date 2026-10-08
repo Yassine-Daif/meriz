@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import {
@@ -8,18 +8,30 @@ import {
   ReactFlow,
   SelectionMode,
   useReactFlow,
+  useStoreApi,
 } from '@xyflow/react'
-import type { Connection, EdgeChange, NodeChange, OnNodeDrag } from '@xyflow/react'
+import type {
+  Connection,
+  EdgeChange,
+  IsValidConnection,
+  NodeChange,
+  OnConnectEnd,
+  OnConnectStart,
+  OnNodeDrag,
+} from '@xyflow/react'
+import { anchorBox, pickAnchors } from './anchors'
 import { mcdToFlow } from './mcdToFlow'
 import type { LegFlowEdge, McdFlowNode } from './mcdToFlow'
 import { EntityNode } from './EntityNode'
 import { AssociationNode } from './AssociationNode'
 import { LegEdge } from './LegEdge'
 import type { McdAction, McdEditorState } from '../model/mcdReducer'
+import { canCreateLeg } from '../model/queries'
 import type { CanvasSelection } from './selection'
 import { McdDispatchContext } from './dispatchContext'
 import { useGestureStream } from './gestureStream'
 import { RemoteCursors } from './RemoteCursors'
+import { RemoteDraftLinks } from './RemoteDraftLinks'
 import type { RemotePresence } from '../model/collabProvider'
 import { useTheme } from '../lib/useTheme'
 
@@ -38,6 +50,11 @@ interface McdCanvasProps {
   others?: RemotePresence[]
   /** Ma position de pointeur, pour que les autres me voient. */
   onPointerFlow?: (position: { x: number; y: number } | null) => void
+  /**
+   * La liaison que je tire, pour que les autres la voient se dessiner.
+   * Null au lâcher. Ce tracé ne passe jamais par le modèle.
+   */
+  onDraftLink?: (from: { x: number; y: number } | null) => void
   /** Faux entre pairs d'un groupe : aucune étiquette prof sur les curseurs. */
   teacherTag?: boolean
   /**
@@ -63,11 +80,13 @@ export function McdCanvas({
   isActive,
   others,
   onPointerFlow,
+  onDraftLink,
   teacherTag = true,
   readOnly = false,
 }: McdCanvasProps) {
   const theme = useTheme()
   const { screenToFlowPosition } = useReactFlow()
+  const store = useStoreApi<McdFlowNode, LegFlowEdge>()
   // Un geste de souris se diffuse pendant qu'il se fait, et ne compte
   // que pour une seule étape d'annulation.
   const gesture = useGestureStream(dispatch)
@@ -127,6 +146,34 @@ export function McdCanvas({
     })
     setEdges(derived.edges.map((edge) => ({ ...edge, selected: selection.edgeIds.has(edge.id) })))
   }, [state.mcd, state.layout, selection])
+
+  /*
+   * Le côté d'accroche de chaque patte, recalculé à chaque image depuis les
+   * positions vivantes et les tailles mesurées. Le modèle, lui, n'est écrit
+   * qu'à la cadence du geste : s'y fier ferait courir le trait après son
+   * bloc. Même idée que la vue MPD, qui dérive ses liens de ses nœuds.
+   *
+   * On ne touche jamais à l'état `edges` : il reste le seul propriétaire de
+   * la sélection. Et quand aucun côté ne change, on rend le tableau reçu,
+   * donc React Flow ne réconcilie pas les liens pour rien.
+   */
+  const anchoredEdges = useMemo(() => {
+    const boxes = new Map(nodes.map((node) => [node.id, anchorBox(node)]))
+    const next = edges.map((edge) => {
+      const source = boxes.get(edge.source)
+      const target = boxes.get(edge.target)
+      if (!source || !target) {
+        // Sans boîte, aucun identifiant : React Flow prend le premier rond,
+        // plutôt que de chercher un côté qui n'existerait pas.
+        return edge
+      }
+      const anchors = pickAnchors(source, target)
+      return edge.sourceHandle === anchors.sourceHandle && edge.targetHandle === anchors.targetHandle
+        ? edge
+        : { ...edge, ...anchors }
+    })
+    return next.every((edge, index) => edge === edges[index]) ? edges : next
+  }, [edges, nodes])
 
   const onNodesChange = useCallback(
     (changes: NodeChange<McdFlowNode>[]) => {
@@ -218,14 +265,41 @@ export function McdCanvas({
     [onSelectionChange],
   )
 
+  /*
+   * Le sens est imposé : une patte va d'une association vers une entité.
+   * La forme des ronds le dit déjà, `source` d'un côté et `target` de
+   * l'autre, mais c'est la règle du modèle qui le prouve, et c'est elle qui
+   * est couverte par un test.
+   */
+  const isValidConnection = useCallback<IsValidConnection<LegFlowEdge>>(
+    (connection) => canCreateLeg(state.mcd, connection.source, connection.target),
+    [state.mcd],
+  )
+
   const onConnect = useCallback(
     (connection: Connection) => {
-      // Seules les associations portent des handles sources : la
-      // source est toujours une association, la cible une entité.
+      if (!canCreateLeg(state.mcd, connection.source, connection.target)) {
+        return
+      }
       dispatch({ type: 'ADD_LEG', associationId: connection.source, entityId: connection.target })
     },
-    [dispatch],
+    [dispatch, state.mcd],
   )
+
+  /*
+   * Un tracé en cours ne passe jamais par le modèle : il part dans la
+   * présence, comme un curseur, et disparaît au lâcher. L'ancrage se lit
+   * dans le store, donc le trait des autres part exactement d'où part le
+   * mien.
+   */
+  const onConnectStart = useCallback<OnConnectStart>(() => {
+    const { connection } = store.getState()
+    onDraftLink?.(connection.inProgress ? { x: connection.from.x, y: connection.from.y } : null)
+  }, [store, onDraftLink])
+
+  const onConnectEnd = useCallback<OnConnectEnd>(() => {
+    onDraftLink?.(null)
+  }, [onDraftLink])
 
   const onNodesDelete = useCallback(
     (deleted: McdFlowNode[]) => {
@@ -300,7 +374,7 @@ export function McdCanvas({
       <McdDispatchContext.Provider value={dispatch}>
       <ReactFlow<McdFlowNode, LegFlowEdge>
         nodes={nodes}
-        edges={edges}
+        edges={anchoredEdges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
@@ -309,6 +383,9 @@ export function McdCanvas({
         onNodeDrag={onNodeDrag}
         onNodeDragStop={onNodeDragStop}
         onConnect={readOnly ? undefined : onConnect}
+        onConnectStart={readOnly ? undefined : onConnectStart}
+        onConnectEnd={readOnly ? undefined : onConnectEnd}
+        isValidConnection={isValidConnection}
         onNodesDelete={onNodesDelete}
         onEdgesDelete={onEdgesDelete}
         onBeforeDelete={onBeforeDelete}
@@ -332,6 +409,7 @@ export function McdCanvas({
         proOptions={{ hideAttribution: true }}
       >
         <Background gap={16} />
+        {others && others.length > 0 && <RemoteDraftLinks others={others} />}
         {others && others.length > 0 && <RemoteCursors others={others} teacherTag={teacherTag} />}
       </ReactFlow>
       </McdDispatchContext.Provider>
