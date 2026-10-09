@@ -18,6 +18,25 @@ export interface WorkAssignment {
 
 export type AssignmentIndex = ReadonlyMap<string, WorkAssignment>
 
+/**
+ * Ce qui reste à rendre, échéance la plus proche d'abord. Un devoir déjà
+ * rendu ou déjà noté sort de la liste : le serveur a tranché, on ne
+ * recalcule rien. Les devoirs sans échéance ferment la marche, parce
+ * qu'ils n'ont rien d'urgent. À égalité, le titre départage, pour que
+ * l'ordre ne bouge pas d'un affichage à l'autre.
+ */
+export function pendingAssignments(rows: readonly StudentAssignmentRow[]): StudentAssignmentRow[] {
+  return rows
+    .filter((row) => row.state === 'todo' || row.state === 'started')
+    .sort((a, b) => {
+      if (a.dueAt === null && b.dueAt === null) return a.title.localeCompare(b.title, 'fr')
+      if (a.dueAt === null) return 1
+      if (b.dueAt === null) return -1
+      const ecart = a.dueAt.localeCompare(b.dueAt)
+      return ecart === 0 ? a.title.localeCompare(b.title, 'fr') : ecart
+    })
+}
+
 /** Les devoirs de l'élève, rangés par identifiant. */
 export function indexAssignments(rows: readonly StudentAssignmentRow[]): AssignmentIndex {
   const index = new Map<string, WorkAssignment>()

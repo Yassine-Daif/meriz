@@ -12,6 +12,7 @@ import { formatSubmittedAt, getMySubmission, submitWork } from '../../lib/submis
 import type { Submission } from '../../lib/submissionsApi'
 import type { WorkLinks } from '../../lib/workDocuments'
 import { ConfirmDialog } from '../ConfirmDialog'
+import { BackButton } from '../ui/BackButton'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
@@ -219,10 +220,7 @@ export function StudentAssignmentView({
   return (
     <section aria-labelledby="devoir-eleve-titre" className="flex flex-col gap-4">
       <div>
-        <Button variant="ghost" size="sm" onClick={() => onBack(null)}>
-          <span aria-hidden="true">←</span>
-          Retour aux exercices
-        </Button>
+        <BackButton label="Retour aux exercices" onClick={() => onBack(null)} />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">

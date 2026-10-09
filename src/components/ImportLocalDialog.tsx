@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef } from 'react'
 import type { DocumentMeta } from '../model/document'
 import { primaryButtonClass, secondaryButtonClass } from './buttonStyles'
+import { dialogClass } from './ui/dialogClass'
 
 export interface ImportReport {
   imported: number
@@ -61,7 +62,7 @@ export function ImportLocalDialog({
         if (phase === 'done') onClose()
         else if (phase === 'ask') onLater()
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-card border border-line bg-surface p-0 text-ink shadow-lift backdrop:bg-[rgb(var(--c-shadow)/0.45)]"
+      className={dialogClass('md')}
     >
       <div className="p-6">
         <h2 id={titleId} className="text-lg font-semibold tracking-tight">

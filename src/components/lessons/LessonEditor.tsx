@@ -23,6 +23,7 @@ import {
 import type { Lesson, LessonMedium } from '../../lib/lessonsApi'
 import { ConfirmDialog } from '../ConfirmDialog'
 import { FormField } from '../FormField'
+import { BackButton } from '../ui/BackButton'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { LiveAnnouncement } from '../ui/LiveAnnouncement'
@@ -261,10 +262,7 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
 
   return (
     <div>
-      <Button variant="ghost" size="sm" onClick={() => onDone(null)} className="-ml-3 mb-3">
-        <span aria-hidden="true">←</span>
-        Retour aux cours
-      </Button>
+      <BackButton label="Retour aux cours" onClick={() => onDone(null)} className="-ml-3 mb-3" />
 
       <p className="text-xs font-semibold tracking-wide text-ink-soft uppercase">Cours</p>
       <h3 className="text-xl font-semibold tracking-tight text-ink">

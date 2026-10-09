@@ -11,7 +11,7 @@ export type ResolvedTheme = 'light' | 'dark'
 export const THEME_STORAGE_KEY = 'meriz-theme'
 
 /** Couleur de la barre du navigateur mobile, selon le thème (fond papier). */
-const THEME_COLORS: Record<ResolvedTheme, string> = { light: '#f6f3ee', dark: '#121124' }
+const THEME_COLORS: Record<ResolvedTheme, string> = { light: '#f7f3ec', dark: '#171428' }
 
 export function parseThemePreference(value: unknown): ThemePreference {
   return value === 'light' || value === 'dark' ? value : 'system'

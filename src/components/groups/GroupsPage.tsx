@@ -1,10 +1,12 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import { formatJoinCode } from '../../lib/classroomsApi'
 import { copyText } from '../../lib/clipboard'
 import type { GroupDetail } from '../../lib/groupsApi'
+import { filterByName, searchCountLabel } from '../../lib/searchFilter'
 import { useGroups } from '../../lib/useGroups'
 import { PageShell } from '../PageShell'
+import { SearchField } from '../ui/SearchField'
 import { Card } from '../ui/Card'
 import { CreateGroupForm } from './CreateGroupForm'
 import type { OpenGroupDocument } from './GroupDocumentsPanel'
@@ -14,6 +16,9 @@ import type { GroupTab } from './GroupView'
 import { JoinGroupForm } from './JoinGroupForm'
 
 /** Ce qu'il faut pour rouvrir un groupe, au retour de l'outil MCD. */
+/** En dessous de ce nombre, une recherche encombre plus qu'elle n'aide. */
+const SEARCH_FROM = 6
+
 export interface GroupOpening {
   id: string
   /** Groupe déjà connu, affiché sans attendre le serveur. */
@@ -38,6 +43,7 @@ export function GroupsPage({ client, opening = null, onOpenGroupDocument }: Grou
   const { reload } = groups
   const [selected, setSelected] = useState<GroupOpening | null>(opening)
   const [status, setStatus] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
 
   const open = (next: GroupOpening) => {
     setSelected(next)
@@ -61,6 +67,16 @@ export function GroupsPage({ client, opening = null, onOpenGroupDocument }: Grou
         : 'Copie impossible dans ce navigateur : ouvrez le groupe pour lire son code.',
     )
   }
+
+  // Même dérivation que sur Mes classes : l'état filtré ne se construit
+  // qu'une fois la liste arrivée, pour que la grille garde ses trois
+  // chemins, chargement, erreur et vide.
+  const all = groups.groups
+  const total = all?.length ?? 0
+  const searchable = total > SEARCH_FROM
+  const searching = searchable && query.trim() !== ''
+  const shown = useMemo(() => (all === null ? [] : filterByName(all, searching ? query : '')), [all, query, searching])
+  const filtered = all === null ? groups : { ...groups, groups: shown }
 
   if (selected) {
     return (
@@ -136,16 +152,29 @@ export function GroupsPage({ client, opening = null, onOpenGroupDocument }: Grou
       <section aria-labelledby="liste-groupes-titre" className="mt-8">
         <h2 id="liste-groupes-titre" className="text-lg font-semibold tracking-tight text-ink">
           Vos groupes
-          {groups.groups && groups.groups.length > 0 && (
-            <span className="font-normal text-ink-soft"> ({groups.groups.length})</span>
-          )}
+          {total > 0 && <span className="font-normal text-ink-soft"> ({total})</span>}
         </h2>
+        {searchable && (
+          <div className="mt-3 max-w-md">
+            <SearchField
+              label="Rechercher un groupe"
+              value={query}
+              onChange={setQuery}
+              placeholder="Nom du groupe"
+              count={searchCountLabel(shown.length, total, 'groupe', 'groupes')}
+            />
+          </div>
+        )}
         <div className="mt-3">
           <GroupGrid
-            state={groups}
+            state={filtered}
             onOpen={(group) => setSelected({ id: group.id, initial: null, message: null })}
             onCopyCode={(code) => void copyCode(code)}
-            emptyText="Aucun groupe pour l’instant : créez-en un, ou saisissez le code d’un camarade."
+            emptyText={
+              searching
+                ? 'Aucun groupe ne porte ce nom. Essayez un autre mot, ou effacez la recherche.'
+                : 'Aucun groupe pour l’instant : créez-en un, ou saisissez le code d’un camarade.'
+            }
           />
         </div>
       </section>

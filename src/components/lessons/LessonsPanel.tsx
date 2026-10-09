@@ -3,6 +3,7 @@ import type { ApiClient } from '../../lib/apiClient'
 import { createLesson, getLesson, lessonStateLabel, listClassroomLessons, mediaCountLabel } from '../../lib/lessonsApi'
 import type { Lesson, LessonSummary } from '../../lib/lessonsApi'
 import { serializeBlocks } from '../../lib/lessonBlocks'
+import { BackButton } from '../ui/BackButton'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { Notice } from '../ui/Notice'
@@ -103,10 +104,11 @@ export function LessonsPanel({ client, classroomId, classroomName }: LessonsPane
   if (view.kind === 'create') {
     return (
       <div>
-        <Button variant="ghost" size="sm" onClick={() => setView({ kind: 'list' })} className="-ml-3 mb-3">
-          <span aria-hidden="true">←</span>
-          Retour aux cours
-        </Button>
+        <BackButton
+          label="Retour aux cours"
+          onClick={() => setView({ kind: 'list' })}
+          className="-ml-3 mb-3"
+        />
         <h3 className="text-xl font-semibold tracking-tight text-ink">Créer un cours</h3>
         <p className="mt-1 text-sm text-ink-soft">
           Classe {classroomName}. Donnez un titre, puis composez la page : le cours reste en brouillon tant que vous ne

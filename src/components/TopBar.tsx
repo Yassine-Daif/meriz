@@ -8,6 +8,7 @@ import { SyncStatus } from './SyncStatus'
 import { UiScaleControl } from './UiScaleControl'
 import type { CollabUser } from '../model/collabProvider'
 import { Avatar } from './ui/Avatar'
+import { BackButton } from './ui/BackButton'
 import { Badge } from './ui/Badge'
 import { Lockup } from './ui/Lockup'
 import { ThemeToggle } from './ui/ThemeToggle'
@@ -87,18 +88,13 @@ export function TopBar({
         <Lockup size={26} label="Meriz" />
       </h1>
       <div className="flex min-w-0 items-center gap-2">
-        <button
-          type="button"
+        <BackButton
+          framed
+          label={backLabel}
           onClick={onBackToDocuments}
           aria-label={`${backLabel} : fermer le modèle et revenir à la page précédente`}
           title="Fermer le modèle et revenir à la page précédente"
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-control border border-line-strong bg-surface px-3 py-1.5 text-sm font-medium text-ink transition-colors duration-150 hover:bg-surface-soft hover:text-ink"
-        >
-          <svg {...iconProps}>
-            <path d="M15 5 8 12l7 7" />
-          </svg>
-          {backLabel}
-        </button>
+        />
         {onRename ? (
           <DocumentNameField name={documentName} onRename={onRename} />
         ) : (

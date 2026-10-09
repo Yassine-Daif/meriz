@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from 'react'
 import { buttonClass } from './ui/buttonClass'
+import { dialogClass } from './ui/dialogClass'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -53,7 +54,7 @@ export function ConfirmDialog({
         event.preventDefault()
         onCancel()
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-sm rounded-card border border-line bg-surface p-0 text-ink shadow-lift backdrop:bg-[rgb(var(--c-shadow)/0.45)]"
+      className={dialogClass('sm')}
     >
       <div className="p-6">
         <h2 id={titleId} className="text-lg font-semibold tracking-tight">

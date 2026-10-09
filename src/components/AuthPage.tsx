@@ -5,7 +5,7 @@ import { useSession } from './sessionContext'
 import { SignInForm } from './SignInForm'
 import { SignUpForm } from './SignUpForm'
 import { UiScaleControl } from './UiScaleControl'
-import { Button } from './ui/Button'
+import { BackButton } from './ui/BackButton'
 import { Card } from './ui/Card'
 import { Lockup } from './ui/Lockup'
 import { Notice } from './ui/Notice'
@@ -78,10 +78,7 @@ export function AuthPage({ mode, onModeChange, onBack, onAuthenticated }: AuthPa
 
       <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line bg-surface px-4 py-2.5 sm:px-6">
         <Lockup size={30} label="Meriz" />
-        <Button variant="ghost" size="sm" onClick={onBack}>
-          <span aria-hidden="true">←</span>
-          Retour à l'accueil
-        </Button>
+        <BackButton label="Retour à l'accueil" onClick={onBack} />
         <div className="ml-auto flex flex-wrap items-center gap-3">
           <ThemeToggle />
           <UiScaleControl />

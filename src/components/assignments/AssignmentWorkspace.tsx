@@ -2,8 +2,8 @@ import { useId, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import { assignmentTypeLabel, formatDueDate } from '../../lib/assignmentsApi'
 import type { Assignment } from '../../lib/assignmentsApi'
+import { BackButton } from '../ui/BackButton'
 import { Badge } from '../ui/Badge'
-import { Button } from '../ui/Button'
 import { TabPanel, Tabs } from '../ui/Tabs'
 import { AssignmentEditor } from './AssignmentEditor'
 import { LiveTrackingPanel } from './LiveTrackingPanel'
@@ -82,10 +82,7 @@ export function AssignmentWorkspace({
 
   return (
     <div>
-      <Button variant="ghost" size="sm" onClick={() => onDone(null)} className="-ml-3 mb-3">
-        <span aria-hidden="true">←</span>
-        Retour aux devoirs
-      </Button>
+      <BackButton label="Retour aux devoirs" onClick={() => onDone(null)} className="-ml-3 mb-3" />
 
       {/* Surtitre : on est dans un devoir, sous l'onglet Exercices de la classe. */}
       {assignment && <p className="text-xs font-semibold tracking-wide text-ink-soft uppercase">Devoir</p>}

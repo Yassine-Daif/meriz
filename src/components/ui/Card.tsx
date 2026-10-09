@@ -12,12 +12,14 @@ interface CardProps {
   'aria-labelledby'?: string
 }
 
-/** Carte arrondie, ombre douce teintée d'encre. */
+/** Carte arrondie, ombre douce et chaude. */
 export function Card({ as: Tag = 'div', tone = 'default', lift = false, className, children, ...aria }: CardProps) {
   const classes = [
     'rounded-card border border-line p-5 shadow-soft',
     tone === 'soft' ? 'bg-surface-soft' : 'bg-surface',
-    lift ? 'transition duration-150 hover:shadow-lift motion-safe:hover:-translate-y-0.5' : '',
+    lift
+      ? 'transition-[box-shadow,transform] duration-150 hover:shadow-lift motion-safe:hover:-translate-y-0.5'
+      : '',
     className ?? '',
   ].join(' ')
   return (

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { StudentAssignmentRow } from './overviewApi'
-import { indexAssignments } from './workAssignments'
+import { indexAssignments, pendingAssignments } from './workAssignments'
 
 const row = (overrides: Partial<StudentAssignmentRow> = {}): StudentAssignmentRow => ({
   id: '01JDEVOIR',
@@ -54,5 +54,52 @@ describe('index des devoirs de l’élève', () => {
 
   it('aucun devoir donne un index vide', () => {
     expect(indexAssignments([]).size).toBe(0)
+  })
+})
+
+describe('ce qui reste à rendre', () => {
+  it('écarte les devoirs rendus et les devoirs notés', () => {
+    const reste = pendingAssignments([
+      row({ id: 'a', state: 'todo' }),
+      row({ id: 'b', state: 'started' }),
+      row({ id: 'c', state: 'submitted', submission: submission('submitted') }),
+      row({ id: 'd', state: 'graded', submission: submission('graded') }),
+    ])
+
+    expect(reste.map((item) => item.id)).toEqual(['a', 'b'])
+  })
+
+  it('met l’échéance la plus proche en premier', () => {
+    const reste = pendingAssignments([
+      row({ id: 'tard', dueAt: '2026-12-01T18:00:00Z' }),
+      row({ id: 'tot', dueAt: '2026-10-01T18:00:00Z' }),
+    ])
+
+    expect(reste.map((item) => item.id)).toEqual(['tot', 'tard'])
+  })
+
+  it('renvoie les devoirs sans échéance à la fin', () => {
+    const reste = pendingAssignments([
+      row({ id: 'sans', dueAt: null }),
+      row({ id: 'avec', dueAt: '2026-12-01T18:00:00Z' }),
+    ])
+
+    expect(reste.map((item) => item.id)).toEqual(['avec', 'sans'])
+  })
+
+  it('départage par le titre à échéance égale, pour un ordre stable', () => {
+    const reste = pendingAssignments([
+      row({ id: 'b', title: 'Vols', dueAt: '2026-10-01T18:00:00Z' }),
+      row({ id: 'a', title: 'Bibliothèque', dueAt: '2026-10-01T18:00:00Z' }),
+    ])
+
+    expect(reste.map((item) => item.id)).toEqual(['a', 'b'])
+  })
+
+  it('ne modifie pas le tableau reçu', () => {
+    const liste = [row({ id: 'tard', dueAt: '2026-12-01T18:00:00Z' }), row({ id: 'tot', dueAt: '2026-10-01T18:00:00Z' })]
+    const copie = liste.map((item) => item.id)
+    pendingAssignments(liste)
+    expect(liste.map((item) => item.id)).toEqual(copie)
   })
 })

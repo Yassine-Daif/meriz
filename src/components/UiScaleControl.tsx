@@ -2,11 +2,17 @@ import { useEffect, useState } from 'react'
 
 const UI_SCALE_KEY = 'meriz-ui-scale'
 
+/*
+ * L'échelle tourne autour de 17 px, un cran plus confortable que le
+ * 16 px des navigateurs. « Normale » porte cette base, et index.css pose
+ * la même valeur sur <html> pour le premier rendu. Un réglage déjà
+ * mémorisé garde son nom et gagne le cran.
+ */
 const UI_SCALES: readonly { id: string; label: string; fontSize: string }[] = [
-  { id: 'small', label: 'Petite', fontSize: '87.5%' },
-  { id: 'normal', label: 'Normale', fontSize: '100%' },
-  { id: 'large', label: 'Grande', fontSize: '112.5%' },
-  { id: 'xlarge', label: 'Très grande', fontSize: '125%' },
+  { id: 'small', label: 'Petite', fontSize: '93.75%' },
+  { id: 'normal', label: 'Normale', fontSize: '106.25%' },
+  { id: 'large', label: 'Grande', fontSize: '118.75%' },
+  { id: 'xlarge', label: 'Très grande', fontSize: '131.25%' },
 ]
 
 function loadScale(): string {
@@ -29,7 +35,7 @@ export function UiScaleControl() {
 
   useEffect(() => {
     const found = UI_SCALES.find((s) => s.id === scale)
-    document.documentElement.style.fontSize = found?.fontSize ?? '100%'
+    document.documentElement.style.fontSize = found?.fontSize ?? '106.25%'
     try {
       localStorage.setItem(UI_SCALE_KEY, scale)
     } catch {

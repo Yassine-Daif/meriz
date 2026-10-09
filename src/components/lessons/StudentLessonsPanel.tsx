@@ -3,6 +3,7 @@ import type { ApiClient } from '../../lib/apiClient'
 import { parseBlocks } from '../../lib/lessonBlocks'
 import { getLesson, lessonStateLabel, listClassroomLessons, mediaCountLabel } from '../../lib/lessonsApi'
 import type { Lesson, LessonSummary } from '../../lib/lessonsApi'
+import { BackButton } from '../ui/BackButton'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { Notice } from '../ui/Notice'
@@ -55,18 +56,14 @@ export function StudentLessonsPanel({ client, classroomId }: StudentLessonsPanel
     const lesson = view.lesson
     return (
       <div>
-        <Button
-          variant="ghost"
-          size="sm"
+        <BackButton
+          label="Retour aux cours"
           onClick={() => {
             setView({ kind: 'list' })
             void load()
           }}
           className="-ml-3 mb-3"
-        >
-          <span aria-hidden="true">←</span>
-          Retour aux cours
-        </Button>
+        />
         <p className="text-xs font-semibold tracking-wide text-ink-soft uppercase">Cours</p>
         <h3 className="text-xl font-semibold tracking-tight text-ink">{lesson.title}</h3>
         <UpdatedAt iso={lesson.updatedAt} className="mt-1 block text-sm text-ink-soft" />

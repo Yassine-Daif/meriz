@@ -11,6 +11,7 @@ import { ConfirmDialog } from '../ConfirmDialog'
 import { FormAlert } from '../FormAlert'
 import { FormField } from '../FormField'
 import { Avatar } from '../ui/Avatar'
+import { BackButton } from '../ui/BackButton'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
@@ -152,10 +153,7 @@ export function SubmissionReview({
   }
 
   const back = (
-    <Button variant="ghost" size="sm" onClick={() => onBack(null)} className="-ml-3 mb-3">
-      <span aria-hidden="true">←</span>
-      {backLabel}
-    </Button>
+    <BackButton label={backLabel} onClick={() => onBack(null)} className="-ml-3 mb-3" />
   )
 
   if (loadError) {

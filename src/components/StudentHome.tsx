@@ -2,12 +2,16 @@ import { useState } from 'react'
 import type { ApiClient, ApiError } from '../lib/apiClient'
 import type { ApiUser } from '../lib/authApi'
 import type { DocumentRepository } from '../lib/documentRepository'
+import { plural } from '../lib/plural'
 import { useClassrooms } from '../lib/useClassrooms'
+import { useGroups } from '../lib/useGroups'
 import { useMyAssignments } from '../lib/useMyAssignments'
+import { pendingAssignments } from '../lib/workAssignments'
 import type { ClassroomOpening } from './ClassesPage'
-import { ClassroomGrid } from './ClassroomGrid'
 import { ClassShortcuts } from './ClassShortcuts'
 import type { ClassShortcut } from './ClassShortcuts'
+import { AttentionToDo } from './home/AttentionToDo'
+import { QuickAccess } from './home/QuickAccess'
 import { JoinClassForm } from './JoinClassForm'
 import { PageShell } from './PageShell'
 import { RecentDocuments } from './RecentDocuments'
@@ -16,6 +20,7 @@ import { Button } from './ui/Button'
 import { Card } from './ui/Card'
 import { LiveAnnouncement } from './ui/LiveAnnouncement'
 import { Notice } from './ui/Notice'
+import { Stat } from './ui/Stat'
 
 /** Là où un élève va le plus souvent, dans une de ses classes. */
 const STUDENT_SHORTCUTS: readonly ClassShortcut[] = [
@@ -39,13 +44,19 @@ interface StudentHomeProps {
   onNewDocument: () => Promise<ApiError | null>
   onOpenClassroom: (opening: ClassroomOpening) => void
   onShowWork: () => void
+  onShowClasses: () => void
+  onShowGroups: () => void
+  onOpenGroup: (id: string) => void
   /** Message à annoncer à l'arrivée (ex. connexion réussie). */
   announcement: string | null
 }
 
 /**
- * Tableau de bord élève : reprendre son travail, retrouver ses classes,
- * en rejoindre une. Exercices, examens et cours arrivent plus tard.
+ * Tableau de bord élève : ce qui reste à rendre, son travail en cours, et
+ * ses classes à portée de clic.
+ *
+ * Rejoindre une classe garde sa place ici : sans classe, un élève ne peut
+ * rien faire. La liste complète, elle, vit sur Mes classes.
  */
 export function StudentHome({
   user,
@@ -55,12 +66,20 @@ export function StudentHome({
   onNewDocument,
   onOpenClassroom,
   onShowWork,
+  onShowClasses,
+  onShowGroups,
+  onOpenGroup,
   announcement,
 }: StudentHomeProps) {
   const classrooms = useClassrooms(client)
-  // Les devoirs nomment la provenance d'un document de travail.
-  const { assignments } = useMyAssignments(client)
+  const groups = useGroups(client)
+  // Un seul appel sert deux usages : nommer la provenance d'un document
+  // de travail, et lister ce qui reste à rendre.
+  const { assignments, rows, error: assignmentsError, reload } = useMyAssignments(client)
   const [actionError, setActionError] = useState<string | null>(null)
+
+  const list = classrooms.classrooms
+  const pending = rows === null ? null : pendingAssignments(rows)
 
   const createDocument = async () => {
     setActionError(null)
@@ -73,7 +92,7 @@ export function StudentHome({
       eyebrow="Espace élève"
       title={`Bonjour ${user.firstName ?? user.name}`}
       leading={<Avatar person={user} size="lg" />}
-      description="Reprenez votre travail là où vous l'avez laissé, ou retrouvez vos classes."
+      description="Ce qui reste à rendre, votre travail en cours, et vos classes."
       actions={
         <Button variant="primary" onClick={() => void createDocument()}>
           <span aria-hidden="true">+</span>
@@ -88,8 +107,34 @@ export function StudentHome({
         </Notice>
       )}
 
-      <div className="grid gap-8 lg:grid-cols-3">
+      <section aria-label="Vos chiffres" className="grid gap-3 sm:grid-cols-3">
+        <Stat
+          value={list === null ? '…' : String(list.length)}
+          label={plural(list?.length ?? 0, 'classe', 'classes')}
+        />
+        <Stat
+          value={groups.groups === null ? '…' : String(groups.groups.length)}
+          label={plural(groups.groups?.length ?? 0, 'groupe', 'groupes')}
+        />
+        <Stat
+          value={pending === null ? '…' : String(pending.length)}
+          label={plural(pending?.length ?? 0, 'devoir à rendre', 'devoirs à rendre')}
+        />
+      </section>
+
+      {/*
+       * Deux colonnes : ce qu'on lit à gauche, ce sur quoi on agit à
+       * droite. Sous le point de bascule, tout s'empile dans cet ordre.
+       */}
+      <div className="mt-8 grid gap-8 lg:grid-cols-3">
         <div className="flex flex-col gap-8 lg:col-span-2">
+          <AttentionToDo
+            rows={rows}
+            error={assignmentsError}
+            onReload={reload}
+            onOpenClassroom={onOpenClassroom}
+          />
+
           <RecentDocuments
             repository={repository}
             onOpenDocument={onOpenDocument}
@@ -98,23 +143,19 @@ export function StudentHome({
             assignments={assignments}
           />
 
-          <section aria-labelledby="classes-titre">
-            <h2 id="classes-titre" className="text-lg font-semibold tracking-tight text-ink">
-              Mes classes
-            </h2>
-            <div className="mt-3">
-              <ClassroomGrid
-                state={classrooms}
-                onOpen={(classroom) => onOpenClassroom({ id: classroom.id, initial: null, message: null })}
-                emptyText="Aucune classe pour l’instant : saisissez le code donné par votre prof."
-              />
-            </div>
-          </section>
+          <ClassShortcuts
+            title="Dans vos classes"
+            classrooms={list ?? []}
+            shortcuts={STUDENT_SHORTCUTS}
+            onOpen={onOpenClassroom}
+          />
         </div>
 
-        <aside aria-label="Rejoindre une classe" className="flex flex-col gap-4">
-          <Card>
-            <h2 className="text-base font-semibold text-ink">Rejoindre une classe</h2>
+        <aside aria-label="Actions et accès rapide" className="flex flex-col gap-4">
+          <Card as="section" aria-labelledby="rejoindre-titre">
+            <h2 id="rejoindre-titre" className="text-base font-semibold text-ink">
+              Rejoindre une classe
+            </h2>
             <div className="mt-3">
               <JoinClassForm
                 client={client}
@@ -128,16 +169,17 @@ export function StudentHome({
               />
             </div>
           </Card>
-        </aside>
-      </div>
 
-      <div className="mt-10">
-        <ClassShortcuts
-          title="Dans vos classes"
-          classrooms={classrooms.classrooms ?? []}
-          shortcuts={STUDENT_SHORTCUTS}
-          onOpen={onOpenClassroom}
-        />
+          <QuickAccess
+            classrooms={list}
+            groups={groups.groups}
+            onOpenClassroom={(id) => onOpenClassroom({ id, initial: null, message: null })}
+            onOpenGroup={onOpenGroup}
+            onShowClasses={onShowClasses}
+            onShowGroups={onShowGroups}
+            emptyClassesText="Aucune classe pour l’instant. Saisissez le code donné par votre prof."
+          />
+        </aside>
       </div>
     </PageShell>
   )

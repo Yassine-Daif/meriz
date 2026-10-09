@@ -2,8 +2,12 @@
 
 /*
  * Système de design de Meriz : « le cahier de la merise ».
- * Un papier chaud, une encre indigo profond (la couleur du mot du logo),
- * l'indigo #4338CA en accent, et la cerise du logo en touche rare.
+ * Un papier chaud, une encre presque noire légèrement brune, et l'indigo
+ * du logo en accent. L'indigo est rare, donc il ressort : il ne sert qu'à
+ * l'accent, aux liens, au focus et aux traits du schéma. En clair, les
+ * gris sont tièdes, jamais bleutés. En sombre, ils prennent la famille de
+ * l'indigo : une nuit profonde où l'accent se sent chez lui, à cinq degrés
+ * de teinte de lui, et où c'est l'encre ivoire qui porte la chaleur.
  *
  * Les couleurs sont des tokens sémantiques, définis une fois en clair et
  * une fois en sombre. Les composants n'emploient que ces tokens : aucun
@@ -43,74 +47,80 @@
 :root {
   color-scheme: light;
   /* Fonds */
-  --c-shell: #f6f3ee; /* papier chaud, fond de l'application */
+  --c-shell: #f7f3ec; /* papier chaud, fond de l'application */
   --c-surface: #ffffff; /* cartes, panneaux */
-  --c-surface-soft: #fbf9f5; /* cartes secondaires, en-têtes de cartes */
-  --c-canvas: #fcfbf8; /* zone de dessin */
+  --c-surface-soft: #fbf8f2; /* cartes secondaires, en-têtes de cartes */
+  --c-canvas: #fcfaf5; /* zone de dessin */
   /* Encre */
-  --c-ink: #1e1b4b; /* texte principal, l'encre du logo */
-  --c-ink-soft: #57536e; /* texte secondaire */
-  --c-line: #e6e0d6; /* séparations décoratives */
-  --c-line-strong: #8a849e; /* contours de contrôles (3:1) */
+  --c-ink: #2a2320; /* texte principal, un presque-noir chaud */
+  --c-ink-soft: #6b5f55; /* texte secondaire, taupe */
+  --c-line: #e8e0d4; /* séparations décoratives */
+  --c-line-strong: #8a8070; /* contours de contrôles (3:1) */
   /* Accent */
   --c-accent: #4338ca;
   --c-accent-hover: #3730a3;
   --c-on-accent: #ffffff;
-  --c-accent-soft: #eeedfd;
+  --c-accent-soft: #eceafb;
   --c-accent-ink: #3730a3; /* liens et texte accentué */
   --c-mark: #4338ca; /* traits et poignées de la zone de dessin (3:1) */
   --c-focus: #4338ca;
   --c-logo: #4338ca; /* tuile du logo, comme design/logo */
   /* Touches chaleureuses et provenance */
-  --c-cherry: #b0164f;
-  --c-cherry-soft: #fce7ef;
-  --c-apricot: #9a3412;
-  --c-apricot-soft: #fdebdd;
-  --c-sage: #1f6b4a;
-  --c-sage-soft: #e1f2e8;
-  --c-sky: #1d4e89;
-  --c-sky-soft: #e3eefb;
+  --c-cherry: #ab1650;
+  --c-cherry-soft: #fce6ee;
+  --c-apricot: #96350f;
+  --c-apricot-soft: #fdeadb;
+  --c-sage: #1d6747;
+  --c-sage-soft: #e2f1e7;
+  --c-sky: #1c4b84;
+  --c-sky-soft: #e4edf9;
   /* États */
-  --c-danger: #b42318;
-  --c-danger-soft: #fdecea;
-  --c-danger-strong: #b42318;
-  --c-warning: #854a00;
-  --c-warning-soft: #fff3d6;
-  /* Ombres teintées d'encre, jamais grises */
-  --c-shadow: 30 27 75;
+  --c-danger: #b02016;
+  --c-danger-soft: #fdeae7;
+  --c-danger-strong: #b02016;
+  --c-warning: #7f4700;
+  --c-warning-soft: #fdf1d6;
+  /* Ombres teintées de brun chaud, jamais grises */
+  --c-shadow: 42 32 26;
 }
 
 [data-theme='dark'] {
   color-scheme: dark;
-  --c-shell: #121124; /* nuit indigo */
-  --c-surface: #1b1a31;
-  --c-surface-soft: #22213b;
-  --c-canvas: #17162c;
-  --c-ink: #eeedf8;
-  --c-ink-soft: #ada9c6;
-  --c-line: #302e4c;
-  --c-line-strong: #77739a;
-  --c-accent: #4f46e5;
-  --c-accent-hover: #4338ca;
+  /*
+   * Une nuit indigo, pas un noir ni un brun. Chaque neutre tient à moins
+   * de sept degrés de teinte de l'accent, donc un bouton bleu s'y pose
+   * sans jurer. Le rouge reste au-dessus du vert dans tous : la nuit
+   * penche vers l'indigo sans devenir un gris froid.
+   */
+  --c-shell: #171428; /* nuit indigo, fond de l'application */
+  --c-surface: #221d38;
+  --c-surface-soft: #2a2543;
+  --c-canvas: #1b172d;
+  --c-ink: #f2efe9; /* ivoire chaud : c'est l'encre qui porte la chaleur */
+  --c-ink-soft: #ada6bf;
+  --c-line: #322c4d;
+  --c-line-strong: #827ba0;
+  --c-accent: #5b52ec;
+  --c-accent-hover: #4f46e5;
   --c-on-accent: #ffffff;
-  --c-accent-soft: #29275c;
-  --c-accent-ink: #c4c8ff;
-  --c-mark: #8f95f7;
-  --c-focus: #a5abff;
+  --c-accent-soft: #312b60;
+  --c-accent-ink: #c6c9ff;
+  --c-mark: #969bf8;
+  --c-focus: #a8adff;
   --c-logo: #6366f1;
-  --c-cherry: #f7a8c8;
-  --c-cherry-soft: #3a1830;
-  --c-apricot: #fdba8c;
-  --c-apricot-soft: #3a2416;
-  --c-sage: #8bd9b1;
-  --c-sage-soft: #153028;
-  --c-sky: #a2c6f6;
-  --c-sky-soft: #16273f;
-  --c-danger: #fca5a5;
-  --c-danger-soft: #3b1719;
-  --c-danger-strong: #dc2626;
-  --c-warning: #f5c26b;
-  --c-warning-soft: #33270f;
+  --c-cherry: #f8abc8;
+  --c-cherry-soft: #3d1d37;
+  --c-apricot: #fdbd8d;
+  --c-apricot-soft: #3b2a26;
+  --c-sage: #8edcb3;
+  --c-sage-soft: #193232;
+  --c-sky: #a6c9f7;
+  --c-sky-soft: #1c2a46;
+  --c-danger: #fca9a2;
+  --c-danger-soft: #3f2128;
+  --c-danger-strong: #d13a2c;
+  --c-warning: #f7c66f;
+  --c-warning-soft: #362c1c;
   --c-shadow: 0 0 0;
 }
 
@@ -153,12 +163,18 @@
   --font-mono:
     ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Consolas, 'Roboto Mono', Menlo, monospace;
 
-  --radius-control: 0.75rem;
-  --radius-card: 1.25rem;
-  --radius-panel: 1.75rem;
+  --radius-control: 0.875rem;
+  --radius-card: 1.5rem;
+  --radius-panel: 2rem;
 
-  --shadow-soft: 0 1px 2px rgb(var(--c-shadow) / 0.06), 0 4px 14px -6px rgb(var(--c-shadow) / 0.12);
-  --shadow-lift: 0 2px 4px rgb(var(--c-shadow) / 0.08), 0 14px 30px -12px rgb(var(--c-shadow) / 0.22);
+  /*
+   * Deux couches : un liseré porté très près du bord, qui pose l'objet,
+   * et une diffusion large et faible, qui fait la chaleur. L'ombre prend
+   * la teinte de --c-shadow, un brun en clair, du noir en sombre où c'est
+   * la bordure qui porte l'élévation.
+   */
+  --shadow-soft: 0 1px 2px rgb(var(--c-shadow) / 0.05), 0 6px 20px -8px rgb(var(--c-shadow) / 0.1);
+  --shadow-lift: 0 2px 4px rgb(var(--c-shadow) / 0.07), 0 18px 40px -16px rgb(var(--c-shadow) / 0.18);
 }
 
 @layer base {
@@ -174,23 +190,86 @@
     overflow: hidden;
   }
 
+  /*
+   * Base de 17 px : un cran plus confortable que le 16 px des
+   * navigateurs. Le réglage Aa décale cette base, et pose la même valeur
+   * sur <html> ; celle-ci sert au premier rendu, avant que React monte.
+   */
   html {
+    font-size: 106.25%;
     font-family: var(--font-sans);
     background: var(--c-shell);
     color: var(--c-ink);
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Focus visible, épais et arrondi : exigence WCAG 2.1 AA. */
+  /*
+   * Focus visible, épais : exigence WCAG 2.1 AA. Aucun rayon imposé ici,
+   * le contour épouse celui de l'élément : une pastille garde sa forme
+   * ronde, un champ garde son rayon de contrôle.
+   */
   :focus-visible {
     outline: 3px solid var(--c-focus);
     outline-offset: 2px;
+  }
+
+  /*
+   * Les cibles de focus posées à la main, un titre de page ou un panneau,
+   * n'ont pas de forme à elles : un contour franc autour d'un titre est
+   * dur. Elles seules reçoivent un rayon, les contrôles gardent le leur.
+   */
+  [tabindex='-1']:focus-visible {
     border-radius: 0.5rem;
   }
 
   ::selection {
     background: var(--c-accent-soft);
     color: var(--c-ink);
+  }
+
+  /*
+   * Barres de défilement : un pouce arrondi au ton des contours, aucun
+   * rail. Vingt-trois zones défilent dans l'application, aucune n'a de
+   * style propre : tout se règle ici.
+   *
+   * Firefox ne sait styler que la largeur et deux couleurs, et son
+   * scrollbar-color n'accepte pas color-mix partout : il reçoit le token
+   * brut. WebKit et Chromium prennent la version détaillée, et le bureau
+   * Tauri en hérite puisqu'il affiche la même page.
+   */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--c-line-strong) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /*
+   * La bordure transparente et le background-clip donnent l'air autour du
+   * pouce : il paraît fin sans que la zone de visée le soit.
+   */
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--c-line-strong) 55%, transparent);
+    background-clip: padding-box;
+    border: 3px solid transparent;
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--c-line-strong);
+    background-clip: padding-box;
+  }
+
+  /* Sans ça, le croisement de deux barres reste gris système. */
+  ::-webkit-scrollbar-corner {
+    background: transparent;
   }
 }
 

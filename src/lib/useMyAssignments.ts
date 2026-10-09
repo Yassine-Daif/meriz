@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { ApiClient } from './apiClient'
 import { listMyAssignments } from './overviewApi'
+import type { StudentAssignmentRow } from './overviewApi'
 import { indexAssignments } from './workAssignments'
 import type { AssignmentIndex } from './workAssignments'
 
 export interface MyAssignmentsState {
   /** null tant que la liste n'est pas arrivée, ou quand l'appel n'a pas lieu. */
   assignments: AssignmentIndex | null
+  /** Les mêmes devoirs, non rangés : de quoi lister ce qui reste à rendre. */
+  rows: StudentAssignmentRow[] | null
   error: string | null
   reload: () => Promise<void>
 }
@@ -18,6 +21,7 @@ export interface MyAssignmentsState {
  */
 export function useMyAssignments(client: ApiClient, enabled = true): MyAssignmentsState {
   const [assignments, setAssignments] = useState<AssignmentIndex | null>(null)
+  const [rows, setRows] = useState<StudentAssignmentRow[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
@@ -26,6 +30,7 @@ export function useMyAssignments(client: ApiClient, enabled = true): MyAssignmen
     const result = await listMyAssignments(client)
     if (result.ok) {
       setAssignments(indexAssignments(result.value))
+      setRows(result.value)
     } else {
       setError(result.error.message)
     }
@@ -35,5 +40,5 @@ export function useMyAssignments(client: ApiClient, enabled = true): MyAssignmen
     void reload()
   }, [reload])
 
-  return { assignments, error, reload }
+  return { assignments, rows, error, reload }
 }

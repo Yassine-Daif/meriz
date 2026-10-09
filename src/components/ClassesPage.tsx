@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ApiClient } from '../lib/apiClient'
 import type { ApiUser } from '../lib/authApi'
 import type { ClassroomDetail } from '../lib/classroomsApi'
+import { filterByName, searchCountLabel } from '../lib/searchFilter'
 import { useClassrooms } from '../lib/useClassrooms'
 import { ClassroomGrid } from './ClassroomGrid'
 import { ClassroomView } from './ClassroomView'
@@ -16,9 +17,13 @@ import type {
 import { CreateClassForm } from './CreateClassForm'
 import { JoinClassForm } from './JoinClassForm'
 import { PageShell } from './PageShell'
+import { SearchField } from './ui/SearchField'
 import { Card } from './ui/Card'
 
 /** Classe à ouvrir en détail, avec son contenu s'il est déjà connu. */
+/** En dessous de ce nombre, une recherche encombre plus qu'elle n'aide. */
+const SEARCH_FROM = 6
+
 export interface ClassroomOpening {
   id: string
   initial: ClassroomDetail | null
@@ -68,6 +73,7 @@ export function ClassesPage({
   const { reload } = classrooms
   const [selected, setSelected] = useState<ClassroomOpening | null>(opening)
   const [status, setStatus] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
 
   const canCreate = user.role === 'teacher'
 
@@ -84,6 +90,19 @@ export function ClassesPage({
     },
     [reload],
   )
+
+  /*
+   * La recherche ne touche ni au chargement ni à l'erreur : on dérive un
+   * état filtré seulement quand la liste est arrivée, et la grille garde
+   * ses trois chemins. Le champ n'apparaît qu'au-delà du seuil : sous six
+   * classes, il encombrerait plus qu'il n'aiderait.
+   */
+  const all = classrooms.classrooms
+  const total = all?.length ?? 0
+  const searchable = total > SEARCH_FROM
+  const searching = searchable && query.trim() !== ''
+  const shown = useMemo(() => (all === null ? [] : filterByName(all, searching ? query : '')), [all, query, searching])
+  const filtered = all === null ? classrooms : { ...classrooms, classrooms: shown }
 
   if (selected) {
     return (
@@ -167,18 +186,29 @@ export function ClassesPage({
       <section aria-labelledby="liste-titre" className="mt-8">
         <h2 id="liste-titre" className="text-lg font-semibold tracking-tight text-ink">
           Vos classes
-          {classrooms.classrooms && classrooms.classrooms.length > 0 && (
-            <span className="font-normal text-ink-soft"> ({classrooms.classrooms.length})</span>
-          )}
+          {total > 0 && <span className="font-normal text-ink-soft"> ({total})</span>}
         </h2>
+        {searchable && (
+          <div className="mt-3 max-w-md">
+            <SearchField
+              label="Rechercher une classe"
+              value={query}
+              onChange={setQuery}
+              placeholder="Nom de la classe"
+              count={searchCountLabel(shown.length, total, 'classe', 'classes')}
+            />
+          </div>
+        )}
         <div className="mt-3">
           <ClassroomGrid
-            state={classrooms}
+            state={filtered}
             onOpen={(classroom) => setSelected({ id: classroom.id, initial: null, message: null })}
             emptyText={
-              canCreate
-                ? 'Aucune classe pour l’instant : créez-en une, ou rejoignez celle d’un collègue.'
-                : 'Aucune classe pour l’instant : saisissez le code donné par votre prof.'
+              searching
+                ? 'Aucune classe ne porte ce nom. Essayez un autre mot, ou effacez la recherche.'
+                : canCreate
+                  ? 'Aucune classe pour l’instant : créez-en une, ou rejoignez celle d’un collègue.'
+                  : 'Aucune classe pour l’instant : saisissez le code donné par votre prof.'
             }
           />
         </div>

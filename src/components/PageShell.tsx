@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
-import { Button } from './ui/Button'
+import { BackButton } from './ui/BackButton'
 import { PageHeader } from './ui/PageHeader'
 
 interface PageShellProps {
@@ -44,10 +44,7 @@ export function PageShell({
   return (
     <div>
       {onBack && (
-        <Button variant="ghost" size="sm" onClick={onBack} className="-ml-3 mb-3">
-          <span aria-hidden="true">←</span>
-          {backLabel}
-        </Button>
+        <BackButton label={backLabel} onClick={onBack} className="-ml-3 mb-3" />
       )}
       <PageHeader
         title={title}

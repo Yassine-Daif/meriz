@@ -756,7 +756,11 @@ export function App() {
       onOpenDocument: openDocument,
       onNewDocument: newDocument,
       onOpenClassroom: (classroom: ClassroomOpening) => navigate('classes', { page: 'classes', classroom }),
+      onOpenGroup: (id: string) =>
+        navigate('groups', { page: 'groups', group: { id, initial: null, message: null } }),
       onShowWork: () => navigate('work'),
+      onShowClasses: () => navigate('classes'),
+      onShowGroups: () => navigate('groups'),
       announcement: homeAnnouncement,
     }
     return (
@@ -774,6 +778,7 @@ export function App() {
                 key={pageKey}
                 {...homeProps}
                 onShowCorrections={() => navigate('corrections')}
+                onOpenCorrection={(correction) => navigate('corrections', { page: 'corrections', correction })}
               />
             ) : (
               <StudentHome key={pageKey} {...homeProps} />

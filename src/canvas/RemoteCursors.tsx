@@ -11,6 +11,11 @@ import type { RemotePresence } from '../model/collabProvider'
  * texte dit toujours qui est là, la couleur n'est qu'un repère en plus.
  * Entre pairs d'un groupe, personne n'est prof de personne, donc on
  * affiche seulement les noms.
+ *
+ * La flèche est une goutte aux angles arrondis, pas un triangle de
+ * système, et le nom se pose dans une pastille. Un liseré clair fait
+ * tenir les deux sur n'importe quel fond de schéma, du bloc teinté
+ * d'accent au papier de la zone de dessin.
  */
 export function RemoteCursors({
   others,
@@ -41,20 +46,22 @@ export function RemoteCursors({
               zIndex: 1000,
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" className="drop-shadow-sm">
               <path
-                d="M2 2l6.5 14 2.2-5.4L16 8.6z"
+                d="M3.6 2.6a1.5 1.5 0 0 1 2-.6l12 7a1.5 1.5 0 0 1-.2 2.7l-4.6 1.6a1.5 1.5 0 0 0-.9.9l-1.6 4.6a1.5 1.5 0 0 1-2.7.2l-4.6-12a1.5 1.5 0 0 1 .6-2z"
                 fill={other.user.avatarBg}
                 stroke={other.user.avatarFg}
-                strokeWidth="1.2"
+                strokeWidth="1.3"
+                strokeLinejoin="round"
+                strokeLinecap="round"
               />
             </svg>
             <span
               style={{ backgroundColor: other.user.avatarBg, color: other.user.avatarFg }}
-              className="mt-0.5 inline-flex items-center gap-1 rounded-control px-1.5 py-0.5 text-xs font-medium whitespace-nowrap shadow-soft"
+              className="-mt-0.5 ml-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ring-2 ring-surface shadow-soft"
             >
               {name}
-              {teacher && <span className="font-semibold uppercase">prof</span>}
+              {teacher && <span className="text-[0.65rem] font-bold tracking-wide uppercase opacity-80">prof</span>}
             </span>
           </div>
         )
