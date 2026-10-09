@@ -13,6 +13,11 @@ interface McdToolbarProps {
   onGenerate: () => void
   /** Consultation seule : plus d'ajout, mais vérifier et générer restent. */
   readOnly?: boolean
+  /**
+   * Crayon rouge du prof, en correction à deux. Absent : aucun bouton.
+   * Le trait ne s'enregistre jamais, il n'explique que sur le moment.
+   */
+  pencil?: { active: boolean; onToggle: () => void }
 }
 
 interface StatusMessage {
@@ -36,7 +41,7 @@ const iconProps = {
 } as const
 
 /** Sous-barre de la vue MCD : ajout d'éléments, vérification, génération. */
-export function McdToolbar({ dispatch, problems, onGenerate, readOnly = false }: McdToolbarProps) {
+export function McdToolbar({ dispatch, problems, onGenerate, readOnly = false, pencil }: McdToolbarProps) {
   const { screenToFlowPosition } = useReactFlow()
   const [status, setStatus] = useState<StatusMessage | null>(null)
   // Décalage en cascade pour que des ajouts répétés ne s'empilent pas.
@@ -106,6 +111,36 @@ export function McdToolbar({ dispatch, problems, onGenerate, readOnly = false }:
               onClick={() => dispatch({ type: 'ADD_ASSOCIATION', position: nextPosition() })}
             >
               Ajouter une association
+            </button>
+          </div>
+
+          <div aria-hidden="true" className="h-6 w-px bg-line" />
+        </>
+      )}
+
+      {pencil && (
+        <>
+          <div role="group" aria-label="Annotation" className="flex gap-2">
+            <button
+              type="button"
+              aria-pressed={pencil.active}
+              onClick={() => {
+                pencil.onToggle()
+                setStatus({
+                  kind: 'info',
+                  text: pencil.active
+                    ? 'Crayon rouge désactivé.'
+                    : 'Crayon rouge activé. Dessinez sur le schéma. Le trait n’est pas enregistré.',
+                })
+              }}
+              className={
+                pencil.active
+                  ? 'flex items-center gap-1.5 rounded-control border border-danger-strong bg-danger-soft px-2.5 py-1.5 text-sm font-medium text-danger'
+                  : buttonClass
+              }
+            >
+              <span aria-hidden="true">✎</span>
+              Crayon rouge
             </button>
           </div>
 

@@ -17,6 +17,7 @@ import { useSharedSeed } from './useSharedSeed'
 import type { CollaborationInfo } from './useCollaboration'
 import { CodeView } from './CodeView'
 import { CollaborationBanner } from './CollaborationBanner'
+import type { CommentsAccess } from './useComments'
 import { TopBar } from './TopBar'
 import { NavRail } from './NavRail'
 import { McdView } from './McdView'
@@ -60,6 +61,12 @@ interface EditorProps {
    * Co-édition : le document est partagé avec d'autres par son canal de
    * présence. Absent, l'éditeur ne se connecte à rien.
    */
+  /**
+   * Commentaires du travail. Absent : aucun fil, aucune bulle. Il ne
+   * passe jamais par la barrière d'édition : en observation le modèle
+   * est verrouillé, mais commenter reste le travail du prof.
+   */
+  comments?: CommentsAccess
   collaboration?: CollaborationInfo
   /**
    * Passer de l'observation à la correction à deux. Offert au prof dès
@@ -86,6 +93,7 @@ export function Editor({
   onNewDocument,
   onImportFile,
   readOnly = false,
+  comments,
   collaboration,
   onStartCollaboration,
 }: EditorProps) {
@@ -133,6 +141,13 @@ export function Editor({
    */
   const linkLost = guest && collab.state !== 'live'
   const locked = readOnly || linkLost
+  /*
+   * Le crayon rouge n'existe qu'en correction à deux, et seulement pour
+   * le prof. En observation, aucun canal de présence n'est ouvert : on
+   * n'en ouvre pas pour dessiner, la discrétion de la lecture reste
+   * entière. Lien perdu, le crayon se coupe comme l'écriture.
+   */
+  const canInk = collaboration?.role === 'guest' && collaboration.me.role === 'teacher' && !locked
   // Une seule barrière pour tout l'éditeur : l'inspecteur, le dictionnaire,
   // la barre d'outils et les étiquettes de pattes passent tous par là.
   const dispatch = locked ? IGNORE_ACTION : editAction
@@ -337,6 +352,8 @@ export function Editor({
               others={collab.others}
               onPointerFlow={collaboration ? collab.reportCursor : undefined}
               onDraftLink={collaboration ? collab.reportDraftLink : undefined}
+              comments={comments}
+              onInkStroke={canInk ? collab.reportInk : undefined}
               // Entre pairs d'un groupe, personne n'est prof de personne.
               teacherTag={role !== 'member'}
               banner={

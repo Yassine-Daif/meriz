@@ -438,6 +438,81 @@ describe('co-édition, présence', () => {
     expect(eleve.provider.others()).toEqual([])
   })
 
+  it('porte le trait du crayon rouge, points compris', () => {
+    const { eleve, prof } = duo()
+
+    prof.provider.publish({
+      cursor: { x: 50, y: 60 },
+      selection: [],
+      ink: { points: [{ x: 10, y: 20 }, { x: 40, y: 50 }] },
+    })
+
+    expect(eleve.provider.others()[0]!.ink).toEqual({
+      points: [{ x: 10, y: 20 }, { x: 40, y: 50 }],
+    })
+  })
+
+  it('sans crayon, le champ reste nul', () => {
+    const { eleve, prof } = duo()
+
+    prof.provider.publish({ cursor: { x: 1, y: 2 }, selection: [] })
+
+    expect(eleve.provider.others()[0]!.ink).toBeNull()
+  })
+
+  it('efface le trait au lâcher du bouton', () => {
+    const { eleve, prof } = duo()
+    prof.provider.publish({
+      cursor: null,
+      selection: [],
+      ink: { points: [{ x: 0, y: 0 }, { x: 9, y: 9 }] },
+    })
+    expect(eleve.provider.others()[0]!.ink).not.toBeNull()
+
+    prof.provider.publish({ cursor: null, selection: [], ink: null })
+
+    expect(eleve.provider.others()[0]!.ink).toBeNull()
+  })
+
+  it('efface le trait de qui s’en va en pleine annotation', () => {
+    const { eleve, prof } = duo()
+    prof.provider.publish({
+      cursor: null,
+      selection: [],
+      ink: { points: [{ x: 0, y: 0 }, { x: 9, y: 9 }] },
+    })
+
+    eleve.provider.forget(PROF.id)
+
+    expect(eleve.provider.others()).toEqual([])
+  })
+
+  it('efface le trait quand le pair s’arrête proprement', () => {
+    const { eleve, prof } = duo()
+    prof.provider.publish({
+      cursor: null,
+      selection: [],
+      ink: { points: [{ x: 0, y: 0 }, { x: 9, y: 9 }] },
+    })
+
+    prof.provider.stop()
+
+    expect(eleve.provider.others()).toEqual([])
+  })
+
+  it('ne montre jamais son propre trait de crayon', () => {
+    const canal = bus()
+    const seul = canal.owner(stateOf(clientCommande))
+    seul.provider.start()
+    seul.provider.publish({
+      cursor: null,
+      selection: [],
+      ink: { points: [{ x: 1, y: 1 }, { x: 8, y: 8 }] },
+    })
+
+    expect(seul.provider.others()).toEqual([])
+  })
+
   it('ne montre jamais son propre tracé', () => {
     const canal = bus()
     const seul = canal.owner(stateOf(clientCommande))
@@ -517,6 +592,49 @@ describe('co-édition, robustesse', () => {
     // Un pair qui publierait n'importe quoi ne doit pas être dessiné.
     prof.doc.sync.awareness.setLocalState({ user: { id: 'pas un nombre' }, cursor: null, selection: [] })
     expect(eleve.provider.others()).toEqual([])
+  })
+
+  it('ignore un trait de crayon malformé sans jeter le reste de la présence', () => {
+    const canal = bus()
+    const eleve = canal.owner(stateOf(clientCommande))
+    const prof = canal.guest()
+    eleve.provider.start()
+    prof.provider.start()
+
+    for (const ink of ['oui', {}, { points: 'non' }, { points: [{ x: 'ici', y: 2 }] }, { points: [{ x: 1, y: 1 }] }, null]) {
+      prof.doc.sync.awareness.setLocalState({
+        user: PROF,
+        cursor: { x: 7, y: 8 },
+        selection: ['ent-client'],
+        draft: null,
+        ink,
+      })
+
+      const vu = eleve.provider.others()[0]!
+      expect(vu.ink).toBeNull()
+      // Le reste de la présence survit toujours à un champ illisible.
+      expect(vu.user).toEqual(PROF)
+      expect(vu.cursor).toEqual({ x: 7, y: 8 })
+    }
+  })
+
+  it('refuse un trait démesuré, au-delà de soixante-quatre points', () => {
+    const canal = bus()
+    const eleve = canal.owner(stateOf(clientCommande))
+    const prof = canal.guest()
+    eleve.provider.start()
+    prof.provider.start()
+    const points = Array.from({ length: 65 }, (_, index) => ({ x: index, y: index }))
+
+    prof.doc.sync.awareness.setLocalState({
+      user: PROF,
+      cursor: null,
+      selection: [],
+      draft: null,
+      ink: { points },
+    })
+
+    expect(eleve.provider.others()[0]!.ink).toBeNull()
   })
 
   it('ignore un tracé malformé sans jeter le reste de la présence', () => {

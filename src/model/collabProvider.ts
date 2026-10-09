@@ -1,5 +1,6 @@
 import { applyAwarenessUpdate, encodeAwarenessUpdate, removeAwarenessStates } from 'y-protocols/awareness'
 import { fromBase64, toBase64 } from '../lib/bytes'
+import { INK_MAX_POINTS } from './inkTrace'
 import type { ModelSync } from './modelDoc'
 
 /**
@@ -40,6 +41,15 @@ export interface CollabDraftLink {
   from: CollabCursor
 }
 
+/**
+ * Trait de crayon éphémère : une polyligne en coordonnées du modèle.
+ * Il ne passe jamais par le modèle, ne s'enregistre jamais, et ne vit que
+ * le temps d'une pression. Null : personne ne dessine.
+ */
+export interface CollabInk {
+  points: CollabCursor[]
+}
+
 /** Ce qu'un participant montre de lui : où il est, ce qu'il a choisi. */
 export interface CollabPresence {
   user: CollabUser
@@ -51,6 +61,8 @@ export interface CollabPresence {
    * c'est de l'affichage, comme un curseur. Null : personne ne tire rien.
    */
   draft: CollabDraftLink | null
+  /** Trait de crayon en cours, éphémère lui aussi. */
+  ink: CollabInk | null
 }
 
 export interface RemotePresence extends CollabPresence {
@@ -83,6 +95,7 @@ export interface CollabProvider {
     cursor: CollabCursor | null
     selection: string[]
     draft?: CollabDraftLink | null
+    ink?: CollabInk | null
   }) => void
   /** Les autres, à dessiner. */
   others: () => RemotePresence[]
@@ -137,6 +150,27 @@ function readDraft(raw: unknown): CollabDraftLink | null {
   return from === null ? null : { from }
 }
 
+/**
+ * Un trait venu du réseau. Trois refus : ce qui n'est pas un tableau de
+ * points, un trait démesuré (un pair bavard ne fera pas ramer le rendu),
+ * et un point illisible, qui invalide tout le trait. Un point seul ne
+ * dessine rien.
+ */
+function readInk(raw: unknown): CollabInk | null {
+  if (!isRecord(raw) || !Array.isArray(raw.points) || raw.points.length > INK_MAX_POINTS) {
+    return null
+  }
+  const points: CollabCursor[] = []
+  for (const item of raw.points) {
+    const point = readCursor(item)
+    if (point === null) {
+      return null
+    }
+    points.push(point)
+  }
+  return points.length < 2 ? null : { points }
+}
+
 function readSelection(raw: unknown): string[] {
   return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === 'string') : []
 }
@@ -177,7 +211,7 @@ export function createCollabProvider({ sync, transport, me }: CollabProviderOpti
         transport.send('yjs-update', { kind: 'update', update: toBase64(update) })
       })
       awareness.on('update', onAwarenessChange)
-      awareness.setLocalState({ user: me, cursor: null, selection: [], draft: null })
+      awareness.setLocalState({ user: me, cursor: null, selection: [], draft: null, ink: null })
       // « Voilà ce que j'ai » : chacun répondra par ce qui me manque.
       transport.send('yjs-update', { kind: 'hello', vector: toBase64(sync.stateVector()) })
     },
@@ -257,9 +291,9 @@ export function createCollabProvider({ sync, transport, me }: CollabProviderOpti
       }
     },
 
-    publish: ({ cursor, selection, draft = null }) => {
+    publish: ({ cursor, selection, draft = null, ink = null }) => {
       if (running) {
-        awareness.setLocalState({ user: me, cursor, selection, draft })
+        awareness.setLocalState({ user: me, cursor, selection, draft, ink })
       }
     },
 
@@ -277,6 +311,7 @@ export function createCollabProvider({ sync, transport, me }: CollabProviderOpti
             cursor: readCursor(raw.cursor),
             selection: readSelection(raw.selection),
             draft: readDraft(raw.draft),
+            ink: readInk(raw.ink),
           })
         }
       }

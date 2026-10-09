@@ -30,10 +30,15 @@ import { canCreateLeg } from '../model/queries'
 import type { CanvasSelection } from './selection'
 import { McdDispatchContext } from './dispatchContext'
 import { useGestureStream } from './gestureStream'
+import { CommentPins } from './CommentPins'
+import type { CommentPin } from './CommentPins'
 import { RemoteCursors } from './RemoteCursors'
 import { RemoteDraftLinks } from './RemoteDraftLinks'
+import { RemoteInk } from './RemoteInk'
 import type { RemotePresence } from '../model/collabProvider'
 import { useTheme } from '../lib/useTheme'
+import { appendInkPoint } from '../model/inkTrace'
+import type { InkPoint } from '../model/inkTrace'
 
 // Déclarés hors composant pour garder des références stables.
 const nodeTypes = { entity: EntityNode, association: AssociationNode }
@@ -57,6 +62,19 @@ interface McdCanvasProps {
   onDraftLink?: (from: { x: number; y: number } | null) => void
   /** Faux entre pairs d'un groupe : aucune étiquette prof sur les curseurs. */
   teacherTag?: boolean
+  /** Bulles de commentaires posées sur le schéma. */
+  pins?: CommentPin[]
+  onOpenPin?: (commentId: string) => void
+  /** Bulle à montrer et à focaliser, rejouable par son jeton. */
+  revealedPin?: { id: string; nonce: number } | null
+  /** Mode « poser une bulle » : le prochain clic donne une position. */
+  placing?: boolean
+  onPlacePin?: (position: { x: number; y: number }) => void
+  /**
+   * Crayon rouge : le trait part dans la présence et n'entre jamais dans
+   * le modèle. Absent : aucun geste de dessin n'est possible.
+   */
+  ink?: { active: boolean; onStroke: (points: InkPoint[] | null) => void }
   /**
    * Consultation seule : on parcourt, on zoome, on sélectionne pour lire,
    * mais rien ne se déplace, ne se relie ni ne se supprime.
@@ -82,6 +100,12 @@ export function McdCanvas({
   onPointerFlow,
   onDraftLink,
   teacherTag = true,
+  pins,
+  onOpenPin,
+  revealedPin = null,
+  placing = false,
+  onPlacePin,
+  ink,
   readOnly = false,
 }: McdCanvasProps) {
   const theme = useTheme()
@@ -93,27 +117,95 @@ export function McdCanvas({
   const paneRef = useRef<HTMLElement | null>(null)
 
   /*
-   * Position du pointeur, pour que les autres voient où l'on est. On
-   * écoute en phase de capture, sur l'élément : React Flow arrête la
-   * propagation de ces évènements, donc un gestionnaire React posé plus
-   * haut ne les verrait jamais passer.
+   * Les gestes de la zone de dessin passent tous par une écoute en phase
+   * de capture, sur l'élément : React Flow arrête la propagation de ces
+   * évènements, donc un gestionnaire React posé plus haut ne les verrait
+   * jamais passer. Elle porte la position du pointeur qu'on diffuse aux
+   * autres, la pose d'une bulle, et le trait du crayon.
+   */
+  const strokeRef = useRef<InkPoint[] | null>(null)
+  /*
+   * Les écouteurs se posent une fois pour toutes, et lisent l'état du
+   * moment dans une ref. Les relier aux props les ferait reposer à chaque
+   * rendu, et le nettoyage effacerait le trait en cours : or le canevas
+   * se rend à la cadence des curseurs des autres.
+   */
+  const gestureRef = useRef({ onPointerFlow, placing, onPlacePin, ink })
+  gestureRef.current = { onPointerFlow, placing, onPlacePin, ink }
+
+  /*
+   * Une seule porte pour les gestes d'outil. Posée sur la section, en
+   * capture, elle passe avant React Flow : un stopPropagation() y suffit
+   * pour qu'un clic de bulle ou un trait de crayon ne devienne ni une
+   * sélection au rectangle, ni un déplacement de nœud.
    */
   useEffect(() => {
     const pane = paneRef.current
-    if (!onPointerFlow || pane === null) {
+    if (pane === null) {
       return
     }
-    const onMove = (event: PointerEvent) => {
-      onPointerFlow(screenToFlowPosition({ x: event.clientX, y: event.clientY }))
+    const flowAt = (event: PointerEvent) => screenToFlowPosition({ x: event.clientX, y: event.clientY })
+
+    const onDown = (event: PointerEvent) => {
+      const { placing: placingNow, onPlacePin: place, ink: inkNow } = gestureRef.current
+      if (placingNow && place) {
+        event.stopPropagation()
+        event.preventDefault()
+        place(flowAt(event))
+        return
+      }
+      if (inkNow?.active === true && event.button === 0 && event.isPrimary) {
+        event.stopPropagation()
+        event.preventDefault()
+        strokeRef.current = appendInkPoint([], flowAt(event))
+        inkNow.onStroke(strokeRef.current)
+      }
     }
-    const onLeave = () => onPointerFlow(null)
+
+    const endStroke = () => {
+      if (strokeRef.current !== null) {
+        strokeRef.current = null
+        gestureRef.current.ink?.onStroke(null)
+      }
+    }
+
+    const onMove = (event: PointerEvent) => {
+      if (strokeRef.current !== null) {
+        // Le mouvement n'est arrêté que pendant un trait : hors geste, la
+        // position du pointeur doit continuer de partir aux autres.
+        event.stopPropagation()
+        strokeRef.current = appendInkPoint(strokeRef.current, flowAt(event))
+        gestureRef.current.ink?.onStroke(strokeRef.current)
+        return
+      }
+      gestureRef.current.onPointerFlow?.(flowAt(event))
+    }
+
+    const onLeave = () => gestureRef.current.onPointerFlow?.(null)
+    const onClickCapture = (event: MouseEvent) => {
+      // Sinon le volet vide la sélection juste après avoir posé la bulle.
+      if (gestureRef.current.placing) {
+        event.stopPropagation()
+        event.preventDefault()
+      }
+    }
+
+    pane.addEventListener('pointerdown', onDown, true)
     pane.addEventListener('pointermove', onMove, true)
     pane.addEventListener('pointerleave', onLeave, true)
+    pane.addEventListener('pointerup', endStroke, true)
+    pane.addEventListener('pointercancel', endStroke, true)
+    pane.addEventListener('click', onClickCapture, true)
     return () => {
+      pane.removeEventListener('pointerdown', onDown, true)
       pane.removeEventListener('pointermove', onMove, true)
       pane.removeEventListener('pointerleave', onLeave, true)
+      pane.removeEventListener('pointerup', endStroke, true)
+      pane.removeEventListener('pointercancel', endStroke, true)
+      pane.removeEventListener('click', onClickCapture, true)
+      endStroke()
     }
-  }, [onPointerFlow, screenToFlowPosition])
+  }, [screenToFlowPosition])
   const [nodes, setNodes] = useState<McdFlowNode[]>([])
   const [edges, setEdges] = useState<LegFlowEdge[]>([])
 
@@ -409,8 +501,17 @@ export function McdCanvas({
         proOptions={{ hideAttribution: true }}
       >
         <Background gap={16} />
+        {others && others.length > 0 && <RemoteInk others={others} />}
         {others && others.length > 0 && <RemoteDraftLinks others={others} />}
         {others && others.length > 0 && <RemoteCursors others={others} teacherTag={teacherTag} />}
+        {pins && pins.length > 0 && onOpenPin && (
+          <CommentPins
+            pins={pins}
+            onOpen={onOpenPin}
+            revealed={revealedPin}
+            muted={placing || ink?.active === true}
+          />
+        )}
       </ReactFlow>
       </McdDispatchContext.Provider>
       <ConfirmDialog

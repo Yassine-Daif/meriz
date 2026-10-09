@@ -147,6 +147,31 @@ function collaborationFor(
 }
 
 /**
+ * Le document de travail dont on peut tenir le fil de correction, ou
+ * null.
+ *
+ * Les commentaires se rattachent à un document réel du compte. Les
+ * autres cibles portent un identifiant fabriqué pour l'éditeur, par
+ * exemple la base d'un devoir sous `${assignment.id}:base` : il n'y a
+ * rien à commenter derrière. Un document personnel est exclu par
+ * périmètre : le fil sert la correction d'un travail.
+ */
+function commentsDocumentId(target: EditorTarget, document: OpenedDocument): string | null {
+  switch (target.kind) {
+    case 'work':
+      return document.meta.id
+    case 'coedit':
+      return target.documentId
+    case 'review':
+      // Un travail suivi a bien un document. Un rendu déposé, lui, n'est
+      // qu'un instantané : rien à commenter.
+      return target.live?.documentId ?? null
+    default:
+      return null
+  }
+}
+
+/**
  * Ce qu'une page doit rouvrir en arrivant. Seule la page visée lit sa
  * charge : personne d'autre n'a à la comprendre.
  */
@@ -844,6 +869,22 @@ export function App() {
   const collaboration = collaborationFor(current.target, session, account.kind === 'cloud'
     ? current.document.meta.id
     : null)
+  const commentsDocument = commentsDocumentId(current.target, current.document)
+  const comments =
+    account.kind === 'cloud' && commentsDocument !== null && session.status === 'signed-in'
+      ? {
+          client: account.client,
+          documentId: commentsDocument,
+          me: {
+            id: session.user.id,
+            name: session.user.name,
+            firstName: session.user.firstName,
+            role: session.user.role,
+            avatarBg: session.user.avatarBg,
+            avatarFg: session.user.avatarFg,
+          },
+        }
+      : undefined
   const startCollaboration =
     current.target.kind === 'review' && current.target.live !== null
       ? () => {
@@ -868,6 +909,7 @@ export function App() {
         saver={current.saver}
         cloud={current.cloud}
         readOnly={chrome.readOnly}
+        comments={comments}
         onRename={chrome.canRename ? rename : undefined}
         onBackToDocuments={() => void leaveEditor()}
         contentLabel={chrome.contentLabel}

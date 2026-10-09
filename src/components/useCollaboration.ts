@@ -3,6 +3,7 @@ import { createCollabProvider } from '../model/collabProvider'
 import type {
   CollabCursor,
   CollabDraftLink,
+  CollabInk,
   CollabProvider,
   CollabUser,
   RemotePresence,
@@ -61,6 +62,11 @@ export interface CollaborationHandle {
    * voient se dessiner. Null : j'ai lâché, ou je n'ai rien commencé.
    */
   reportDraftLink: (from: CollabCursor | null) => void
+  /**
+   * Le trait de crayon que je suis en train de tracer. Null : plus rien.
+   * Éphémère de bout en bout, il ne touche jamais le modèle.
+   */
+  reportInk: (points: CollabCursor[] | null) => void
 }
 
 export interface UseCollaborationOptions {
@@ -93,6 +99,7 @@ export function useCollaboration({
   const selectionRef = useRef<string[]>(selection)
   // Le tracé en cours part avec le curseur, dans le même message.
   const draftRef = useRef<CollabDraftLink | null>(null)
+  const inkRef = useRef<CollabInk | null>(null)
   const publishRef = useRef<CollabProvider['publish'] | null>(null)
 
   const documentId = info?.documentId ?? null
@@ -153,6 +160,7 @@ export function useCollaboration({
               cursor: cursorRef.current,
               selection: selectionRef.current,
               draft: draftRef.current,
+              ink: inkRef.current,
             })
           } else {
             // Le lien reviendra avec une nouvelle poignée de main, donc
@@ -170,8 +178,9 @@ export function useCollaboration({
       setParticipants([])
       setOthers([])
       // Un tracé ne survit jamais à une fermeture : onglet caché, lien
-      // perdu ou démontage, il repart de rien.
+      // perdu ou démontage, il repart de rien. Le trait de crayon non plus.
       draftRef.current = null
+      inkRef.current = null
     }
 
     /**
@@ -199,6 +208,7 @@ export function useCollaboration({
         cursor: cursorRef.current,
         selection: selectionRef.current,
         draft: draftRef.current,
+        ink: inkRef.current,
       })
     }, CURSOR_INTERVAL_MS)
 
@@ -226,11 +236,17 @@ export function useCollaboration({
     draftRef.current = from === null ? null : { from }
   }, [])
 
+  const reportInk = useCallback((points: CollabCursor[] | null) => {
+    // Un point seul ne dessine rien : autant ne rien publier.
+    inkRef.current = points === null || points.length < 2 ? null : { points }
+  }, [])
+
   return {
     state: documentId === null ? 'off' : state,
     participants: meId === null ? [] : participants,
     others,
     reportCursor,
     reportDraftLink,
+    reportInk,
   }
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Dispatch, KeyboardEvent, PointerEvent, ReactNode, SetStateAction } from 'react'
 import type { McdAction, McdEditorState } from '../model/mcdReducer'
 import type { RemotePresence } from '../model/collabProvider'
@@ -7,7 +7,16 @@ import { McdCanvas } from '../canvas/McdCanvas'
 import type { CanvasSelection } from '../canvas/selection'
 import { McdToolbar } from './McdToolbar'
 import { Inspector } from './Inspector'
+import { CommentsPanel } from './CommentsPanel'
 import { ProblemsPanel } from './ProblemsPanel'
+import { useComments } from './useComments'
+import type { CommentsAccess } from './useComments'
+import { pinLabel } from '../lib/commentsApi'
+import type { CommentPosition } from '../lib/commentsApi'
+import { displayName } from '../lib/authApi'
+import { isEditableTarget } from '../lib/keyboard'
+import { LiveAnnouncement } from './ui/LiveAnnouncement'
+import type { InkPoint } from '../model/inkTrace'
 
 const PANEL_MIN = 240
 const PANEL_MAX = 640
@@ -42,6 +51,13 @@ interface McdViewProps {
   banner?: ReactNode
   /** Consultation seule : le modèle se parcourt, il ne se modifie pas. */
   readOnly?: boolean
+  /**
+   * Commentaires du travail. Absent : aucun fil, aucune bulle. Il ne
+   * dépend surtout pas de readOnly : commenter, c'est corriger.
+   */
+  comments?: CommentsAccess
+  /** Crayon rouge : offert au prof en correction à deux, sinon absent. */
+  onInkStroke?: (points: InkPoint[] | null) => void
 }
 
 /**
@@ -63,8 +79,74 @@ export function McdView({
   teacherTag,
   banner,
   readOnly = false,
+  comments,
+  onInkStroke,
 }: McdViewProps) {
   const [panelWidth, setPanelWidth] = useState(300)
+  const [threadOpen, setThreadOpen] = useState(false)
+  const [placing, setPlacing] = useState(false)
+  const [pendingPosition, setPendingPosition] = useState<CommentPosition | null>(null)
+  const [revealed, setRevealed] = useState<{ id: string; nonce: number } | null>(null)
+  const [pencil, setPencil] = useState(false)
+  const [annotating, setAnnotating] = useState<string | null>(null)
+
+  // La relecture ne tourne que fil ouvert et vue affichée : sinon elle
+  // continuerait depuis la vue SQL, pour personne.
+  const thread = useComments({ access: comments ?? null, watching: threadOpen && isActive })
+  const pins = useMemo(
+    () =>
+      (thread.comments ?? []).flatMap((comment, index) =>
+        comment.position === null
+          ? []
+          : [
+              {
+                id: comment.id,
+                index,
+                position: comment.position,
+                label: pinLabel(comment, index),
+                resolved: comment.resolved,
+              },
+            ],
+      ),
+    [thread.comments],
+  )
+
+  /* Échap sort du mode bulle, sans voler l'Échap d'un champ de saisie. */
+  useEffect(() => {
+    if (!placing) {
+      return
+    }
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape' && !isEditableTarget(event.target)) {
+        setPlacing(false)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [placing])
+
+  /* Quitter la vue éteint le crayon et efface le trait en cours. */
+  useEffect(() => {
+    if (!isActive && pencil) {
+      setPencil(false)
+      onInkStroke?.(null)
+    }
+  }, [isActive, pencil, onInkStroke])
+
+  /*
+   * Un trait apparaît chez un autre : on le dit une fois, pas à chaque
+   * geste. Une région live bavarde noierait l'information.
+   */
+  const inker = others?.find((other) => other.ink !== null) ?? null
+  useEffect(() => {
+    setAnnotating((current) => {
+      if (inker === null) {
+        return null
+      }
+      const name = displayName(inker.user) || 'Votre prof'
+      return current === null ? `${name} annote le schéma.` : current
+    })
+  }, [inker])
 
   const onSeparatorPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     event.preventDefault()
@@ -98,7 +180,27 @@ export function McdView({
       aria-label="Vue MCD"
       className={isActive ? 'flex min-h-0 flex-1 flex-col' : 'hidden'}
     >
-      <McdToolbar dispatch={dispatch} problems={problems} onGenerate={onGenerate} readOnly={readOnly} />
+      <McdToolbar
+        dispatch={dispatch}
+        problems={problems}
+        onGenerate={onGenerate}
+        readOnly={readOnly}
+        pencil={
+          onInkStroke
+            ? {
+                active: pencil,
+                onToggle: () => {
+                  setPencil((active) => {
+                    if (active) onInkStroke(null)
+                    else setPlacing(false)
+                    return !active
+                  })
+                },
+              }
+            : undefined
+        }
+      />
+      <LiveAnnouncement message={annotating} />
       {banner}
       <div className="flex min-h-0 flex-1">
         <McdCanvas
@@ -112,6 +214,19 @@ export function McdView({
           onDraftLink={onDraftLink}
           teacherTag={teacherTag}
           readOnly={readOnly}
+          pins={pins}
+          onOpenPin={(commentId) => {
+            setThreadOpen(true)
+            setRevealed({ id: commentId, nonce: Date.now() })
+          }}
+          revealedPin={revealed}
+          placing={placing}
+          onPlacePin={(position) => {
+            setPendingPosition(position)
+            setPlacing(false)
+            setThreadOpen(true)
+          }}
+          ink={onInkStroke ? { active: pencil, onStroke: onInkStroke } : undefined}
         />
         <div
           role="separator"
@@ -131,6 +246,27 @@ export function McdView({
         >
           <Inspector mcd={state.mcd} selection={selection} dispatch={dispatch} readOnly={readOnly} />
           <ProblemsPanel problems={problems} mcd={state.mcd} onSelectElement={onSelectElement} />
+          {comments && (
+            <CommentsPanel
+              thread={thread}
+              me={comments.me}
+              open={threadOpen}
+              onToggleOpen={() => setThreadOpen((value) => !value)}
+              placing={placing}
+              onTogglePlacing={() => {
+                setPlacing((value) => {
+                  if (!value) {
+                    setPencil(false)
+                    setThreadOpen(true)
+                  }
+                  return !value
+                })
+              }}
+              pendingPosition={pendingPosition}
+              onClearPosition={() => setPendingPosition(null)}
+              onReveal={(commentId) => setRevealed({ id: commentId, nonce: Date.now() })}
+            />
+          )}
         </div>
       </div>
     </section>

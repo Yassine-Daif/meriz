@@ -30,6 +30,7 @@ Les treize étapes prévues sont livrées. La stabilisation a réglé les quatre
 | Dictionnaire central | Fait | Propriétés définies une fois, placées au plus une fois, règle vérifiée par la validation. |
 | Canvas MCD | Fait | React Flow contrôlé, glisser fluide, sélection multiple, suppression protégée. Les pattes se raccrochent au rond le plus proche à chaque image, et le tracé en cours se voit chez les autres. |
 | Édition et inspecteur | Fait | Formulaires entité, association et patte. Création de patte au clavier ajoutée. |
+| Commentaires et annotation | Fait | Fil de correction sur un travail, bulles posées sur le schéma, et crayon rouge éphémère du prof en correction à deux. |
 | Validation | Fait | Deux niveaux, dix-sept invariants documentés, problèmes cliquables. |
 | Vue MLD | Fait | Dérivée en direct du MCD, jamais vide après rechargement. |
 | Vue MPD | Fait | Dérivée en direct, positions du diagramme conservées au changement de vue. |
@@ -55,6 +56,10 @@ Une patte s'accroche à l'un des quatre ronds posés sur le bord d'un bloc. Le c
 On tire depuis un rond d'une association et on lâche n'importe où sur une entité : un calque invisible couvre toute sa surface et ne reçoit le pointeur que pendant un tracé, donc le corps du bloc reste la poignée de déplacement. Les entités n'exposent que des ronds `target` et les associations des ronds `source`, et la règle `canCreateLeg` vérifie le sens dans le modèle, à la fois dans `isValidConnection` et dans `onConnect`.
 
 Pendant qu'un participant tire une liaison, son tracé part dans la présence, comme son curseur : les autres voient un trait tireté à sa couleur, dessiné par `RemoteDraftLinks`. Ce tracé n'entre jamais dans le modèle, et la patte créée au lâcher ne compte que pour une seule étape d'annulation.
+
+**Commentaires et annotation.** Le fil de correction d'un travail vit dans la colonne latérale de l'éditeur, sous l'inspecteur et les problèmes, replié par défaut et borné en hauteur. Tout passe par les routes du serveur (`commentsApi.ts`) : un commentaire général, ou une bulle posée à un endroit précis du schéma. Les bulles sont ancrées dans le repère du modèle, donc elles restent sur leur point au zoom et au déplacement, et leur état résolu se lit au texte, pas seulement à la couleur. Le serveur ne diffuse rien pour les commentaires : le fil se relit à l'ouverture, après chaque écriture, et toutes les dix secondes tant que le panneau est ouvert, en pause quand l'onglet est caché. Le fil ne dépend jamais de la barrière d'édition : en observation le modèle est verrouillé, mais commenter reste possible.
+
+Le crayon rouge, lui, n'écrit rien. Le prof l'active en correction à deux, trace sur la zone de dessin, et l'élève voit le trait se faire : il part dans la présence, comme un curseur, borné à soixante-quatre points décimés et arrondis (`inkTrace.ts`). Il s'efface au lâcher du bouton, à l'arrêt de l'outil, en quittant la vue, et au départ du pair. Rien n'entre dans le modèle, rien n'est enregistré. En observation en lecture seule, aucun canal de présence n'est ouvert et le crayon n'existe pas : la discrétion de la lecture reste entière.
 
 **Édition et inspecteur.** L'inspecteur édite un seul élément sélectionné. Le formulaire d'association contient désormais un bloc « Relier à une entité » (`LegConnector.tsx`) : liste des entités, bouton Relier, annonce accessible, focus rendu à la liste. Le sens association vers entité est garanti par l'action `ADD_LEG` et par `canCreateLeg`, couverte par un test.
 
