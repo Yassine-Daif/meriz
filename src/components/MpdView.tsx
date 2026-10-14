@@ -44,6 +44,19 @@ export function MpdView({
   const mappingPanelId = useId()
   const [mappingOpen, setMappingOpen] = useState(true)
   const visibilityClass = isActive ? 'flex min-h-0 flex-1 flex-col' : 'hidden'
+
+  // La vue reste montée quand elle est inactive, et React Flow remplace
+  // alors sa taille nulle par une taille d'office : son cadrage partirait
+  // faux, les tables minuscules dans un coin. On ne monte donc le canvas
+  // qu'au premier affichage, puis on le garde, pour qu'il conserve son
+  // zoom et ses positions au retour.
+  const [revealed, setRevealed] = useState(isActive)
+  useEffect(() => {
+    if (isActive) {
+      setRevealed(true)
+    }
+  }, [isActive])
+
   if (tables.length === 0) {
     return (
       <div className={visibilityClass}>
@@ -85,7 +98,7 @@ export function MpdView({
         </p>
       </div>
       <div className="flex min-h-0 flex-1">
-        <MpdDiagram tables={tables} hasErrors={hasErrors} />
+        {revealed && <MpdDiagram tables={tables} hasErrors={hasErrors} />}
         {mappingOpen && (
           <TypeMappingPanel
             panelId={mappingPanelId}

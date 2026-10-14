@@ -4,6 +4,7 @@ import type { ApiUser } from '../lib/authApi'
 import { becomeTeacher } from '../lib/profileApi'
 import { useSession } from './sessionContext'
 import { FormAlert } from './FormAlert'
+import { ResendVerification } from './ResendVerification'
 import { Button } from './ui/Button'
 
 interface TeacherModeSectionProps {
@@ -70,13 +71,28 @@ export function TeacherModeSection({ user, client, onShowClasses }: TeacherModeS
         </div>
       </>
     )
+  } else if (user.isAcademic && user.emailVerifiedAt === null) {
+    // L'adresse est scolaire, mais pas encore confirmée : le serveur
+    // refuserait. On le dit avant, et on offre le renvoi sur place.
+    content = (
+      <>
+        <p className="text-sm leading-6 text-ink-soft">
+          Le mode prof demande deux choses : une adresse scolaire ou universitaire, ce qui est le
+          cas de la vôtre, et une adresse confirmée. La vôtre ne l'est pas encore.
+        </p>
+        <div className="mt-3">
+          <ResendVerification client={client} label="Recevoir un nouveau lien" />
+        </div>
+      </>
+    )
   } else if (user.isAcademic) {
     content = (
       <>
         <p className="text-sm leading-6 text-ink-soft">
           Le mode prof vous permet de créer des classes, d'obtenir un code à partager avec vos
           élèves et de gérer leurs membres. Vos documents et les classes que vous avez rejointes
-          ne changent pas. Le mode prof reste actif ensuite.
+          ne changent pas. Le mode prof reste actif ensuite. Il demande une adresse scolaire ou
+          universitaire, et une adresse confirmée : vous remplissez les deux.
         </p>
         <div className="mt-3">
           <FormAlert message={error} attempt={attempt} />
@@ -97,8 +113,8 @@ export function TeacherModeSection({ user, client, onShowClasses }: TeacherModeS
   } else {
     content = (
       <p className="text-sm leading-6 text-ink-soft">
-        Le mode prof est réservé aux adresses email scolaires ou universitaires. Votre adresse de
-        connexion n'en fait pas partie.
+        Le mode prof est réservé aux adresses email scolaires ou universitaires, confirmées par
+        leur lien. Votre adresse de connexion n'en fait pas partie.
       </p>
     )
   }

@@ -17,6 +17,7 @@ const user: ApiUser = {
   contactShared: false,
   avatarBg: '#e0e7ff',
   avatarFg: '#1e1b4b',
+  emailVerifiedAt: null,
 }
 
 function failure(kind: ApiErrorKind) {

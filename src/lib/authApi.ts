@@ -32,6 +32,11 @@ export interface ApiUser {
   /** Couleurs de la pastille d'initiales, hexadécimales. */
   avatarBg: string
   avatarFg: string
+  /**
+   * Date de confirmation de l'adresse, ou null tant qu'elle ne l'est
+   * pas. Le serveur reste seul juge : on lit, on ne recalcule rien.
+   */
+  emailVerifiedAt: string | null
 }
 
 export interface AuthSuccess {
@@ -86,12 +91,14 @@ export function parseApiUser(raw: unknown): ApiUser | null {
   const contact = optionalText(raw.contact)
   const bioShared = optionalFlag(raw.bio_shared)
   const contactShared = optionalFlag(raw.contact_shared)
+  const emailVerifiedAt = optionalText(raw.email_verified_at)
   if (
     firstName === undefined ||
     bio === undefined ||
     contact === undefined ||
     bioShared === undefined ||
-    contactShared === undefined
+    contactShared === undefined ||
+    emailVerifiedAt === undefined
   ) {
     return null
   }
@@ -108,6 +115,7 @@ export function parseApiUser(raw: unknown): ApiUser | null {
     contactShared,
     avatarBg: parseAvatarColor(raw.avatar_bg, DEFAULT_AVATAR_BG),
     avatarFg: parseAvatarColor(raw.avatar_fg, DEFAULT_AVATAR_FG),
+    emailVerifiedAt,
   }
 }
 

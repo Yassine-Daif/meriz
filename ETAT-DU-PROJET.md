@@ -42,6 +42,8 @@ Les treize étapes prévues sont livrées. La stabilisation a réglé les quatre
 | Écrans de création | Fait | Compositeur de cours à deux onglets, éditeur de devoir en sections, gestion de groupe alignée sur celle des classes. Le focus suit chaque geste. |
 | Classe et groupe | Fait | La gestion vit dans son onglet Réglages, ouvert par défaut à la création seulement. Cartes de membre de hauteur égale, et retour en haut sur les pages longues. |
 | Finition du schéma | Fait | Focus clavier rendu visible dans la zone de dessin, sélection qui se signale par la forme, aide d'accessibilité en français, et plus aucune valeur de taille écrite en dur dans l'application. |
+| Cadrage du MPD | Fait | La vue s'ouvre centrée à la bonne échelle, et garde son cadrage et ses tables déplacées au retour. |
+| Vérification d'email | Fait | Le lien reçu par courrier ouvre une page qui annonce son résultat, sans exiger de compte. Le profil montre l'état de l'adresse et renvoie le lien. |
 | Système de design | Fait | Palettes chaudes en clair et en sombre, composants de base élevés, barres de défilement, bouton retour unique. Soixante paires de contrastes tenues au niveau AA. |
 | Version PC (Tauri) | Fait | Configuration complète, workflow de release, `v0.1.0` publiée avec neuf fichiers. |
 | Version web (déploiement) | Partiel | Workflow réparé et poussé. Il attend les secrets du VPS, à créer à la main. |
@@ -103,6 +105,24 @@ Les curseurs des autres portaient un anneau censé les détacher du fond. Mesur�
 **Plus aucune valeur de taille écrite en dur.** Dix-neuf `text-[Npx]` traînaient dans l'application, surtout dans la page Apprendre. Deux d'entre elles sont *sous* le plus petit cran de l'échelle : les monter aurait grossi les nœuds du schéma et déplacé les pattes. Elles sont donc déclarées comme tokens à leur valeur exacte, `--text-micro`, `--text-nano` et `--text-code`, et le rendu ne bouge pas d'un pixel.
 
 Enfin, trente-quatre boutons écrits à la main passent au bouton partagé, ce qui leur donne l'état d'attente, le voile et `aria-busy` qu'ils n'avaient pas, et `buttonStyles.ts` disparaît avec son dernier usage. Deux constantes locales nommées `buttonClass` masquaient le nom de la brique commune : elles s'en vont aussi. Les éditeurs en ligne du dictionnaire et du mappage des types restent des champs compacts, parce qu'ils vivent dans des tableaux denses où un champ de formulaire imposerait sa hauteur.
+
+**Le cadrage du MPD.** La vue s'ouvrait mal cadrée, les tables minuscules dans un coin. La cause tient au montage : la vue reste montée quand elle est inactive, simplement masquée, pour que son zoom et ses tables déplacées survivent aux allers et retours. Son canvas naissait donc dans un conteneur de taille nulle. **React Flow ne laisse pas passer le zéro, il lui substitue une taille d'office de 500 sur 500**, donc le cadrage automatique s'exécutait pour une fenêtre qui n'existait pas, et ce cadrage faux restait en place une fois la vue affichée.
+
+Le MCD échappait au piège sans rien de spécial : c'est la vue ouverte au départ, son canvas naît mesurable. La correction rend cette situation au MPD plutôt que de lui ajouter une mécanique qu'il serait seul à porter : **le canvas n'est monté qu'au premier affichage de la vue**, puis il y reste. Avant ce premier affichage il n'y a rien à conserver, personne n'a encore rien déplacé. Après, le cadrage automatique ne s'exécute plus jamais, donc il n'écrase ni le zoom ni les positions.
+
+Un essai de bout en bout mesure ce qu'on voit vraiment : l'échelle du viewport, les boîtes des tables, leur centrage dans la zone. Sans le correctif il tombe à six échecs, les tables rendues à 103 pixels de large au lieu de 185.
+
+**La vérification d'email.** Le serveur faisait déjà tout : il envoie le lien signé, il le valide, et il renvoie la personne vers l'application avec son verdict dans le paramètre `verification`. Côté application, rien ne le recevait. Suivre le lien tombait sur l'accueil **sans un mot**, et un compte dont le lien avait expiré n'avait aucun moyen d'en demander un autre.
+
+La page de retour annonce les quatre verdicts du serveur, `success`, `already`, `expired` et `invalid`, chacun avec son ton. **Elle ne demande jamais de compte** : un lien de courrier s'ouvre souvent depuis un autre appareil que celui où la session est ouverte. Les deux réussites offrent d'entrer dans l'application. Les deux échecs proposent le renvoi quand la session est ouverte, et sinon mènent à la connexion en disant où relancer l'envoi. Rien n'alarme : un lien périmé est une banalité.
+
+Elle se reconnaît à deux signes, le chemin de retour **ou** le seul paramètre. C'est volontaire : l'application se construit en chemins relatifs et peut vivre dans un sous-dossier, où un chemin réel demanderait à l'hébergeur de renvoyer les adresses inconnues vers `index.html`. Avec le paramètre seul, `FRONTEND_EMAIL_VERIFIED_PATH` peut viser la racine et le lien marche quand même. Un verdict inventé dans l'adresse se traite comme un lien illisible : rien de ce qui arrive par l'URL n'est digne de confiance. Et continuer efface le verdict de la barre d'adresse, car il ne vaut qu'une fois.
+
+Le renvoi est une brique unique, posée à trois endroits : la page de retour, le profil et le mode prof. Le serveur distingue ses deux réussites **par le statut**, 202 quand le courrier part et 200 quand l'adresse était déjà confirmée, donc c'est le statut qu'on lit, pas le texte. Son message s'affiche tel quel, y compris le refus pour quota atteint, avec le délai qu'il donne. Quand il répond « déjà vérifié », l'application relit le compte : l'écran cesse aussitôt de réclamer une vérification faite ailleurs.
+
+Le profil montre l'adresse de connexion et son état, **porté par un mot autant que par la pastille**. Le mode prof, lui, demande désormais deux choses, une adresse scolaire et une adresse confirmée. Une adresse scolaire non confirmée ne voit plus le bouton d'activation, qui mènerait à un refus prévisible, mais le renvoi du lien. La règle reste au serveur : l'application lit `email_verified_at` et n'en recalcule rien.
+
+Au passage, la coquille des écrans hors connexion, logo, thème, taille d'interface et carte centrée, que `AuthPage` écrivait pour elle seule, devient une brique partagée avec la page de retour.
 
 **Système de design.** Les couleurs sont des tokens sémantiques, définis une fois en clair et une fois en sombre dans `src/index.css`. Aucun composant ne porte de couleur en dur, et `src/design/contrast.test.ts` lit les tokens dans la feuille de style pour vérifier **soixante paires** de texte sur fond, dans les deux thèmes : 4,5 pour du texte, 3 pour un contour ou un trait. On ne baisse jamais un minimum pour faire passer une couleur, on change la couleur.
 

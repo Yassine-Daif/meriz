@@ -20,7 +20,10 @@ import type { AssignmentField } from './lib/assignmentsApi'
 import { markOffered, unofferedLocalIds } from './lib/importOffers'
 import { DocumentsHome } from './components/DocumentsHome'
 import { Editor } from './components/Editor'
+import { readVerification, urlWithoutVerification } from './lib/verificationLanding'
+import type { VerificationResult } from './lib/verificationLanding'
 import { AuthPage } from './components/AuthPage'
+import { EmailVerifiedPage } from './components/EmailVerifiedPage'
 import type { AuthMode } from './components/AuthPage'
 import { ImportLocalDialog } from './components/ImportLocalDialog'
 import type { ImportReport } from './components/ImportLocalDialog'
@@ -291,6 +294,14 @@ export function App() {
   // qui l'a ouvert.
   const [opened, setOpened] = useState<OpenedSession | null>(null)
   const [authMode, setAuthMode] = useState<AuthMode | null>(null)
+  /*
+   * Retour d'un lien de confirmation d'adresse, lu une seule fois au
+   * démarrage. Il prime sur tout le reste : le lien s'ouvre depuis une
+   * boîte mail, souvent sans session et parfois sur un autre appareil.
+   */
+  const [verification, setVerification] = useState<VerificationResult | null>(() =>
+    typeof window === 'undefined' ? null : readVerification(window.location.href),
+  )
   const [homeAnnouncement, setHomeAnnouncement] = useState<string | null>(null)
   const [proposal, setProposal] = useState<ImportProposal | null>(null)
   // Page de l'espace connecté, gardée pendant l'édition : fermer un
@@ -711,6 +722,27 @@ export function App() {
     setHomeAnnouncement(null)
     setAuthMode(mode)
   }, [])
+
+  if (verification !== null) {
+    // Continuer efface le résultat de l'adresse : il ne vaut qu'une
+    // fois, et n'a rien à faire dans un favori ni dans un historique.
+    const leave = () => {
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(null, '', urlWithoutVerification(window.location.href))
+      }
+      setVerification(null)
+    }
+    return (
+      <EmailVerifiedPage
+        result={verification}
+        onContinue={leave}
+        onSignIn={() => {
+          leave()
+          showAuth('sign-in')
+        }}
+      />
+    )
+  }
 
   if (!current && authMode) {
     return (

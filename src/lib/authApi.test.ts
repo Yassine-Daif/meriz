@@ -90,6 +90,7 @@ describe('authApi, réponses', () => {
           contactShared: false,
           avatarBg: '#e0e7ff',
           avatarFg: '#1e1b4b',
+          emailVerifiedAt: null,
         },
       },
     })
@@ -145,6 +146,15 @@ describe('authApi, profil complet', () => {
 
   it("tolère un ancien compte sans prénom ni champs de profil", () => {
     expect(parseApiUser(serverUser)).toMatchObject({ firstName: null, bio: null, bioShared: false })
+  })
+
+  // L'adresse confirmée ou non : le serveur donne une date, ou rien.
+  it('lit la date de confirmation de l adresse', () => {
+    expect(parseApiUser({ ...serverUser, email_verified_at: '2026-03-01T10:00:00+00:00' })).toMatchObject({
+      emailVerifiedAt: '2026-03-01T10:00:00+00:00',
+    })
+    expect(parseApiUser(serverUser)).toMatchObject({ emailVerifiedAt: null })
+    expect(parseApiUser({ ...serverUser, email_verified_at: 42 })).toBeNull()
   })
 
   it('lit les couleurs de la pastille, et retombe sur le défaut si elles manquent', () => {

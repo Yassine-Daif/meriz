@@ -12,6 +12,7 @@ import { FormField } from './FormField'
 import { FormAlert } from './FormAlert'
 import { PageShell } from './PageShell'
 import { ToggleSwitch } from './ToggleSwitch'
+import { EmailVerificationSection } from './EmailVerificationSection'
 import { TeacherModeSection } from './TeacherModeSection'
 import { Button } from './ui/Button'
 
@@ -249,6 +250,8 @@ export function ProfilePage({ user, client, onShowClasses }: ProfilePageProps) {
           </p>
         </div>
       </form>
+
+      <EmailVerificationSection user={user} client={client} />
 
       <TeacherModeSection user={user} client={client} onShowClasses={onShowClasses} />
     </PageShell>
