@@ -11,12 +11,12 @@ const SECTIONS: readonly { id: string; title: string }[] = [
   { id: 'merise', title: '2. Merise en bref' },
   { id: 'dictionnaire', title: '3. Le dictionnaire des données' },
   { id: 'briques', title: '4. Les briques du MCD' },
-  { id: 'cardinalites', title: '5. Les cardinalités' },
+  { id: 'cardinalites', title: '5. Les cardinalités expliquées' },
   { id: 'types', title: '6. Les types de données' },
-  { id: 'transformation', title: '7. Du MCD au SQL' },
-  { id: 'sql', title: '8. Le SQL et les bases' },
-  { id: 'code', title: '9. Du MCD au code' },
-  { id: 'pratique', title: '10. Prendre en main Meriz' },
+  { id: 'transformation', title: '7. Du MCD au SQL, le voyage' },
+  { id: 'sql', title: '8. Le SQL et les bases de données' },
+  { id: 'code', title: '9. Du MCD au code de ton framework' },
+  { id: 'pratique', title: '10. Prendre en main Meriz, pas à pas' },
 ]
 
 /** Mini carte d'entité, dans le style réel du canvas. */
@@ -26,7 +26,7 @@ function MiniEntity({ name, rows }: { name: string; rows: [string, string, boole
       <div className="rounded-t-lg border-b border-line bg-shell px-3 py-1 text-center text-xs font-semibold">
         {name}
       </div>
-      <ul className="px-3 py-1.5 text-[11px] leading-5">
+      <ul className="px-3 py-1.5 text-micro leading-5">
         {rows.map(([attribute, type, isIdentifier]) => (
           <li key={attribute} className="flex items-baseline gap-2">
             <span
@@ -36,9 +36,9 @@ function MiniEntity({ name, rows }: { name: string; rows: [string, string, boole
             >
               {attribute}
             </span>
-            <span className="font-mono text-[10px] text-ink-soft">{type}</span>
+            <span className="font-mono text-nano text-ink-soft">{type}</span>
             {isIdentifier && (
-              <span className="ml-auto rounded-sm border border-line bg-accent-soft px-1 font-mono text-[9px] font-medium text-accent-ink">
+              <span className="ml-auto rounded-sm border border-line bg-accent-soft px-1 font-mono text-nano font-medium text-accent-ink">
                 clé
               </span>
             )}
@@ -52,7 +52,7 @@ function MiniEntity({ name, rows }: { name: string; rows: [string, string, boole
 /** Pastille de cardinalité, comme sur les pattes du canvas. */
 function CardinalityPill({ value }: { value: string }) {
   return (
-    <span className="rounded-sm border border-line-strong bg-surface px-1 font-mono text-[11px]">
+    <span className="rounded-sm border border-line-strong bg-surface px-1 font-mono text-micro">
       {value}
     </span>
   )
@@ -222,8 +222,8 @@ export function LearnView({ onSelectView }: LearnViewProps) {
             <p>
               Avant de dessiner, on liste. Le dictionnaire répertorie chaque donnée avec son
               nom, sa signification, son type et sa taille :{' '}
-              <span className="font-mono text-[13px]">nomClient, texte(50)</span> ou{' '}
-              <span className="font-mono text-[13px]">dateCommande, date</span>. Une donnée,
+              <span className="font-mono text-code">nomClient, texte(50)</span> ou{' '}
+              <span className="font-mono text-code">dateCommande, date</span>. Une donnée,
               une ligne, une seule fois.
             </p>
             <p>Quatre pièges classiques à laisser dehors :</p>
@@ -358,7 +358,7 @@ export function LearnView({ onSelectView }: LearnViewProps) {
 
           <Section id="types" title="6. Les types de données">
             <p>Au MCD, chaque propriété porte un des sept types conceptuels :</p>
-            <ul className="grid gap-1 font-mono text-[13px] sm:grid-cols-2">
+            <ul className="grid gap-1 font-mono text-code sm:grid-cols-2">
               <li>texte : du texte, comme un nom</li>
               <li>entier : un nombre entier, comme une quantité</li>
               <li>decimal : un nombre à virgule, comme un prix</li>
@@ -392,7 +392,7 @@ export function LearnView({ onSelectView }: LearnViewProps) {
                 Une association <strong>fonctionnelle</strong> ne devient pas une table : on
                 injecte la clé de la table du côté n dans la table du côté 1, où elle devient
                 une clé étrangère, notée avec un dièse. Commande est à (1,1) : la table
-                Commande reçoit <span className="font-mono text-[13px]">#numeroClient</span>.
+                Commande reçoit <span className="font-mono text-code">#numeroClient</span>.
               </li>
               <li>
                 Une association <strong>non fonctionnelle</strong> (ou reliant trois entités
@@ -402,7 +402,7 @@ export function LearnView({ onSelectView }: LearnViewProps) {
               </li>
             </ol>
             <p>En notation relationnelle, l'exemple donne :</p>
-            <pre className="overflow-x-auto rounded-lg border border-line bg-shell p-3 font-mono text-[12px] leading-5 text-ink-soft">
+            <pre tabIndex={0} className="overflow-x-auto rounded-control border border-line bg-shell p-3 font-mono text-xs leading-5 text-ink-soft">
               {`Client (numeroClient, nom)
 Commande (numeroCommande, dateCommande, #numeroClient)`}
             </pre>
@@ -418,7 +418,7 @@ Commande (numeroCommande, dateCommande, #numeroClient)`}
                 stock quitte l'article : il dépend maintenant du couple article et magasin,
                 donc il migre <strong>sur l'association</strong>. Au MLD, tout finit dans la
                 table de liaison :{' '}
-                <span className="font-mono text-[12px]">
+                <span className="font-mono text-xs">
                   disposer (#refArticle, #codeMagasin, stock)
                 </span>
                 . Retiens la leçon : les cardinalités viennent des règles de gestion, et une
@@ -448,7 +448,7 @@ Commande (numeroCommande, dateCommande, #numeroClient)`}
               manipulation language) manipule les données : SELECT, INSERT, UPDATE, DELETE.
               Le script généré par Meriz, c'est la partie DDL :
             </p>
-            <pre className="overflow-x-auto rounded-lg border border-line bg-shell p-3 font-mono text-[12px] leading-5 text-ink-soft">
+            <pre tabIndex={0} className="overflow-x-auto rounded-control border border-line bg-shell p-3 font-mono text-xs leading-5 text-ink-soft">
               {`CREATE TABLE Client (
   numeroClient INT NOT NULL AUTO_INCREMENT,
   nom VARCHAR(255) NOT NULL,
@@ -460,7 +460,7 @@ Commande (numeroCommande, dateCommande, #numeroClient)`}
               l'opération qui recolle les tables. Afficher chaque commande avec le nom de son
               client :
             </p>
-            <pre className="overflow-x-auto rounded-lg border border-line bg-shell p-3 font-mono text-[12px] leading-5 text-ink-soft">
+            <pre tabIndex={0} className="overflow-x-auto rounded-control border border-line bg-shell p-3 font-mono text-xs leading-5 text-ink-soft">
               {`SELECT numeroCommande, nom
 FROM Commande
 INNER JOIN Client ON Commande.numeroClient = Client.numeroClient;`}
@@ -515,7 +515,7 @@ INNER JOIN Client ON Commande.numeroClient = Client.numeroClient;`}
               Sur notre exemple, la cardinalité (1,1) côté Commande devient une méthode de
               relation chez Laravel :
             </p>
-            <pre className="overflow-x-auto rounded-lg border border-line bg-shell p-3 font-mono text-[12px] leading-5 text-ink-soft">
+            <pre tabIndex={0} className="overflow-x-auto rounded-control border border-line bg-shell p-3 font-mono text-xs leading-5 text-ink-soft">
               {`class Commande extends Model
 {
     public function client(): BelongsTo
@@ -525,7 +525,7 @@ INNER JOIN Client ON Commande.numeroClient = Client.numeroClient;`}
 }`}
             </pre>
             <p>Et la même idée, écrite autrement, chez Symfony :</p>
-            <pre className="overflow-x-auto rounded-lg border border-line bg-shell p-3 font-mono text-[12px] leading-5 text-ink-soft">
+            <pre tabIndex={0} className="overflow-x-auto rounded-control border border-line bg-shell p-3 font-mono text-xs leading-5 text-ink-soft">
               {`class Commande
 {
     #[ORM\\ManyToOne(targetEntity: Client::class, inversedBy: 'commandes')]

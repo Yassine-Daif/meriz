@@ -13,19 +13,25 @@ export function AssociationNode({ data, selected, isConnectable }: NodeProps<Ass
   const { association, attributes } = data
   return (
     <div
-      className={`rounded-full border px-6 py-2.5 text-center text-ink shadow-soft ${
+      /*
+       * La capsule, affinée : le fond reste celui de l'accent doux, qui
+       * la distingue d'une entité blanche, et la sélection ne joue que
+       * sur le bord et la bague, pour que les deux signaux ne se
+       * confondent pas.
+       */
+      className={`rounded-full border px-6 py-3 text-center text-ink shadow-soft ${
         selected
-          ? 'border-mark bg-accent-soft ring-3 ring-mark/35'
-          : 'border-line-strong bg-accent-soft'
-      }`}
+          ? 'border-mark ring-3 ring-mark/45 ring-offset-2 ring-offset-canvas'
+          : 'border-line-strong'
+      } bg-accent-soft`}
     >
       <div className="text-sm font-semibold tracking-tight">{association.name}</div>
       {attributes.length > 0 && (
-        <ul className="mt-0.5 text-xs leading-5">
+        <ul className="mt-1.5 text-xs leading-5">
           {attributes.map((attribute) => (
             <li key={attribute.propertyId}>
               {attribute.name}{' '}
-              <span className="font-mono text-[11px] text-ink-soft">
+              <span className="font-mono text-micro text-ink-soft">
                 {attribute.type}
                 {attribute.size !== undefined && `(${attribute.size})`}
               </span>

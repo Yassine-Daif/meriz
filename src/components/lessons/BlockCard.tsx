@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import type { LessonBlock } from '../../lib/lessonBlocks'
 import { blockLabel, mediaIdOf } from '../../lib/lessonBlocks'
@@ -20,6 +21,10 @@ interface BlockCardProps {
   onMove: (direction: 'up' | 'down') => void
   /** Boutons de déplacement confiés au parent, qui y remet le focus. */
   onRegisterMoveButton: (direction: 'up' | 'down', button: HTMLButtonElement | null) => void
+  /** La carte elle-même, confiée au parent pour la même raison. */
+  onRegisterCard?: (card: HTMLLIElement | null) => void
+  /** Carte qui vient d'être ajoutée : son premier champ prend le focus. */
+  focusOnMount?: boolean
   onRemove: () => void
   onUploaded: (medium: LessonMedium) => void
   onMediumGone: (mediumId: string) => void
@@ -43,6 +48,8 @@ export function BlockCard({
   onChange,
   onMove,
   onRegisterMoveButton,
+  onRegisterCard,
+  focusOnMount = false,
   onRemove,
   onUploaded,
   onMediumGone,
@@ -51,9 +58,33 @@ export function BlockCard({
   const label = blockLabel(block.type)
   const mediaId = mediaIdOf(block)
   const medium = media.find((item) => item.id === mediaId) ?? null
+  const card = useRef<HTMLLIElement>(null)
+
+  /*
+   * Un bloc neuf arrive au bas d'une page qui peut être longue : on pose
+   * le focus dans son premier champ, pour que la frappe suive le clic
+   * sans que l'on ait à redescendre la page.
+   */
+  useEffect(() => {
+    if (!focusOnMount) return
+    const field = card.current?.querySelector<HTMLElement>('input, textarea')
+    field?.focus()
+  }, [focusOnMount])
 
   return (
-    <li className="rounded-card border border-line bg-surface p-4 shadow-soft">
+    <li
+      ref={(element) => {
+        card.current = element
+        onRegisterCard?.(element)
+      }}
+      // Le nom de la carte dit le rang et le type : un lecteur d'écran
+      // qui parcourt la page sait de quel bloc il parle, et le parent
+      // peut y ramener le focus après un retrait.
+      role="group"
+      aria-label={`Bloc ${position}, ${label}`}
+      tabIndex={-1}
+      className="rounded-card border border-line bg-surface p-4 shadow-soft focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="flex items-center gap-2">
           <Badge tone="neutral">{label}</Badge>

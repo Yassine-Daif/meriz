@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import {
@@ -16,7 +16,9 @@ import type { Assignment, AssignmentType } from '../../lib/assignmentsApi'
 import { ConfirmDialog } from '../ConfirmDialog'
 import { FormAlert } from '../FormAlert'
 import { FormField } from '../FormField'
+import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
+import { FormSection } from '../ui/FormSection'
 import { Segmented } from '../ui/Segmented'
 import { AssignmentImageField } from './AssignmentImageField'
 import type { EditAssignmentModel } from './types'
@@ -62,7 +64,6 @@ export function AssignmentEditor({
   onSaved,
   onEditModel,
 }: AssignmentEditorProps) {
-  const dueId = useId()
   const [title, setTitle] = useState(assignment?.title ?? '')
   const [instructions, setInstructions] = useState(assignment?.instructions ?? '')
   const [type, setType] = useState<AssignmentType>(assignment?.type ?? 'exercise')
@@ -119,7 +120,24 @@ export function AssignmentEditor({
   }
 
   /** Action sur un devoir existant : publication, corrigé, suppression. */
-  const run = async (action: () => Promise<{ ok: true; value: Assignment } | { ok: false; error: { message: string; fieldErrors: Record<string, string[]> } }>, success: string) => {
+  /*
+   * Publier remplace le bouton par Dépublier, et libérer le corrigé fait
+   * de même : sans ces deux enveloppes, le focus tomberait sur le corps
+   * du document à chaque fois. On le rend au bouton qui prend la place.
+   */
+  const publishAction = useRef<HTMLDivElement>(null)
+  const solutionAction = useRef<HTMLDivElement>(null)
+  const focusAfter = useRef<'publish' | 'solution' | null>(null)
+
+  useEffect(() => {
+    const target = focusAfter.current
+    if (target === null) return
+    focusAfter.current = null
+    const zone = target === 'publish' ? publishAction : solutionAction
+    zone.current?.querySelector('button')?.focus()
+  }, [assignment?.status, assignment?.solutionReleased])
+
+  const run = async (action: () => Promise<{ ok: true; value: Assignment } | { ok: false; error: { message: string; fieldErrors: Record<string, string[]> } }>, success: string, focus?: 'publish' | 'solution') => {
     if (pending) return
     setPending(true)
     setSaved('')
@@ -127,6 +145,7 @@ export function AssignmentEditor({
     const result = await action()
     setPending(false)
     if (result.ok) {
+      if (focus !== undefined) focusAfter.current = focus
       setSaved(success)
       onSaved(result.value)
     } else {
@@ -147,10 +166,18 @@ export function AssignmentEditor({
       return
     }
     if (action === 'unpublish') {
-      await run(() => unpublishAssignment(client, assignment.id), 'Devoir dépublié : vos élèves ne le voient plus.')
+      await run(
+        () => unpublishAssignment(client, assignment.id),
+        'Devoir dépublié : vos élèves ne le voient plus.',
+        'publish',
+      )
       return
     }
-    await run(() => withholdSolution(client, assignment.id), 'Corrigé retenu : vos élèves ne le voient plus.')
+    await run(
+      () => withholdSolution(client, assignment.id),
+      'Corrigé retenu : vos élèves ne le voient plus.',
+      'solution',
+    )
   }
 
   const dialogText: Record<PendingAction, { title: string; message: string; confirm: string }> = {
@@ -172,173 +199,206 @@ export function AssignmentEditor({
   }
 
   return (
-    <div>
-      <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-5">
-        <FormAlert message={formError} attempt={attempt} />
+    <div className="flex flex-col gap-4">
+      <FormSection
+        title="Énoncé"
+        level="h4"
+        description="Ce que vos élèves lisent avant de commencer."
+      >
+        <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-5">
+          <FormAlert message={formError} attempt={attempt} />
 
-        <FormField
-          label="Titre"
-          type="text"
-          value={title}
-          onChange={setTitle}
-          autoComplete="off"
-          maxLength={200}
-          hint="Ce que vos élèves verront en premier."
-          error={fieldErrors.title}
-        />
+          <FormField
+            label="Titre"
+            type="text"
+            value={title}
+            onChange={setTitle}
+            autoComplete="off"
+            maxLength={200}
+            hint="Ce que vos élèves verront en premier."
+            error={fieldErrors.title}
+          />
 
-        <FormField
-          label="Consigne"
-          type="text"
-          value={instructions}
-          onChange={setInstructions}
-          autoComplete="off"
-          multiline
-          maxLength={20000}
-          hint="La mise en situation : le domaine à modéliser, les règles de gestion, ce que vous attendez."
-          error={fieldErrors.instructions}
-        />
+          <FormField
+            label="Consigne"
+            type="text"
+            value={instructions}
+            onChange={setInstructions}
+            autoComplete="off"
+            multiline
+            maxLength={20000}
+            hint="La mise en situation : le domaine à modéliser, les règles de gestion, ce que vous attendez."
+            error={fieldErrors.instructions}
+          />
 
-        <Segmented<AssignmentType> legend="Type" options={TYPES} value={type} onChange={setType} />
+          <Segmented<AssignmentType> legend="Type" options={TYPES} value={type} onChange={setType} />
 
-        <div>
-          <label htmlFor={dueId} className="block text-sm font-medium text-ink">
-            Date limite <span className="ml-1 font-normal text-ink-soft">(facultative)</span>
-          </label>
-          <p className="mt-0.5 text-xs text-ink-soft">Laissez vide pour un devoir sans échéance.</p>
-          <input
-            id={dueId}
+          {/*
+            * Le champ passe par FormField : l'aide, l'erreur et l'état
+            * invalide s'y relient tout seuls, ce que la version écrite à la
+            * main ne faisait pour aucun des trois.
+            */}
+          <FormField
+            label="Date limite"
             type="datetime-local"
             value={dueAt}
-            onChange={(event) => setDueAt(event.target.value)}
-            className="mt-1.5 rounded-control border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink"
+            onChange={setDueAt}
+            required={false}
+            optionalLabel="(facultative)"
+            hint="Laissez vide pour un devoir sans échéance."
+            error={fieldErrors.dueAt}
           />
-          {fieldErrors.dueAt && (
-            <p className="mt-1.5 text-xs font-medium text-danger">
-              <span aria-hidden="true">✕ </span>
-              {fieldErrors.dueAt}
-            </p>
-          )}
-        </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Button type="submit" variant="primary" loading={pending} loadingLabel="Enregistrement…">
-            {assignment ? 'Enregistrer' : 'Créer le devoir'}
-          </Button>
-          <p role="status" aria-live="polite" className="text-sm text-ink-soft">
-            {saved && (
-              <>
-                <span aria-hidden="true">✓ </span>
-                {saved}
-              </>
-            )}
-          </p>
-        </div>
-      </form>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="submit" variant="primary" loading={pending} loadingLabel="Enregistrement…">
+              {assignment ? 'Enregistrer' : 'Créer le devoir'}
+            </Button>
+            <p role="status" aria-live="polite" className="text-sm text-ink-soft">
+              {saved && (
+                <>
+                  <span aria-hidden="true">✓ </span>
+                  {saved}
+                </>
+              )}
+            </p>
+          </div>
+        </form>
+      </FormSection>
 
       {assignment ? (
         <>
-          <section aria-labelledby="image-titre" className="mt-8 rounded-card border border-line bg-surface p-5 shadow-soft">
-            <h4 id="image-titre" className="text-base font-semibold text-ink">
-              Image
-            </h4>
-            <p className="mt-1 text-xs text-ink-soft">
-              Un schéma, un énoncé photographié, une capture. JPEG, PNG ou WebP, 2 Mo au plus.
-            </p>
-            <div className="mt-3">
-              <AssignmentImageField client={client} assignment={assignment} onChanged={onSaved} />
-            </div>
-          </section>
+          <FormSection
+            title="Image"
+            level="h4"
+            description="Un schéma, un énoncé photographié, une capture. JPEG, PNG ou WebP, 2 Mo au plus."
+          >
+            <AssignmentImageField client={client} assignment={assignment} onChanged={onSaved} />
+          </FormSection>
 
-          <section aria-labelledby="modeles-titre" className="mt-4 rounded-card bg-accent-soft p-5">
-            <h4 id="modeles-titre" className="text-base font-semibold text-ink">
-              Base et corrigé
-            </h4>
-            <p className="mt-1 text-sm text-ink">
-              La base est le point de départ donné à vos élèves. Le corrigé reste chez vous tant que vous ne le
-              libérez pas. Les deux se dessinent dans l'outil MCD.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button
-                variant="primary"
-                onClick={() =>
-                  onEditModel(
-                    { id: assignment.id, classroomId: assignment.classroomId, title: assignment.title },
-                    'base',
-                    assignment.baseContent,
-                  )
-                }
-              >
-                {assignment.hasBase ? 'Modifier la base' : 'Construire la base'}
-              </Button>
-              <Button
-                onClick={() =>
-                  onEditModel(
-                    { id: assignment.id, classroomId: assignment.classroomId, title: assignment.title },
-                    'solution',
-                    assignment.solutionContent,
-                  )
-                }
-              >
-                {assignment.hasSolution ? 'Modifier le corrigé' : 'Construire le corrigé'}
-              </Button>
-            </div>
-          </section>
-
-          <section aria-labelledby="diffusion-titre" className="mt-4 rounded-card border border-line bg-surface p-5 shadow-soft">
-            <h4 id="diffusion-titre" className="text-base font-semibold text-ink">
-              Diffusion
-            </h4>
-            <p className="mt-1 text-sm text-ink-soft">
-              {assignment.status === 'published'
-                ? 'Ce devoir est visible par les élèves de la classe.'
-                : 'Ce devoir est un brouillon : personne d’autre ne le voit.'}{' '}
-              {assignment.solutionReleased
-                ? 'Le corrigé est libéré.'
-                : 'Le corrigé n’est pas libéré : vos élèves ne le voient pas.'}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {assignment.status === 'published' ? (
-                <Button onClick={() => setPendingAction('unpublish')} disabled={pending}>
-                  Dépublier
-                </Button>
-              ) : (
+          {/*
+            * Chaque modèle dit s'il existe à côté du bouton qui le
+            * construit : le verbe du bouton le disait déjà, mais il
+            * fallait le lire pour le savoir.
+            */}
+          <FormSection
+            title="Base et corrigé"
+            level="h4"
+            description="La base est le point de départ donné à vos élèves. Le corrigé reste chez vous tant que vous ne le libérez pas. Les deux se dessinent dans l'outil MCD."
+          >
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="primary"
-                  onClick={() => void run(() => publishAssignment(client, assignment.id), 'Devoir publié : vos élèves le voient.')}
-                  disabled={pending}
+                  onClick={() =>
+                    onEditModel(
+                      { id: assignment.id, classroomId: assignment.classroomId, title: assignment.title },
+                      'base',
+                      assignment.baseContent,
+                    )
+                  }
                 >
-                  Publier
+                  {assignment.hasBase ? 'Modifier la base' : 'Construire la base'}
                 </Button>
-              )}
-              {assignment.solutionReleased ? (
-                <Button onClick={() => setPendingAction('withhold')} disabled={pending}>
-                  Retenir le corrigé
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => void run(() => releaseSolution(client, assignment.id), 'Corrigé libéré : vos élèves peuvent le consulter.')}
-                  disabled={pending}
-                >
-                  Libérer le corrigé
-                </Button>
-              )}
-            </div>
-          </section>
+                <Badge tone={assignment.hasBase ? 'accent' : 'neutral'}>
+                  {assignment.hasBase ? 'Base prête' : 'Sans base'}
+                </Badge>
+              </div>
 
-          <div className="mt-6 border-t border-line pt-4">
-            <button
-              type="button"
-              onClick={() => setPendingAction('delete')}
-              disabled={pending}
-              className="inline-flex min-h-10 items-center rounded-control border border-danger bg-surface px-4 py-2 text-sm font-medium text-danger transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
-            >
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  onClick={() =>
+                    onEditModel(
+                      { id: assignment.id, classroomId: assignment.classroomId, title: assignment.title },
+                      'solution',
+                      assignment.solutionContent,
+                    )
+                  }
+                >
+                  {assignment.hasSolution ? 'Modifier le corrigé' : 'Construire le corrigé'}
+                </Button>
+                <Badge tone={assignment.hasSolution ? 'accent' : 'neutral'}>
+                  {assignment.hasSolution ? 'Corrigé prêt' : 'Sans corrigé'}
+                </Badge>
+              </div>
+            </div>
+          </FormSection>
+
+          <FormSection title="Diffusion" level="h4">
+            {/*
+              * Chaque état est collé au bouton qui le change, et le
+              * focus revient sur ce bouton quand il prend la place du
+              * précédent : sans cela il tombait sur le corps du document.
+              */}
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <div ref={publishAction}>
+                  {assignment.status === 'published' ? (
+                    <Button onClick={() => setPendingAction('unpublish')} disabled={pending}>
+                      Dépublier
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="primary"
+                      onClick={() =>
+                        void run(
+                          () => publishAssignment(client, assignment.id),
+                          'Devoir publié : vos élèves le voient.',
+                          'publish',
+                        )
+                      }
+                      disabled={pending}
+                    >
+                      Publier
+                    </Button>
+                  )}
+                </div>
+                <p className="text-sm text-ink-soft">
+                  {assignment.status === 'published'
+                    ? 'Ce devoir est visible par les élèves de la classe.'
+                    : 'Ce devoir est un brouillon : personne d’autre ne le voit.'}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div ref={solutionAction}>
+                  {assignment.solutionReleased ? (
+                    <Button onClick={() => setPendingAction('withhold')} disabled={pending}>
+                      Retenir le corrigé
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() =>
+                        void run(
+                          () => releaseSolution(client, assignment.id),
+                          'Corrigé libéré : vos élèves peuvent le consulter.',
+                          'solution',
+                        )
+                      }
+                      disabled={pending || !assignment.hasSolution}
+                    >
+                      Libérer le corrigé
+                    </Button>
+                  )}
+                </div>
+                <p className="text-sm text-ink-soft">
+                  {assignment.solutionReleased
+                    ? 'Le corrigé est libéré.'
+                    : assignment.hasSolution
+                      ? 'Le corrigé n’est pas libéré : vos élèves ne le voient pas.'
+                      : 'Construisez le corrigé avant de pouvoir le libérer.'}
+                </p>
+              </div>
+            </div>
+          </FormSection>
+
+          <div className="border-t border-line pt-4">
+            <Button variant="danger" disabled={pending} onClick={() => setPendingAction('delete')}>
               Supprimer le devoir
-            </button>
+            </Button>
           </div>
         </>
       ) : (
-        <p className="mt-6 rounded-control bg-surface-soft px-4 py-3 text-sm text-ink-soft">
+        <p className="rounded-control bg-surface-soft px-4 py-3 text-sm text-ink-soft">
           Créez le devoir pour ajouter une image, construire sa base et son corrigé, puis le publier.
         </p>
       )}

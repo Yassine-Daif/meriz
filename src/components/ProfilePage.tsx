@@ -13,7 +13,7 @@ import { FormAlert } from './FormAlert'
 import { PageShell } from './PageShell'
 import { ToggleSwitch } from './ToggleSwitch'
 import { TeacherModeSection } from './TeacherModeSection'
-import { primaryButtonClass } from './buttonStyles'
+import { Button } from './ui/Button'
 
 interface ProfilePageProps {
   user: ApiUser
@@ -236,9 +236,9 @@ export function ProfilePage({ user, client, onShowClasses }: ProfilePageProps) {
         </section>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button type="submit" disabled={pending} className={primaryButtonClass}>
-            {pending ? 'Enregistrement…' : 'Enregistrer'}
-          </button>
+          <Button type="submit" variant="primary" loading={pending} loadingLabel="Enregistrement…">
+            Enregistrer
+          </Button>
           <p role="status" aria-live="polite" className="text-sm text-ink-soft">
             {saved && (
               <>

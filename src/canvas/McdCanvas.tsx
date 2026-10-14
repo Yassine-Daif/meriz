@@ -23,6 +23,7 @@ import { anchorBox, pickAnchors } from './anchors'
 import { mcdToFlow } from './mcdToFlow'
 import type { LegFlowEdge, McdFlowNode } from './mcdToFlow'
 import { EntityNode } from './EntityNode'
+import { ARIA_LABELS } from './ariaLabels'
 import { AssociationNode } from './AssociationNode'
 import { LegEdge } from './LegEdge'
 import type { McdAction, McdEditorState } from '../model/mcdReducer'
@@ -492,6 +493,7 @@ export function McdCanvas({
         // Le déplacement de la vue passe au bouton du milieu ou droit,
         // et à la molette.
         connectionLineStyle={{ stroke: 'var(--c-mark)', strokeWidth: 1.5 }}
+        ariaLabelConfig={ARIA_LABELS}
         colorMode={theme.resolved}
         selectionOnDrag
         selectionMode={SelectionMode.Partial}

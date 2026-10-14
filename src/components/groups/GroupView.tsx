@@ -16,7 +16,6 @@ import type { GroupDetail, GroupMember } from '../../lib/groupsApi'
 import { ConfirmDialog } from '../ConfirmDialog'
 import { FormField } from '../FormField'
 import { PersonCard } from '../PersonCard'
-import { smallButtonClass } from '../buttonStyles'
 import { Button } from '../ui/Button'
 import { TabPanel, Tabs } from '../ui/Tabs'
 import { GroupDocumentsPanel } from './GroupDocumentsPanel'
@@ -24,7 +23,7 @@ import type { OpenGroupDocument } from './GroupDocumentsPanel'
 import { GroupManagePanel } from './GroupManagePanel'
 import { GroupMembersPanel } from './GroupMembersPanel'
 
-export type GroupTab = 'membres' | 'documents'
+export type GroupTab = 'membres' | 'documents' | 'reglages'
 
 type PendingAction =
   | { kind: 'leave' }
@@ -44,10 +43,6 @@ interface GroupViewProps {
   onOpenGroupDocument: OpenGroupDocument
 }
 
-const TABS = [
-  { value: 'membres', label: 'Membres' },
-  { value: 'documents', label: 'Documents' },
-] as const
 
 /**
  * Un groupe. Pour tous : son nom, ses membres et ses documents
@@ -153,10 +148,32 @@ export function GroupView({
     }
   }
 
+  /*
+   * Entrer en renommage donne le focus au champ, en sortir le rend au
+   * bouton Renommer : sans cela, la main repart du haut de la page à
+   * chaque aller-retour.
+   */
+  const renameField = useRef<HTMLInputElement>(null)
+  const renameButton = useRef<HTMLSpanElement>(null)
+  const focusRenameButton = useRef(false)
+
+  useEffect(() => {
+    if (renaming) renameField.current?.focus()
+    else if (focusRenameButton.current) {
+      focusRenameButton.current = false
+      renameButton.current?.querySelector('button')?.focus()
+    }
+  }, [renaming])
+
   const startRenaming = () => {
     setNewName(group?.name ?? '')
     setRenameError(undefined)
     setRenaming(true)
+  }
+
+  const stopRenaming = () => {
+    focusRenameButton.current = true
+    setRenaming(false)
   }
 
   const submitRename = async (event: FormEvent<HTMLFormElement>) => {
@@ -168,6 +185,7 @@ export function GroupView({
     setBusy(false)
     if (result.ok) {
       setGroup(result.value)
+      focusRenameButton.current = true
       setRenaming(false)
       setStatus({ kind: 'info', text: `Groupe renommé en « ${result.value.name} ».` })
     } else {
@@ -184,9 +202,9 @@ export function GroupView({
               ⚠
             </span>
             {loadError}
-            <button type="button" onClick={() => void load()} className={smallButtonClass}>
+            <Button size="sm" onClick={() => void load()}>
               Réessayer
-            </button>
+            </Button>
           </p>
         ) : (
           <p role="status" className="text-ink-soft">
@@ -225,25 +243,37 @@ export function GroupView({
     },
   }
 
+  /*
+   * Un onglet de réglages reçu par un simple membre retombe sur les
+   * membres : l'onglet n'existe pas pour lui.
+   */
+  const shown: GroupTab = tab === 'reglages' && !admin ? 'membres' : tab
+
   return (
-    <div>
+    <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           {renaming ? (
-            <form onSubmit={(event) => void submitRename(event)} className="flex flex-wrap items-end gap-2">
-              <FormField
-                label="Nouveau nom du groupe"
-                type="text"
-                value={newName}
-                onChange={setNewName}
-                autoComplete="off"
-                maxLength={100}
-                error={renameError}
-              />
+            <form
+              onSubmit={(event) => void submitRename(event)}
+              className="flex min-w-0 flex-1 flex-wrap items-end gap-2"
+            >
+              <div className="min-w-60 flex-1">
+                <FormField
+                  label="Nouveau nom du groupe"
+                  type="text"
+                  value={newName}
+                  onChange={setNewName}
+                  autoComplete="off"
+                  maxLength={100}
+                  error={renameError}
+                  inputRef={renameField}
+                />
+              </div>
               <Button type="submit" variant="primary" size="sm" loading={busy} loadingLabel="Enregistrement…">
                 Enregistrer
               </Button>
-              <Button type="button" size="sm" onClick={() => setRenaming(false)}>
+              <Button type="button" size="sm" onClick={stopRenaming}>
                 Annuler
               </Button>
             </form>
@@ -258,13 +288,15 @@ export function GroupView({
           )}
         </div>
         {admin && !renaming && (
-          <Button size="sm" onClick={startRenaming} disabled={busy}>
-            Renommer
-          </Button>
+          <span ref={renameButton}>
+            <Button size="sm" onClick={startRenaming} disabled={busy}>
+              Renommer
+            </Button>
+          </span>
         )}
       </div>
 
-      <p role="status" aria-live="polite" className="mt-2 min-h-5 text-sm">
+      <p role="status" aria-live="polite" className="min-h-5 text-sm">
         {status && (
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 ${
@@ -279,28 +311,34 @@ export function GroupView({
         )}
       </p>
 
-      {admin && (
-        <GroupManagePanel
-          group={group}
-          busy={busy}
-          onCopyCode={() => void copyCode(group.joinCode ?? '')}
-          onRegenerate={() => setPendingAction({ kind: 'regenerate' })}
-          onRename={startRenaming}
-          onDelete={() => setPendingAction({ kind: 'delete' })}
-          onStatus={(text) => setStatus({ kind: 'info', text })}
-        />
-      )}
-
       {!admin && group.creator && (
-        <div className="mt-4 rounded-card border border-line bg-surface p-4 shadow-soft">
+        <div className="rounded-card border border-line bg-surface p-4 shadow-soft">
           <PersonCard person={group.creator} extra="Créateur du groupe" />
         </div>
       )}
 
-      <div className="mt-6">
-        <Tabs label="Sections du groupe" items={[...TABS]} value={tab} onChange={setTab} idBase={idBase} />
+      <div>
+        <Tabs
+          label="Sections du groupe"
+          /*
+           * Pas de compteur sur l'onglet : le titre du panneau porte
+           * déjà « Membres (2) », et un compteur dans l'onglet entrerait
+           * dans son nom lu, « Membres 2 ».
+           */
+          items={[
+            { value: 'membres' as const, label: 'Membres' },
+            { value: 'documents' as const, label: 'Documents' },
+            // La gestion n'a de sens que pour le créateur : l'onglet
+            // n'existe pas pour les autres, plutôt que de mener à un
+            // panneau vide.
+            ...(admin ? [{ value: 'reglages' as const, label: 'Réglages' }] : []),
+          ]}
+          value={shown}
+          onChange={setTab}
+          idBase={idBase}
+        />
 
-        {tab === 'membres' && (
+        {shown === 'membres' && (
           <TabPanel idBase={idBase} value="membres">
             <GroupMembersPanel
               group={group}
@@ -311,13 +349,27 @@ export function GroupView({
           </TabPanel>
         )}
 
-        {tab === 'documents' && (
+        {shown === 'documents' && (
           <TabPanel idBase={idBase} value="documents">
             <GroupDocumentsPanel
               client={client}
               group={group}
               onOpenGroupDocument={onOpenGroupDocument}
-              onStatus={(text) => setStatus({ kind: 'info', text })}
+              onStatus={(text, kind = 'info') => setStatus({ kind, text })}
+            />
+          </TabPanel>
+        )}
+
+        {shown === 'reglages' && admin && (
+          <TabPanel idBase={idBase} value="reglages">
+            <GroupManagePanel
+              group={group}
+              busy={busy}
+              onCopyCode={() => void copyCode(group.joinCode ?? '')}
+              onRegenerate={() => setPendingAction({ kind: 'regenerate' })}
+              onRename={startRenaming}
+              onDelete={() => setPendingAction({ kind: 'delete' })}
+              onStatus={(text, kind = 'info') => setStatus({ kind, text })}
             />
           </TabPanel>
         )}

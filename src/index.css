@@ -166,6 +166,25 @@
   --radius-control: 0.875rem;
   --radius-card: 1.5rem;
   --radius-panel: 2rem;
+  /*
+   * Le rayon d'un bloc du schéma. Plus serré qu'une carte de page : un
+   * nœud fait quatre-vingts pixels de haut, le rayon d'une carte le
+   * rendrait mou.
+   */
+  --radius-node: 1rem;
+
+  /*
+   * Deux crans sous text-xs, pour les annotations du schéma et des
+   * tableaux denses. Ils existaient déjà, écrits en dur ; ils gardent
+   * leur valeur au pixel près et gagnent un nom.
+   */
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 1.25rem;
+  --text-nano: 0.625rem;
+  /* Un cran entre text-xs et text-sm, pour le code et les tableaux denses. */
+  --text-code: 0.8125rem;
+  --text-code--line-height: 1.5rem;
+  --text-nano--line-height: 1rem;
 
   /*
    * Deux couches : un liseré porté très près du bord, qui pose l'objet,
@@ -291,6 +310,19 @@
 .react-flow {
   --xy-background-color: var(--c-canvas);
   --xy-background-pattern-color: var(--c-line);
+}
+
+/*
+ * Le focus clavier sur un nœud ou une patte. La feuille de React Flow
+ * pose « outline: none » sur « .react-flow__node.selectable:focus-visible »,
+ * soit deux classes et une pseudo-classe. Il faut donc viser aussi
+ * précis qu'elle, et passer après : sans ces deux lignes, se déplacer au
+ * clavier dans le schéma ne se voit pas.
+ */
+.react-flow__node.selectable:focus-visible,
+.react-flow__edge.selectable:focus-visible {
+  outline: 3px solid var(--c-focus);
+  outline-offset: 2px;
 }
 
 /* Zone de sélection : contour tireté, voile léger. */

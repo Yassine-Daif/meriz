@@ -14,11 +14,20 @@ const handleStyle = { opacity: 0, width: 6, height: 6, pointerEvents: 'none' as 
  * soulignée + badge, clés étrangères préfixées « # » comme dans la
  * convention AnalyseSI.
  */
-export function TableNode({ data }: NodeProps<TableFlowNode>) {
+export function TableNode({ data, selected }: NodeProps<TableFlowNode>) {
   const { table } = data
   return (
-    <div className="min-w-48 rounded-2xl border border-line-strong bg-surface text-ink shadow-soft">
-      <div className="rounded-t-2xl border-b border-line bg-accent-soft px-3 py-2 text-center text-sm font-semibold tracking-tight text-ink">
+    // Même bague que dans le MCD : une table sélectionnée se signalait
+    // par rien du tout, le style par défaut de React Flow ne visant que
+    // ses propres types de nœuds.
+    <div
+      className={`min-w-48 rounded-node border bg-surface text-ink shadow-soft ${
+        selected
+          ? 'border-mark ring-3 ring-mark/45 ring-offset-2 ring-offset-canvas'
+          : 'border-line-strong'
+      }`}
+    >
+      <div className="rounded-t-node border-b border-line bg-accent-soft px-3 py-2 text-center text-sm font-semibold tracking-tight text-ink">
         {table.name}
       </div>
       <ul className="px-3 py-2 font-mono text-xs leading-6">
@@ -33,12 +42,20 @@ export function TableNode({ data }: NodeProps<TableFlowNode>) {
                     : ''
               }
             >
-              {column.references && <span aria-hidden="true">#</span>}
+              {column.references && (
+                <>
+                  {/* Le « # » est la convention AnalyseSI. Il était masqué
+                      aux lecteurs d'écran, donc une colonne étrangère ne
+                      se distinguait pour eux que par sa couleur. */}
+                  <span aria-hidden="true">#</span>
+                  <span className="sr-only">clé étrangère, </span>
+                </>
+              )}
               {column.name}
             </span>
             <span className="ml-auto text-ink-soft">{column.sqlType}</span>
             {column.isPrimaryKey && (
-              <span className="self-center rounded-full bg-accent-soft px-1.5 text-[10px] font-medium text-accent-ink">
+              <span className="self-center rounded-full bg-accent-soft px-1.5 text-nano font-medium text-accent-ink">
                 PK
               </span>
             )}

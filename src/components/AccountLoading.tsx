@@ -1,6 +1,7 @@
 import { useSession } from './sessionContext'
 import { Button } from './ui/Button'
 import { Card } from './ui/Card'
+import { SkipLink } from './ui/SkipLink'
 import { Lockup } from './ui/Lockup'
 
 interface AccountLoadingProps {
@@ -17,6 +18,7 @@ export function AccountLoading({ kind }: AccountLoadingProps) {
 
   return (
     <div className="flex h-dvh flex-col bg-shell font-sans text-ink">
+      <SkipLink />
       <header className="flex items-center border-b border-line bg-surface px-4 py-2.5 sm:px-6">
         <Lockup size={30} label="Meriz" />
       </header>

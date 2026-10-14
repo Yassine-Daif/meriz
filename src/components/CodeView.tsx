@@ -7,6 +7,7 @@ import type { Mcd } from '../model/mcd'
 import type { MldTable } from '../model/mld'
 import type { MpdSettings } from '../model/mpd'
 import { EmptyGeneration, ErrorsBanner } from './GenerationNotices'
+import { Button } from './ui/Button'
 import { MoreInfo } from './ui/MoreInfo'
 import { Notice } from './ui/Notice'
 import { Segmented } from './ui/Segmented'
@@ -17,8 +18,6 @@ interface CodeViewProps {
   settings: MpdSettings
   hasErrors: boolean
 }
-
-const buttonClass = 'rounded-control border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell'
 
 /**
  * Vue Code : les fichiers de données du framework choisi, dérivés du
@@ -66,12 +65,12 @@ export function CodeView({ mcd, tables, settings, hasErrors }: CodeViewProps) {
           value={framework}
           onChange={setFramework}
         />
-        <button type="button" onClick={() => void copy(concatFiles(files), 'Tous les fichiers copiés dans le presse-papiers.')} className={buttonClass}>
+        <Button size="sm" onClick={() => void copy(concatFiles(files), 'Tous les fichiers copiés dans le presse-papiers.')}>
           Copier tout
-        </button>
-        <button type="button" onClick={() => void handleExport()} className={buttonClass}>
+        </Button>
+        <Button size="sm" onClick={() => void handleExport()}>
           Exporter en .md
-        </button>
+        </Button>
         <p className="text-xs text-ink-soft">
           {files.length === 1 ? '1 fichier généré pour ' : `${files.length} fichiers générés pour `}
           <span className="font-mono">{label}</span>
@@ -127,16 +126,22 @@ export function CodeView({ mcd, tables, settings, hasErrors }: CodeViewProps) {
             <li key={file.path} className="rounded-card border border-line bg-surface shadow-soft">
               <div className="flex flex-wrap items-center gap-2 border-b border-line px-3 py-2">
                 <span className="font-mono text-xs text-ink">{file.path}</span>
-                <button
-                  type="button"
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="ml-auto"
                   onClick={() => void copy(file.content, `${file.path} copié dans le presse-papiers.`)}
                   aria-label={`Copier ${file.path}`}
-                  className="ml-auto rounded-control px-2.5 py-1 text-xs font-medium text-accent-ink transition-colors duration-150 hover:bg-accent-soft hover:text-accent-ink"
                 >
                   Copier
-                </button>
+                </Button>
               </div>
-              <pre className="max-h-96 overflow-auto px-4 py-3 font-mono text-[13px] leading-6">
+              <pre
+                tabIndex={0}
+                role="region"
+                aria-label={`Contenu de ${file.path}`}
+                className="max-h-96 overflow-auto px-4 py-3 font-mono text-micro leading-6"
+              >
                 <code>{file.content}</code>
               </pre>
             </li>

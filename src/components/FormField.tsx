@@ -3,10 +3,11 @@ import type { Ref } from 'react'
 
 interface FormFieldProps {
   label: string
-  type: 'text' | 'email' | 'password' | 'url'
+  type: 'text' | 'email' | 'password' | 'url' | 'datetime-local'
   value: string
   onChange: (value: string) => void
-  autoComplete: string
+  /** Laissé de côté quand le champ n'a rien à remplir tout seul. */
+  autoComplete?: string
   /** Erreur du champ, annoncée et liée au champ. */
   error?: string
   /** Aide permanente sous le libellé (ex. longueur minimale). */
@@ -15,6 +16,8 @@ interface FormFieldProps {
   maxLength?: number
   /** Vrai par défaut. */
   required?: boolean
+  /** Mention affichée quand le champ est facultatif, pour l'accord. */
+  optionalLabel?: string
   /** Zone de texte sur plusieurs lignes, avec un compteur si maxLength. */
   multiline?: boolean
   /** Hauteur de la zone de texte, en lignes. */
@@ -40,6 +43,7 @@ export function FormField({
   minLength,
   maxLength,
   required = true,
+  optionalLabel = '(facultatif)',
   multiline = false,
   rows = 3,
   mono = false,
@@ -72,7 +76,7 @@ export function FormField({
     <div>
       <label htmlFor={inputId} className="block text-sm font-medium text-ink">
         {label}
-        {!required && <span className="ml-1 font-normal text-ink-soft">(facultatif)</span>}
+        {!required && <span className="ml-1 font-normal text-ink-soft">{optionalLabel}</span>}
       </label>
       {hint && (
         <p id={hintId} className="mt-0.5 text-xs text-ink-soft">

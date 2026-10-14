@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useId, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import { deleteCloudDocument, updateCloudDocument } from '../../lib/documentsApi'
 import { createGroupDocument, listGroupDocuments } from '../../lib/groupsApi'
@@ -18,7 +18,8 @@ interface GroupDocumentsPanelProps {
   client: ApiClient
   group: GroupDetail
   onOpenGroupDocument: OpenGroupDocument
-  onStatus: (text: string) => void
+  /** Un échec passe par le canal des erreurs, pas par celui des succès. */
+  onStatus: (text: string, kind?: 'info' | 'error') => void
 }
 
 /** Un nom neuf qui ne reprend pas celui d'un document déjà là. */
@@ -39,6 +40,7 @@ function nextName(documents: GroupDocument[]): string {
  * son refus s'affiche tel quel.
  */
 export function GroupDocumentsPanel({ client, group, onOpenGroupDocument, onStatus }: GroupDocumentsPanelProps) {
+  const titleId = useId()
   const [documents, setDocuments] = useState<GroupDocument[] | null>(group.documents)
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
@@ -67,7 +69,7 @@ export function GroupDocumentsPanel({ client, group, onOpenGroupDocument, onStat
     })
     setCreating(false)
     if (!result.ok) {
-      onStatus(result.error.fieldErrors.content?.[0] ?? result.error.message)
+      onStatus(result.error.fieldErrors.content?.[0] ?? result.error.message, 'error')
       return
     }
     await reload()
@@ -82,7 +84,7 @@ export function GroupDocumentsPanel({ client, group, onOpenGroupDocument, onStat
       )
       onStatus(`Document renommé en « ${name} ».`)
     } else {
-      onStatus(result.error.message)
+      onStatus(result.error.message, 'error')
     }
   }
 
@@ -95,15 +97,15 @@ export function GroupDocumentsPanel({ client, group, onOpenGroupDocument, onStat
       setDocuments((previous) => (previous ?? []).filter((item) => item.id !== document.id))
       onStatus(`Document « ${document.name} » supprimé.`)
     } else {
-      onStatus(result.error.message)
+      onStatus(result.error.message, 'error')
     }
     await reload()
   }
 
   return (
-    <div className="mt-4">
+    <section aria-labelledby={titleId}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-base font-semibold text-ink">
+        <h3 id={titleId} className="text-base font-semibold text-ink">
           Documents partagés
           {documents && documents.length > 0 && (
             <span className="font-normal text-ink-soft"> ({documents.length})</span>
@@ -164,6 +166,6 @@ export function GroupDocumentsPanel({ client, group, onOpenGroupDocument, onStat
         onConfirm={() => void confirmDelete()}
         onCancel={() => setPendingDelete(null)}
       />
-    </div>
+    </section>
   )
 }

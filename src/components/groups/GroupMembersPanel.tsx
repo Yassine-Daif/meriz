@@ -1,10 +1,10 @@
+import { useId } from 'react'
 import { displayName } from '../../lib/authApi'
-import { formatDate } from '../../lib/formatDate'
+import { formatDay } from '../../lib/formatDate'
 import type { GroupDetail, GroupMember } from '../../lib/groupsApi'
-import { PersonCard } from '../PersonCard'
+import { MemberCard } from '../MemberCard'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
-import { Card } from '../ui/Card'
 
 interface GroupMembersPanelProps {
   group: GroupDetail
@@ -20,10 +20,11 @@ interface GroupMembersPanelProps {
  */
 export function GroupMembersPanel({ group, busy, onRemove, onLeave }: GroupMembersPanelProps) {
   const admin = group.myRole === 'admin'
+  const titleId = useId()
 
   return (
-    <div className="mt-4">
-      <h3 className="text-base font-semibold text-ink">
+    <section aria-labelledby={titleId}>
+      <h3 id={titleId} className="text-base font-semibold text-ink">
         Membres
         {group.members.length > 0 && <span className="font-normal text-ink-soft"> ({group.members.length})</span>}
       </h3>
@@ -34,28 +35,28 @@ export function GroupMembersPanel({ group, busy, onRemove, onLeave }: GroupMembe
         </p>
       ) : (
         <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-          {group.members.map((member) => {
-            const joined = member.joinedAt === null ? '' : formatDate(member.joinedAt)
-            return (
-              <Card as="li" key={member.id} className="flex flex-wrap items-start justify-between gap-3">
-                <PersonCard person={member} extra={joined ? `Dans le groupe depuis le ${joined}` : undefined} />
-                <div className="flex flex-col items-end gap-2">
-                  {member.isAdmin && <Badge tone="accent">Créateur</Badge>}
-                  {admin && !member.isAdmin && (
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      disabled={busy}
-                      onClick={() => onRemove(member)}
-                      aria-label={`Retirer ${displayName(member)} du groupe`}
-                    >
-                      Retirer
-                    </Button>
-                  )}
-                </div>
-              </Card>
-            )
-          })}
+          {group.members.map((member) => (
+            <MemberCard
+              key={member.id}
+              person={member}
+              joined={formatDay(member.joinedAt)}
+              joinedLabel="Dans le groupe depuis le"
+              badge={member.isAdmin ? <Badge tone="accent">Créateur</Badge> : undefined}
+              action={
+                admin && !member.isAdmin ? (
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    disabled={busy}
+                    aria-label={`Retirer ${displayName(member)} du groupe`}
+                    onClick={() => onRemove(member)}
+                  >
+                    Retirer
+                  </Button>
+                ) : undefined
+              }
+            />
+          ))}
         </ul>
       )}
 
@@ -69,6 +70,6 @@ export function GroupMembersPanel({ group, busy, onRemove, onLeave }: GroupMembe
           </Button>
         </div>
       )}
-    </div>
+    </section>
   )
 }

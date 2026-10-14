@@ -56,7 +56,7 @@ const steps: { title: string; text: string }[] = [
 
 function Kbd({ children }: { children: string }) {
   return (
-    <kbd className="rounded-md border border-line-strong bg-surface-soft px-1.5 font-mono text-[11px] text-ink">
+    <kbd className="rounded-md border border-line-strong bg-surface-soft px-1.5 font-mono text-micro text-ink">
       {children}
     </kbd>
   )

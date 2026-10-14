@@ -3,11 +3,13 @@ import { applyNodeChanges, Background, Panel, ReactFlow, ReactFlowProvider } fro
 import type { NodeChange } from '@xyflow/react'
 import type { MpdSettings, MpdTable, SqlDialect } from '../model/mpd'
 import { SQL_DIALECTS } from '../model/mpd'
+import { ARIA_LABELS } from '../canvas/ariaLabels'
 import { TableNode } from '../canvas/TableNode'
 import type { TableFlowNode } from '../canvas/TableNode'
 import { buildFkEdges, initialTableNodes } from '../canvas/mldToFlow'
 import { useTheme } from '../lib/useTheme'
 import { EmptyGeneration, ErrorsBanner } from './GenerationNotices'
+import { Button } from './ui/Button'
 
 const nodeTypes = { table: TableNode }
 
@@ -67,18 +69,17 @@ export function MpdView({
             </option>
           ))}
         </select>
-        <button
-          type="button"
+        <Button
+          size="sm"
           aria-expanded={mappingOpen}
           aria-controls={mappingPanelId}
           onClick={() => setMappingOpen((open) => !open)}
-          className="flex items-center gap-1.5 rounded-control border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell"
         >
           <span aria-hidden="true" className="text-ink-soft">
             {mappingOpen ? '▸' : '◂'}
           </span>
           Mappage des types
-        </button>
+        </Button>
         <p className="text-xs text-ink-soft">
           Types éditables colonne par colonne, choix mémorisés.
         </p>
@@ -128,6 +129,7 @@ function MpdDiagram({ tables, hasErrors }: { tables: MpdTable[]; hasErrors: bool
           nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
           nodesConnectable={false}
+          ariaLabelConfig={ARIA_LABELS}
           colorMode={theme.resolved}
           deleteKeyCode={null}
           proOptions={{ hideAttribution: true }}
@@ -193,15 +195,15 @@ function TypeMappingPanel({
               </tr>
               {table.columns.map((column, index) => (
                 <tr key={column.id} className={index % 2 === 1 ? 'bg-shell/50' : ''}>
-                  <td className="border-b border-line px-3 py-1.5 font-mono text-[13px]">
+                  <td className="border-b border-line px-3 py-1.5 font-mono text-code">
                     {column.name}
                     {column.isPrimaryKey && (
-                      <span className="ml-1.5 rounded-sm border border-line bg-accent-soft px-1 text-[10px] font-medium text-accent-ink">
+                      <span className="ml-1.5 rounded-sm border border-line bg-accent-soft px-1 text-nano font-medium text-accent-ink">
                         PK
                       </span>
                     )}
                   </td>
-                  <td className="border-b border-line px-3 py-1.5 font-mono text-[13px] text-ink-soft">
+                  <td className="border-b border-line px-3 py-1.5 font-mono text-code text-ink-soft">
                     {column.conceptualType}
                   </td>
                   <td className="border-b border-line px-3 py-1.5">
@@ -212,7 +214,7 @@ function TypeMappingPanel({
                         value={column.overridden ? column.sqlType : ''}
                         placeholder={column.proposedType}
                         onChange={(event) => onOverrideChange(column.id, event.target.value)}
-                        className="w-full min-w-0 rounded-lg border border-line-strong bg-surface px-1.5 py-0.5 font-mono text-[13px] placeholder:text-ink-soft"
+                        className="w-full min-w-0 rounded-control border border-line-strong bg-surface px-1.5 py-0.5 font-mono text-micro placeholder:text-ink-soft"
                       />
                       {column.overridden && (
                         <button
@@ -220,7 +222,7 @@ function TypeMappingPanel({
                           aria-label={`Revenir au type proposé pour ${column.name}`}
                           title={`Revenir à ${column.proposedType}`}
                           onClick={() => onOverrideChange(column.id, '')}
-                          className="shrink-0 rounded-lg border border-line-strong px-1.5 py-0.5 text-xs hover:bg-surface-soft"
+                          className="shrink-0 rounded-control border border-line-strong px-1.5 py-0.5 text-xs hover:bg-surface-soft"
                         >
                           ↺
                         </button>

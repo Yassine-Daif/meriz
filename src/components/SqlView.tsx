@@ -5,6 +5,7 @@ import { copyText } from '../lib/clipboard'
 import { mpdToSql, SQL_DIALECTS } from '../model/mpd'
 import { saveFileAs } from '../lib/download'
 import { EmptyGeneration, ErrorsBanner } from './GenerationNotices'
+import { Button } from './ui/Button'
 
 interface SqlViewProps {
   tables: MpdTable[]
@@ -67,20 +68,18 @@ export function SqlView({ tables, dialect, hasErrors }: SqlViewProps) {
   return (
     <section aria-label="Vue SQL" className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2">
-        <button
-          type="button"
+        <Button
+          size="sm"
           onClick={() => void handleCopy()}
-          className="rounded-control border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell"
         >
           Copier
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          size="sm"
           onClick={() => void handleExport()}
-          className="rounded-control border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell"
         >
           Exporter en .sql
-        </button>
+        </Button>
         <label htmlFor={dropsId} className="flex items-center gap-1.5 text-xs text-ink-soft">
           <input
             id={dropsId}
@@ -99,7 +98,12 @@ export function SqlView({ tables, dialect, hasErrors }: SqlViewProps) {
       </div>
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {hasErrors && <ErrorsBanner />}
-        <pre className="w-full overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-[13px] leading-6 shadow-soft">
+        <pre
+          tabIndex={0}
+          role="region"
+          aria-label="Script SQL"
+          className="w-full overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-micro leading-6 shadow-soft"
+        >
           <code>{highlightSql(sql)}</code>
         </pre>
       </div>

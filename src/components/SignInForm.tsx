@@ -4,7 +4,7 @@ import type { ApiUser } from '../lib/authApi'
 import { useSession } from './sessionContext'
 import { FormField } from './FormField'
 import { FormAlert } from './FormAlert'
-import { primaryButtonClass } from './buttonStyles'
+import { Button } from './ui/Button'
 
 interface SignInFormProps {
   onSuccess: (user: ApiUser) => void
@@ -59,9 +59,9 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
         autoComplete="current-password"
         maxLength={255}
       />
-      <button type="submit" disabled={pending} className={`${primaryButtonClass} w-full`}>
-        {pending ? 'Connexion…' : 'Se connecter'}
-      </button>
+      <Button type="submit" variant="primary" block loading={pending} loadingLabel="Connexion…">
+        Se connecter
+      </Button>
       <p className="text-center text-sm text-ink-soft">
         Pas encore de compte ?{' '}
         <button

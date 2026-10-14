@@ -1,3 +1,5 @@
+import { Notice } from './ui/Notice'
+
 /** Invite affichée tant que le MCD ne contient aucune entité. */
 export function EmptyGeneration({ viewName }: { viewName: string }) {
   return (
@@ -13,13 +15,17 @@ export function EmptyGeneration({ viewName }: { viewName: string }) {
   )
 }
 
-/** Bandeau affiché quand le MCD contient des erreurs bloquantes. */
+/**
+ * Bandeau affiché quand le MCD contient des erreurs bloquantes.
+ *
+ * C'était un paragraphe nu : l'erreur apparaissait sans être annoncée.
+ * Notice porte le rôle, le préfixe lu « Erreur : » et la pastille.
+ */
 export function ErrorsBanner() {
   return (
-    <p className="mb-4 flex items-center gap-1.5 rounded-lg border border-danger/50 bg-danger-soft px-3 py-2 text-xs text-ink">
-      <span aria-hidden="true">✕</span>
-      Le MCD contient des erreurs : le résultat ci-dessous peut être incomplet.
-      Corrigez-les dans la vue MCD (bouton Vérifier).
-    </p>
+    <Notice tone="error" className="mb-4">
+      Le MCD contient des erreurs : le résultat ci-dessous peut être incomplet. Corrigez-les dans la
+      vue MCD (bouton Vérifier).
+    </Notice>
   )
 }

@@ -17,13 +17,13 @@ import type {
 import { CreateClassForm } from './CreateClassForm'
 import { JoinClassForm } from './JoinClassForm'
 import { PageShell } from './PageShell'
-import { SearchField } from './ui/SearchField'
 import { Card } from './ui/Card'
+import { SearchField } from './ui/SearchField'
 
-/** Classe à ouvrir en détail, avec son contenu s'il est déjà connu. */
 /** En dessous de ce nombre, une recherche encombre plus qu'elle n'aide. */
 const SEARCH_FROM = 6
 
+/** Classe à ouvrir en détail, avec son contenu s'il est déjà connu. */
 export interface ClassroomOpening {
   id: string
   initial: ClassroomDetail | null
@@ -175,6 +175,9 @@ export function ClassesPage({
                     id: classroom.id,
                     initial: classroom,
                     message: `Classe « ${classroom.name} » créée. Partagez son code à vos élèves.`,
+                    // À la création seulement : le prof voit son code tout
+                    // de suite. Les visites suivantes ouvrent les membres.
+                    tab: 'reglages',
                   })
                 }
               />

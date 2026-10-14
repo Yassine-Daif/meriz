@@ -77,7 +77,12 @@ export function AboutView() {
             modifier et le redistribuer librement, y compris dans un cadre commercial, à
             condition de conserver la notice ci-dessous.
           </p>
-          <pre className="mt-3 overflow-x-auto rounded-lg border border-line bg-shell p-3 font-mono text-[11px] leading-5 text-ink-soft">
+          <pre
+            tabIndex={0}
+            role="region"
+            aria-label="Texte de la licence MIT"
+            className="mt-3 overflow-x-auto rounded-control border border-line bg-shell p-3 font-mono text-micro leading-5 text-ink-soft"
+          >
             {MIT_LICENSE}
           </pre>
         </div>

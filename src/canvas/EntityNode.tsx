@@ -14,11 +14,19 @@ export function EntityNode({ data, selected, isConnectable }: NodeProps<EntityFl
   const { entity, attributes } = data
   return (
     <div
-      className={`min-w-44 rounded-2xl border bg-surface text-ink shadow-soft ${
-        selected ? 'border-mark ring-3 ring-mark/35' : 'border-line-strong'
+      /*
+       * L'anneau de sélection se détache du bord au lieu de s'y coller :
+       * une bague séparée se lit comme une forme qui apparaît, pas comme
+       * une teinte qui change. La largeur du bord ne bouge pas, sinon la
+       * boîte du nœud grandirait et les pattes sauteraient.
+       */
+      className={`min-w-44 rounded-node border bg-surface text-ink shadow-soft ${
+        selected
+          ? 'border-mark ring-3 ring-mark/45 ring-offset-2 ring-offset-canvas'
+          : 'border-line-strong'
       }`}
     >
-      <div className="rounded-t-2xl border-b border-line bg-accent-soft px-3 py-2 text-center text-sm font-semibold tracking-tight text-ink">
+      <div className="rounded-t-node border-b border-line bg-accent-soft px-3 py-2 text-center text-sm font-semibold tracking-tight text-ink">
         {entity.name}
       </div>
       <ul className="px-3 py-2 text-xs leading-5">
@@ -33,12 +41,12 @@ export function EntityNode({ data, selected, isConnectable }: NodeProps<EntityFl
             >
               {attribute.name}
             </span>
-            <span className="font-mono text-[11px] text-ink-soft">
+            <span className="font-mono text-micro text-ink-soft">
               {attribute.type}
               {attribute.size !== undefined && `(${attribute.size})`}
             </span>
             {attribute.isIdentifier && (
-              <span className="ml-auto self-center rounded-full bg-accent-soft px-1.5 font-mono text-[10px] font-medium text-accent-ink">
+              <span className="ml-auto self-center rounded-full bg-accent-soft px-1.5 font-mono text-nano font-medium text-accent-ink">
                 clé
               </span>
             )}

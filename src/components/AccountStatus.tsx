@@ -2,10 +2,8 @@ import { useState } from 'react'
 import { displayName } from '../lib/authApi'
 import { useSession } from './sessionContext'
 import { Avatar } from './ui/Avatar'
-import { smallButtonClass } from './buttonStyles'
-import { buttonClass } from './ui/buttonClass'
+import { Button } from './ui/Button'
 
-const smallPrimaryButtonClass = buttonClass({ variant: 'primary', size: 'sm' })
 
 interface AccountStatusProps {
   /** Version barre d'éditeur : n'affiche rien tant qu'on n'est pas connecté. */
@@ -59,23 +57,24 @@ export function AccountStatus({
             )}
           </span>
           {!compact && onShowProfile && (
-            <button type="button" onClick={onShowProfile} className={smallButtonClass}>
+            <Button type="button" size="sm" onClick={onShowProfile}>
               Mon profil
-            </button>
+            </Button>
           )}
           {!compact && onShowClasses && (
-            <button type="button" onClick={onShowClasses} className={smallButtonClass}>
+            <Button type="button" size="sm" onClick={onShowClasses}>
               Mes classes
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             type="button"
+            size="sm"
             onClick={() => void handleSignOut()}
-            disabled={pending}
-            className={smallButtonClass}
+            loading={pending}
+            loadingLabel="Envoi et déconnexion…"
           >
-            {pending ? 'Envoi et déconnexion…' : 'Se déconnecter'}
-          </button>
+            Se déconnecter
+          </Button>
         </>
       )
       break
@@ -83,16 +82,12 @@ export function AccountStatus({
       if (!compact && onShowSignIn && onShowSignUp) {
         content = (
           <>
-            <button type="button" onClick={onShowSignIn} className={smallButtonClass}>
+            <Button type="button" size="sm" onClick={onShowSignIn}>
               Se connecter
-            </button>
-            <button
-              type="button"
-              onClick={onShowSignUp}
-              className={smallPrimaryButtonClass}
-            >
+            </Button>
+            <Button type="button" size="sm" variant="primary" onClick={onShowSignUp}>
               Créer un compte
-            </button>
+            </Button>
           </>
         )
       }
@@ -104,9 +99,9 @@ export function AccountStatus({
             <span aria-hidden="true">⚠ </span>
             Serveur de comptes injoignable
           </span>
-          <button type="button" onClick={retry} className={smallButtonClass}>
+          <Button type="button" size="sm" onClick={retry}>
             Réessayer
-          </button>
+          </Button>
         </>
       )
       break

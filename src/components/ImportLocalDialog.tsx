@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from 'react'
 import type { DocumentMeta } from '../model/document'
-import { primaryButtonClass, secondaryButtonClass } from './buttonStyles'
+import { Button } from './ui/Button'
 import { dialogClass } from './ui/dialogClass'
 
 export interface ImportReport {
@@ -114,35 +114,25 @@ export function ImportLocalDialog({
 
         <div className="mt-6 flex flex-wrap justify-end gap-2">
           {phase === 'done' ? (
-            <button type="button" onClick={onClose} className={primaryButtonClass}>
+            <Button variant="primary" onClick={onClose}>
               Fermer
-            </button>
+            </Button>
           ) : (
             <>
-              <button
-                type="button"
-                onClick={onLater}
-                disabled={phase === 'working'}
-                className={secondaryButtonClass}
-              >
+              <Button onClick={onLater} disabled={phase === 'working'}>
                 Plus tard
-              </button>
-              <button
-                type="button"
-                onClick={onKeepLocal}
-                disabled={phase === 'working'}
-                className={secondaryButtonClass}
-              >
+              </Button>
+              <Button onClick={onKeepLocal} disabled={phase === 'working'}>
                 Garder en local
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="primary"
                 onClick={onImport}
-                disabled={phase === 'working'}
-                className={primaryButtonClass}
+                loading={phase === 'working'}
+                loadingLabel="Import…"
               >
-                {phase === 'working' ? 'Import…' : 'Importer dans mon compte'}
-              </button>
+                Importer dans mon compte
+              </Button>
             </>
           )}
         </div>

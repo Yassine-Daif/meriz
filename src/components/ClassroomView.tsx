@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ApiClient, ApiError } from '../lib/apiClient'
 import { displayName } from '../lib/authApi'
+import { formatDay } from '../lib/formatDate'
 import {
   deleteClassroom,
   formatJoinCode,
@@ -14,6 +15,9 @@ import {
 import type { ClassroomDetail, ClassroomMember } from '../lib/classroomsApi'
 import { copyText } from '../lib/clipboard'
 import { ConfirmDialog } from './ConfirmDialog'
+import { Button } from './ui/Button'
+import { ClassroomManagePanel } from './ClassroomManagePanel'
+import { MemberCard } from './MemberCard'
 import { PersonCard } from './PersonCard'
 import { AssignmentsPanel } from './assignments/AssignmentsPanel'
 import type { AssignmentTab } from './assignments/AssignmentWorkspace'
@@ -28,7 +32,6 @@ import { LessonsPanel } from './lessons/LessonsPanel'
 import { StudentLessonsPanel } from './lessons/StudentLessonsPanel'
 import { TabPanel, Tabs } from './ui/Tabs'
 import { FormField } from './FormField'
-import { primaryButtonClass, secondaryButtonClass, smallButtonClass } from './buttonStyles'
 
 interface ClassroomViewProps {
   client: ApiClient
@@ -58,7 +61,7 @@ interface ClassroomViewProps {
 }
 
 /** Sections de l'espace d'une classe. */
-export type ClassroomTab = 'eleves' | 'exercices' | 'cours'
+export type ClassroomTab = 'eleves' | 'exercices' | 'cours' | 'reglages'
 
 type PendingAction =
   | { kind: 'leave' }
@@ -66,13 +69,6 @@ type PendingAction =
   | { kind: 'regenerate' }
   | { kind: 'remove'; member: ClassroomMember }
 
-const dateFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' })
-
-function formatDate(iso: string | null): string {
-  if (!iso) return ''
-  const date = new Date(iso)
-  return Number.isNaN(date.getTime()) ? '' : dateFormat.format(date)
-}
 
 /**
  * Une classe. Pour tous : nom, prof et camarades, sans email. Pour le
@@ -215,9 +211,9 @@ export function ClassroomView({
           <p className="flex flex-wrap items-center gap-2">
             <span aria-hidden="true" className="text-warning">⚠</span>
             {loadError}
-            <button type="button" onClick={() => void load()} className={smallButtonClass}>
+            <Button size="sm" onClick={() => void load()}>
               Réessayer
-            </button>
+            </Button>
           </p>
         ) : (
           <p role="status" className="text-ink-soft">Chargement de la classe…</p>
@@ -253,13 +249,20 @@ export function ClassroomView({
     },
   }
 
+  /*
+   * Un onglet de réglages reçu par un élève retombe sur les membres :
+   * l'onglet n'existe pas pour lui, et un panneau vide ne vaut rien.
+   */
+  const shown: ClassroomTab = tab === 'reglages' && !isTeacher ? 'eleves' : tab
+
   const tabs = [
     { value: 'eleves' as const, label: isTeacher ? 'Membres' : 'Élèves', count: classroom.members.length },
     { value: 'exercices' as const, label: 'Exercices' },
     { value: 'cours' as const, label: 'Cours' },
+    // La gestion n'a de sens que pour le prof : l'onglet n'existe pas
+    // pour les autres, plutôt que de mener à un panneau vide.
+    ...(isTeacher ? [{ value: 'reglages' as const, label: 'Réglages' }] : []),
   ]
-  const dangerButtonClass =
-    'inline-flex min-h-10 items-center rounded-control border border-danger bg-surface px-4 py-2 text-sm font-medium text-danger transition-colors duration-150 hover:bg-danger-soft hover:text-danger'
 
   return (
     <div className="flex flex-col gap-5">
@@ -277,12 +280,12 @@ export function ClassroomView({
                 error={renameError}
               />
             </div>
-            <button type="submit" disabled={busy} className={primaryButtonClass}>
+            <Button type="submit" variant="primary" loading={busy} loadingLabel="Enregistrement…">
               Renommer
-            </button>
-            <button type="button" onClick={() => setRenaming(false)} className={secondaryButtonClass}>
+            </Button>
+            <Button type="button" onClick={() => setRenaming(false)}>
               Annuler
-            </button>
+            </Button>
           </form>
         ) : (
           <div className="min-w-0">
@@ -293,9 +296,9 @@ export function ClassroomView({
           </div>
         )}
         {isTeacher && !renaming && (
-          <button type="button" onClick={startRenaming} className={smallButtonClass}>
+          <Button size="sm" onClick={startRenaming}>
             Renommer
-          </button>
+          </Button>
         )}
       </div>
 
@@ -314,59 +317,10 @@ export function ClassroomView({
         )}
       </p>
 
-      {isTeacher && (
-        <section aria-labelledby="gestion-titre" className="rounded-card bg-accent-soft p-5 sm:p-6">
-          <h3 id="gestion-titre" className="text-base font-semibold text-ink">
-            Gérer la classe
-          </h3>
-          {classroom.joinCode ? (
-            <>
-              <p className="mt-1 text-sm text-ink">
-                Donnez ce code à vos élèves : ils le saisissent dans « Mes classes ».
-              </p>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <p className="rounded-control border border-line-strong bg-surface px-4 py-2 font-mono text-2xl font-semibold tracking-widest text-ink">
-                  {formatJoinCode(classroom.joinCode)}
-                </p>
-                <button type="button" onClick={() => void copyCode(classroom.joinCode ?? '')} className={primaryButtonClass}>
-                  Copier le code
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPendingAction({ kind: 'regenerate' })}
-                  disabled={busy}
-                  className={secondaryButtonClass}
-                >
-                  Nouveau code
-                </button>
-                <button type="button" onClick={startRenaming} disabled={busy} className={secondaryButtonClass}>
-                  Renommer la classe
-                </button>
-              </div>
-            </>
-          ) : (
-            <p className="mt-1 text-sm text-ink">Le code de cette classe n'est pas disponible.</p>
-          )}
-          <div className="mt-5 border-t border-line pt-4">
-            <button
-              type="button"
-              onClick={() => setPendingAction({ kind: 'delete' })}
-              disabled={busy}
-              className={dangerButtonClass}
-            >
-              Supprimer la classe
-            </button>
-            <p className="mt-1.5 text-xs text-ink-soft">
-              Tous les membres en seront retirés. Cette action est définitive.
-            </p>
-          </div>
-        </section>
-      )}
-
       <div>
-        <Tabs label="Sections de la classe" items={tabs} value={tab} onChange={setTab} idBase={idBase} />
+        <Tabs label="Sections de la classe" items={tabs} value={shown} onChange={setTab} idBase={idBase} />
 
-        {tab === 'eleves' && (
+        {shown === 'eleves' && (
           <TabPanel idBase={idBase} value="eleves">
             <section aria-labelledby="prof-titre" className="rounded-card border border-line bg-surface p-5 shadow-soft">
               <h3 id="prof-titre" className="text-base font-semibold text-ink">
@@ -393,48 +347,46 @@ export function ClassroomView({
                 </p>
               ) : (
                 <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-                  {classroom.members.map((member) => (
-                    <li
-                      key={member.id}
-                      className="flex flex-wrap items-start justify-between gap-3 rounded-card border border-line bg-surface p-4 shadow-soft"
+            {classroom.members.map((member) => (
+              <MemberCard
+                key={member.id}
+                person={member}
+                joined={isTeacher ? formatDay(member.joinedAt) : null}
+                action={
+                  isTeacher ? (
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      disabled={busy}
+                      aria-label={`Retirer ${displayName(member)} de la classe`}
+                      onClick={() => setPendingAction({ kind: 'remove', member })}
                     >
-                      <PersonCard
-                        person={member}
-                        extra={isTeacher && member.joinedAt ? `Arrivé le ${formatDate(member.joinedAt)}` : undefined}
-                      />
-                      {isTeacher && (
-                        <button
-                          type="button"
-                          onClick={() => setPendingAction({ kind: 'remove', member })}
-                          disabled={busy}
-                          aria-label={`Retirer ${displayName(member)} de la classe`}
-                          className="inline-flex min-h-8 items-center rounded-control border border-danger bg-surface px-3 py-1 text-xs font-medium text-danger transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
-                        >
-                          Retirer
-                        </button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+                      Retirer
+                    </Button>
+                  ) : undefined
+                }
+              />
+            ))}
+          </ul>
               )}
             </section>
 
             {!isTeacher && (
               <div className="mt-6 border-t border-line pt-4">
-                <button
-                  type="button"
-                  onClick={() => setPendingAction({ kind: 'leave' })}
+                <Button
+                  variant="danger"
+                  size="sm"
                   disabled={busy}
-                  className={dangerButtonClass}
+                  onClick={() => setPendingAction({ kind: 'leave' })}
                 >
                   Quitter la classe
-                </button>
+                </Button>
               </div>
             )}
           </TabPanel>
         )}
 
-        {tab === 'exercices' && (
+        {shown === 'exercices' && (
           <TabPanel idBase={idBase} value="exercices">
             {isTeacher ? (
               <AssignmentsPanel
@@ -460,7 +412,20 @@ export function ClassroomView({
           </TabPanel>
         )}
 
-        {tab === 'cours' && (
+        {shown === 'reglages' && isTeacher && (
+          <TabPanel idBase={idBase} value="reglages">
+            <ClassroomManagePanel
+              classroom={classroom}
+              busy={busy}
+              onCopyCode={() => void copyCode(classroom.joinCode ?? '')}
+              onRegenerate={() => setPendingAction({ kind: 'regenerate' })}
+              onRename={startRenaming}
+              onDelete={() => setPendingAction({ kind: 'delete' })}
+            />
+          </TabPanel>
+        )}
+
+        {shown === 'cours' && (
           <TabPanel idBase={idBase} value="cours">
             {isTeacher ? (
               <LessonsPanel client={client} classroomId={classroom.id} classroomName={classroom.name} />

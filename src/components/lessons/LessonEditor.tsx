@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import type { BlockType, LessonBlock } from '../../lib/lessonBlocks'
 import {
@@ -21,14 +21,18 @@ import {
   unpublishLesson,
 } from '../../lib/lessonsApi'
 import type { Lesson, LessonMedium } from '../../lib/lessonsApi'
+import { plural } from '../../lib/plural'
 import { ConfirmDialog } from '../ConfirmDialog'
 import { FormField } from '../FormField'
 import { BackButton } from '../ui/BackButton'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
+import { FormSection } from '../ui/FormSection'
 import { LiveAnnouncement } from '../ui/LiveAnnouncement'
+import { TabPanel, Tabs } from '../ui/Tabs'
 import { AddBlockBar } from './AddBlockBar'
 import { BlockCard } from './BlockCard'
+import { LessonPage } from './LessonPage'
 
 interface LessonEditorProps {
   client: ApiClient
@@ -119,6 +123,9 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
   const [pending, setPending] = useState(false)
   const [removal, setRemoval] = useState<PendingRemoval | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [tab, setTab] = useState<'ecrire' | 'apercu'>('ecrire')
+  const tabsId = useId()
+  const diffusionAction = useRef<HTMLDivElement>(null)
 
   // La sauvegarde naît et meurt avec l'effet, jamais dans un état : React
   // monte les effets deux fois en développement, et une sauvegarde créée
@@ -151,6 +158,13 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
   // cela, la navigation au clavier repart du début de la page.
   const focusAfterMove = useRef<{ blockId: string; direction: 'up' | 'down' } | null>(null)
   const moveButtons = useRef(new Map<string, HTMLButtonElement>())
+  // Même principe pour l'ajout et le retrait : la carte neuve prend le
+  // focus dans son premier champ, et après un retrait il va sur la carte
+  // qui prend la place, ou sur la barre d'ajout si la page se vide.
+  const cards = useRef(new Map<string, HTMLLIElement>())
+  const addBar = useRef<HTMLDivElement>(null)
+  const [addedId, setAddedId] = useState<string | null>(null)
+  const focusAfterRemoval = useRef<number | null>(null)
 
   // Le rappel du parent peut changer à chaque rendu : on garde le dernier.
   const onChangedRef = useRef(onChanged)
@@ -178,8 +192,24 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
     moveButtons.current.get(`${target.blockId}:${opposite}`)?.focus()
   }, [blocks])
 
+  useEffect(() => {
+    const index = focusAfterRemoval.current
+    if (index === null) return
+    focusAfterRemoval.current = null
+    // La carte qui prend la place, sinon la dernière, sinon la barre
+    // d'ajout quand il ne reste plus rien à cibler.
+    const entry = blocks[index] ?? blocks[blocks.length - 1]
+    const card = entry ? cards.current.get(entry.id) : undefined
+    if (card) card.focus()
+    else addBar.current?.querySelector('button')?.focus()
+  }, [blocks])
+
   const addBlock = (type: BlockType) => {
-    setBlocks((current) => [...current, { id: newId(), block: emptyBlock(type) }])
+    const id = newId()
+    setBlocks((current) => [...current, { id, block: emptyBlock(type) }])
+    setAddedId(id)
+    // Un bloc s'ajoute en écriture : si l'aperçu est ouvert, on y revient.
+    setTab('ecrire')
     setAnnouncement(`Bloc ${blockLabel(type)} ajouté en position ${blocks.length + 1}.`)
   }
 
@@ -203,6 +233,7 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
     const label = blockLabel(entry.block.type)
     if (mediumId === null) {
       // Rien à détruire : le bloc part sans confirmation.
+      focusAfterRemoval.current = index
       setBlocks((current) => current.filter((_, position) => position !== index))
       setAnnouncement(`Bloc ${label} retiré.`)
       return
@@ -224,11 +255,20 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
       const goneId = target.mediumId
       setMedia((current) => current.filter((item) => item.id !== goneId))
     }
+    focusAfterRemoval.current = target.index
     setBlocks((current) => current.filter((_, position) => position !== target.index))
     setAnnouncement(`Bloc ${target.label} et son fichier retirés.`)
   }
 
   /** Action sur le cours : publication, dépublication. */
+  const focusDiffusion = useRef(false)
+
+  useEffect(() => {
+    if (!focusDiffusion.current) return
+    focusDiffusion.current = false
+    diffusionAction.current?.querySelector('button')?.focus()
+  }, [state.status])
+
   const run = async (action: () => Promise<{ ok: true; value: Lesson } | { ok: false; error: { message: string } }>) => {
     if (pending) return
     setPending(true)
@@ -236,8 +276,14 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
     const result = await action()
     setPending(false)
     if (result.ok) {
+      focusDiffusion.current = true
       setState(result.value)
       onChanged(result.value)
+      setAnnouncement(
+        result.value.status === 'published'
+          ? 'Cours publié : vos élèves le voient.'
+          : 'Cours dépublié : vos élèves ne le voient plus.',
+      )
     } else {
       setActionError(result.error.message)
     }
@@ -260,123 +306,170 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
     else moveButtons.current.delete(key)
   }, [])
 
+  const pageBlocks = blocks.map((entry) => entry.block)
+
+  const liste =
+    blocks.length === 0 ? (
+      <p className="rounded-card border border-dashed border-line-strong bg-surface-soft p-6 text-center text-sm text-ink-soft">
+        Page vide : commencez par un titre de section ou un texte.
+      </p>
+    ) : (
+      <ul className="flex flex-col gap-3">
+        {blocks.map((entry, index) => (
+          <BlockCard
+            key={entry.id}
+            client={client}
+            lessonId={lesson.id}
+            block={entry.block}
+            index={index}
+            total={blocks.length}
+            media={media}
+            focusOnMount={entry.id === addedId}
+            onChange={(block) => changeBlock(index, block)}
+            onMove={(direction) => move(index, direction)}
+            onRegisterMoveButton={(direction, button) =>
+              registerMoveButton(`${entry.id}:${direction}`, button)
+            }
+            onRegisterCard={(card) => {
+              if (card) cards.current.set(entry.id, card)
+              else cards.current.delete(entry.id)
+            }}
+            onRemove={() => askRemoval(index)}
+            onUploaded={(medium) => {
+              setMedia((current) => [...current, medium])
+              const block = entry.block
+              if (block.type === 'image') changeBlock(index, { ...block, mediaId: medium.id })
+              else if (block.type === 'audio') changeBlock(index, { ...block, mediaId: medium.id })
+            }}
+            onMediumGone={(mediumId) => setMedia((current) => current.filter((item) => item.id !== mediumId))}
+          />
+        ))}
+      </ul>
+    )
+
   return (
-    <div>
-      <BackButton label="Retour aux cours" onClick={() => onDone(null)} className="-ml-3 mb-3" />
+    <div className="flex flex-col gap-5">
+      <BackButton label="Retour aux cours" onClick={() => onDone(null)} className="-ml-3" />
 
-      <p className="text-xs font-semibold tracking-wide text-ink-soft uppercase">Cours</p>
-      <h3 className="text-xl font-semibold tracking-tight text-ink">
-        {title.trim() === '' ? 'Cours sans titre' : title}
-      </h3>
-      <p className="mt-1 text-sm text-ink-soft">Classe {classroomName}.</p>
+      <header>
+        <p className="text-xs font-semibold tracking-wide text-ink-soft uppercase">Cours</p>
+        <h3 className="text-xl font-semibold tracking-tight text-ink">
+          {title.trim() === '' ? 'Cours sans titre' : title}
+        </h3>
+        <p className="mt-1 text-sm text-ink-soft">Classe {classroomName}.</p>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Badge tone={state.status === 'published' ? 'sage' : 'neutral'}>{lessonStateLabel(state)}</Badge>
-        <SaveLine status={status} onRetry={() => saver?.retry()} />
-      </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Badge tone={state.status === 'published' ? 'sage' : 'neutral'}>{lessonStateLabel(state)}</Badge>
+          <SaveLine status={status} onRetry={() => saver?.retry()} />
+        </div>
+      </header>
 
       <LiveAnnouncement message={announcement} />
 
       {actionError && (
-        <p role="alert" className="mt-3 text-sm font-medium text-danger">
+        <p role="alert" className="text-sm font-medium text-danger">
           <span aria-hidden="true">✕ </span>
           {actionError}
         </p>
       )}
 
-      <div className="mt-5">
-        <FormField
-          label="Titre du cours"
-          type="text"
-          value={title}
-          onChange={setTitle}
-          autoComplete="off"
-          maxLength={200}
-          hint="Ce que vos élèves verront dans la liste."
+      <FormField
+        label="Titre du cours"
+        type="text"
+        value={title}
+        onChange={setTitle}
+        autoComplete="off"
+        maxLength={200}
+        hint="Ce que vos élèves verront dans la liste."
+      />
+
+      {/*
+        * Écrire et Aperçu plutôt que deux colonnes : chaque mode prend
+        * toute la largeur, donc les blocs respirent, et l'aperçu monte
+        * la page de l'élève telle quelle, sans adaptation.
+        */}
+      <div>
+        <Tabs
+          label="Modes du cours"
+          idBase={tabsId}
+          size="sm"
+          items={[
+            { value: 'ecrire', label: 'Écrire', count: blocks.length },
+            { value: 'apercu', label: 'Aperçu' },
+          ]}
+          value={tab}
+          onChange={setTab}
         />
-      </div>
 
-      <section aria-labelledby="page-titre" className="mt-6">
-        <h4 id="page-titre" className="text-base font-semibold text-ink">
-          La page du cours
-          {blocks.length > 0 && <span className="font-normal text-ink-soft"> ({blocks.length} blocs)</span>}
-        </h4>
-        <p className="mt-1 text-sm text-ink-soft">
-          Ajoutez des blocs, remplissez-les, et rangez-les avec les flèches Monter et Descendre.
-        </p>
-
-        {blocks.length === 0 ? (
-          <p className="mt-3 rounded-card border border-dashed border-line-strong bg-surface-soft p-6 text-center text-sm text-ink-soft">
-            Page vide : commencez par un titre de section ou un texte.
-          </p>
-        ) : (
-          <ul className="mt-3 flex flex-col gap-3">
-            {blocks.map((entry, index) => (
-              <BlockCard
-                key={entry.id}
-                client={client}
-                lessonId={lesson.id}
-                block={entry.block}
-                index={index}
-                total={blocks.length}
-                media={media}
-                onChange={(block) => changeBlock(index, block)}
-                onMove={(direction) => move(index, direction)}
-                onRegisterMoveButton={(direction, button) =>
-                  registerMoveButton(`${entry.id}:${direction}`, button)
-                }
-                onRemove={() => askRemoval(index)}
-                onUploaded={(medium) => {
-                  setMedia((current) => [...current, medium])
-                  const block = entry.block
-                  if (block.type === 'image') changeBlock(index, { ...block, mediaId: medium.id })
-                  else if (block.type === 'audio') changeBlock(index, { ...block, mediaId: medium.id })
-                }}
-                onMediumGone={(mediumId) => setMedia((current) => current.filter((item) => item.id !== mediumId))}
-              />
-            ))}
-          </ul>
+        {tab === 'ecrire' && (
+          <TabPanel idBase={tabsId} value="ecrire">
+            <FormSection
+              title="La page du cours"
+              level="h4"
+              description="Ajoutez des blocs, remplissez-les, et rangez-les avec les flèches Monter et Descendre."
+            >
+              {liste}
+              <div ref={addBar} className="mt-4">
+                <AddBlockBar onAdd={addBlock} />
+              </div>
+            </FormSection>
+          </TabPanel>
         )}
 
-        <div className="mt-4">
-          <AddBlockBar onAdd={addBlock} />
-        </div>
-      </section>
+        {tab === 'apercu' && (
+          <TabPanel idBase={tabsId} value="apercu">
+            <FormSection
+              title="Ce que verra la classe"
+              level="h4"
+              tone="soft"
+              description={`Votre page telle qu'elle s'affichera, ${blocks.length} ${plural(blocks.length, 'bloc', 'blocs')}.`}
+            >
+              <LessonPage client={client} lessonId={lesson.id} blocks={pageBlocks} />
+            </FormSection>
+          </TabPanel>
+        )}
+      </div>
 
-      <section
-        aria-labelledby="diffusion-cours-titre"
-        className="mt-6 rounded-card border border-line bg-surface p-5 shadow-soft"
-      >
-        <h4 id="diffusion-cours-titre" className="text-base font-semibold text-ink">
-          Diffusion
-        </h4>
-        <p className="mt-1 text-sm text-ink-soft">
-          {state.status === 'published'
+      <FormSection
+        title="Diffusion"
+        level="h4"
+        description={
+          state.status === 'published'
             ? 'Ce cours est visible par les élèves de la classe.'
-            : 'Ce cours est un brouillon : personne d’autre ne le voit.'}
-        </p>
-        <div className="mt-3">
+            : 'Ce cours est un brouillon : personne d’autre ne le voit.'
+        }
+      >
+        {/*
+          * Publier remplace le bouton par Dépublier : sans cette
+          * enveloppe, le focus tomberait sur le corps du document. On le
+          * rend au bouton qui prend la place.
+          */}
+        <div ref={diffusionAction}>
           {state.status === 'published' ? (
-            <Button onClick={() => void run(() => unpublishLesson(client, lesson.id))} disabled={pending}>
+            <Button
+              loading={pending}
+              loadingLabel="Un instant…"
+              onClick={() => void run(() => unpublishLesson(client, lesson.id))}
+            >
               Dépublier
             </Button>
           ) : (
-            <Button variant="primary" onClick={() => void run(() => publishLesson(client, lesson.id))} disabled={pending}>
+            <Button
+              variant="primary"
+              loading={pending}
+              loadingLabel="Un instant…"
+              onClick={() => void run(() => publishLesson(client, lesson.id))}
+            >
               Publier
             </Button>
           )}
         </div>
-      </section>
+      </FormSection>
 
-      <div className="mt-6 border-t border-line pt-4">
-        <button
-          type="button"
-          onClick={() => setConfirmDelete(true)}
-          disabled={pending}
-          className="inline-flex min-h-10 items-center rounded-control border border-danger bg-surface px-4 py-2 text-sm font-medium text-danger transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
-        >
+      <div className="border-t border-line pt-4">
+        <Button variant="danger" disabled={pending} onClick={() => setConfirmDelete(true)}>
           Supprimer le cours
-        </button>
+        </Button>
       </div>
 
       <ConfirmDialog

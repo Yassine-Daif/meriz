@@ -3,6 +3,7 @@ import type { MldTable } from '../model/mld'
 import { copyText } from '../lib/clipboard'
 import { relationalLine } from '../model/mld'
 import { EmptyGeneration, ErrorsBanner } from './GenerationNotices'
+import { Button } from './ui/Button'
 
 interface MldViewProps {
   tables: MldTable[]
@@ -38,13 +39,12 @@ export function MldView({ tables, hasErrors }: MldViewProps) {
   return (
     <section aria-label="Vue MLD" className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center gap-3 border-b border-line bg-surface px-4 py-2">
-        <button
-          type="button"
+        <Button
+          size="sm"
           onClick={() => void handleCopy()}
-          className="rounded-control border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell"
         >
           Copier la notation
-        </button>
+        </Button>
         <p className="text-xs text-ink-soft">
           {tables.length} table{tables.length > 1 ? 's' : ''} dérivée
           {tables.length > 1 ? 's' : ''} du MCD
@@ -76,7 +76,7 @@ export function MldView({ tables, hasErrors }: MldViewProps) {
                     <span className="text-ink-soft">{column.type}</span>
                     {column.nullable && <span className="text-ink-soft">NULL</span>}
                     {column.isPrimaryKey && (
-                      <span className="rounded-sm border border-line bg-accent-soft px-1 text-[10px] font-medium text-accent-ink">
+                      <span className="rounded-sm border border-line bg-accent-soft px-1 text-nano font-medium text-accent-ink">
                         PK
                       </span>
                     )}
@@ -94,7 +94,7 @@ export function MldView({ tables, hasErrors }: MldViewProps) {
             puis la notation relationnelle, FK préfixées #. */}
         <div className="w-full rounded-card border border-line bg-surface p-4 shadow-soft">
           <h2 className="text-sm font-semibold tracking-tight">Notation relationnelle (MLDR)</h2>
-          <div className="mt-2 font-mono text-[13px] leading-7">
+          <div className="mt-2 font-mono text-code leading-7">
             <p className="text-ink-soft">{mldrHeader(new Date())}</p>
             <ul>
               {tables.map((table) => (

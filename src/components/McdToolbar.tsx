@@ -5,6 +5,7 @@ import type { McdAction } from '../model/mcdReducer'
 import type { ValidationProblem } from '../model/validate'
 import { validationErrors, validationWarnings } from '../model/validate'
 import type { Position } from '../model/layout'
+import { Button } from './ui/Button'
 
 interface McdToolbarProps {
   dispatch: Dispatch<McdAction>
@@ -24,9 +25,6 @@ interface StatusMessage {
   kind: 'info' | 'error'
   text: string
 }
-
-const buttonClass =
-  'flex items-center gap-1.5 rounded-control border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell'
 
 const iconProps = {
   width: 16,
@@ -98,20 +96,12 @@ export function McdToolbar({ dispatch, problems, onGenerate, readOnly = false, p
       {!readOnly && (
         <>
           <div role="group" aria-label="Édition du MCD" className="flex gap-2">
-            <button
-              type="button"
-              className={buttonClass}
-              onClick={() => dispatch({ type: 'ADD_ENTITY', position: nextPosition() })}
-            >
+            <Button size="sm" onClick={() => dispatch({ type: 'ADD_ENTITY', position: nextPosition() })}>
               Ajouter une entité
-            </button>
-            <button
-              type="button"
-              className={buttonClass}
-              onClick={() => dispatch({ type: 'ADD_ASSOCIATION', position: nextPosition() })}
-            >
+            </Button>
+            <Button size="sm" onClick={() => dispatch({ type: 'ADD_ASSOCIATION', position: nextPosition() })}>
               Ajouter une association
-            </button>
+            </Button>
           </div>
 
           <div aria-hidden="true" className="h-6 w-px bg-line" />
@@ -121,8 +111,8 @@ export function McdToolbar({ dispatch, problems, onGenerate, readOnly = false, p
       {pencil && (
         <>
           <div role="group" aria-label="Annotation" className="flex gap-2">
-            <button
-              type="button"
+            <Button
+              size="sm"
               aria-pressed={pencil.active}
               onClick={() => {
                 pencil.onToggle()
@@ -133,15 +123,15 @@ export function McdToolbar({ dispatch, problems, onGenerate, readOnly = false, p
                     : 'Crayon rouge activé. Dessinez sur le schéma. Le trait n’est pas enregistré.',
                 })
               }}
-              className={
-                pencil.active
-                  ? 'flex items-center gap-1.5 rounded-control border border-danger-strong bg-danger-soft px-2.5 py-1.5 text-sm font-medium text-danger'
-                  : buttonClass
-              }
+              /*
+               * L'outil actif se voit au fond rouge pâle, en plus de
+               * aria-pressed et du pictogramme : jamais la couleur seule.
+               */
+              className={pencil.active ? 'border-danger-strong bg-danger-soft text-danger' : undefined}
             >
               <span aria-hidden="true">✎</span>
               Crayon rouge
-            </button>
+            </Button>
           </div>
 
           <div aria-hidden="true" className="h-6 w-px bg-line" />
@@ -149,23 +139,19 @@ export function McdToolbar({ dispatch, problems, onGenerate, readOnly = false, p
       )}
 
       <div role="group" aria-label="Vérification et génération" className="flex gap-2">
-        <button type="button" className={buttonClass} onClick={handleVerify}>
+        <Button size="sm" onClick={handleVerify}>
           <svg {...iconProps}>
             <circle cx="12" cy="12" r="3" />
             <path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1" />
           </svg>
           Vérifier
-        </button>
-        <button
-          type="button"
-          onClick={handleGenerate}
-          className="flex items-center gap-1.5 rounded-control border border-accent bg-accent px-2.5 py-1.5 text-sm font-medium text-on-accent hover:bg-accent-hover"
-        >
+        </Button>
+        <Button size="sm" variant="primary" onClick={handleGenerate}>
           <svg {...iconProps}>
             <path d="m4.5 12.5 5 5 10-11" />
           </svg>
           Générer
-        </button>
+        </Button>
       </div>
 
       <p role="status" aria-live="polite" className="min-w-0 text-xs text-ink-soft">

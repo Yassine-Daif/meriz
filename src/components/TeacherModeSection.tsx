@@ -4,7 +4,7 @@ import type { ApiUser } from '../lib/authApi'
 import { becomeTeacher } from '../lib/profileApi'
 import { useSession } from './sessionContext'
 import { FormAlert } from './FormAlert'
-import { primaryButtonClass, secondaryButtonClass } from './buttonStyles'
+import { Button } from './ui/Button'
 
 interface TeacherModeSectionProps {
   user: ApiUser
@@ -63,9 +63,11 @@ export function TeacherModeSection({ user, client, onShowClasses }: TeacherModeS
             leurs membres.
           </p>
         )}
-        <button type="button" onClick={onShowClasses} className={`${secondaryButtonClass} mt-3`}>
-          Aller à mes classes
-        </button>
+        <div className="mt-3">
+          <Button type="button" onClick={onShowClasses}>
+            Aller à mes classes
+          </Button>
+        </div>
       </>
     )
   } else if (user.isAcademic) {
@@ -79,14 +81,17 @@ export function TeacherModeSection({ user, client, onShowClasses }: TeacherModeS
         <div className="mt-3">
           <FormAlert message={error} attempt={attempt} />
         </div>
-        <button
-          type="button"
-          onClick={() => void activate()}
-          disabled={pending}
-          className={`${primaryButtonClass} mt-3`}
-        >
-          {pending ? 'Activation…' : 'Activer le mode prof'}
-        </button>
+        <div className="mt-3">
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => void activate()}
+            loading={pending}
+            loadingLabel="Activation…"
+          >
+            Activer le mode prof
+          </Button>
+        </div>
       </>
     )
   } else {

@@ -93,7 +93,7 @@ export function LegEdge({ id, sourceX, sourceY, targetX, targetY, data, selected
               transform: `translate(-50%, -50%) translate(${label.x}px, ${label.y}px)`,
               pointerEvents: 'all',
             }}
-            className={`nodrag nopan absolute cursor-move touch-none rounded-md border bg-surface px-1.5 font-mono text-[11px] shadow-soft ${
+            className={`nodrag nopan absolute cursor-move touch-none rounded-control border bg-surface px-2 py-0.5 font-mono text-micro font-medium shadow-soft ${
               selected ? 'border-mark font-semibold text-accent-ink' : 'border-line-strong text-ink'
             }`}
             title="Glisser pour déplacer l'étiquette"

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Dispatch } from 'react'
 import { ConfirmDialog } from './ConfirmDialog'
+import { Button } from './ui/Button'
 import type { AttributeType, Mcd, Property } from '../model/mcd'
 import { ATTRIBUTE_TYPES } from '../model/mcd'
 import type { McdAction } from '../model/mcdReducer'
@@ -119,13 +120,9 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
     <section aria-label="Dictionnaire des données" className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center gap-3 border-b border-line bg-surface px-4 py-2">
         {!readOnly && (
-          <button
-            type="button"
-            onClick={() => dispatch({ type: 'ADD_PROPERTY' })}
-            className="rounded-control border border-line bg-surface px-2.5 py-1.5 text-sm hover:bg-shell"
-          >
+          <Button size="sm" onClick={() => dispatch({ type: 'ADD_PROPERTY' })}>
             Ajouter une propriété
-          </button>
+          </Button>
         )}
         <p className="text-xs text-ink-soft">
           {rows.length} propriété{rows.length > 1 ? 's' : ''} au dictionnaire
@@ -192,7 +189,7 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
                           patch: { name: event.target.value },
                         })
                       }
-                      className="w-full min-w-24 rounded-lg border border-transparent px-1 py-0.5 font-mono text-[13px] hover:border-line-strong focus:border-line-strong"
+                      className="w-full min-w-24 rounded-lg border border-transparent px-1 py-0.5 font-mono text-code hover:border-line-strong focus:border-line-strong"
                     />
                   </td>
                   <td className="border-b border-line px-3 py-1.5">
@@ -225,7 +222,7 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
                       value={row.property.size ?? ''}
                       disabled={readOnly}
                       onChange={(event) => updateSize(row.property.id, event.target.value)}
-                      className="w-20 rounded-lg border border-transparent px-1 py-0.5 text-right font-mono text-[13px] hover:border-line-strong focus:border-line-strong"
+                      className="w-20 rounded-lg border border-transparent px-1 py-0.5 text-right font-mono text-code hover:border-line-strong focus:border-line-strong"
                     />
                   </td>
                   <td className="border-b border-line px-3 py-1.5">
@@ -242,7 +239,7 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
                       <>
                         {row.placementLabel}
                         {row.isIdentifier && (
-                          <span className="ml-1.5 rounded-sm border border-line bg-accent-soft px-1 font-mono text-[11px] font-medium text-accent-ink">
+                          <span className="ml-1.5 rounded-sm border border-line bg-accent-soft px-1 font-mono text-micro font-medium text-accent-ink">
                             clé
                           </span>
                         )}
@@ -262,7 +259,7 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
                           : 'Supprimer du dictionnaire'
                       }
                       onClick={() => deleteProperty(row)}
-                      className="rounded-lg border border-line-strong px-1.5 py-0.5 text-sm hover:bg-surface-soft"
+                      className="rounded-control border border-line-strong px-1.5 py-0.5 text-sm hover:bg-surface-soft"
                     >
                       ✕
                     </button>

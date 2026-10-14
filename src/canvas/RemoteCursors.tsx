@@ -58,10 +58,16 @@ export function RemoteCursors({
             </svg>
             <span
               style={{ backgroundColor: other.user.avatarBg, color: other.user.avatarFg }}
-              className="-mt-0.5 ml-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ring-2 ring-surface shadow-soft"
+              /*
+               * Pas d'anneau : « ring-surface » sur la zone de dessin ne
+               * valait que 1,04 de contraste en clair et 1,08 en sombre,
+               * donc il ne séparait rien. C'est l'ombre qui détache la
+               * pastille, et elle marche sur n'importe quel fond.
+               */
+              className="-mt-0.5 ml-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap shadow-lift"
             >
               {name}
-              {teacher && <span className="text-[0.65rem] font-bold tracking-wide uppercase opacity-80">prof</span>}
+              {teacher && <span className="text-nano font-bold tracking-wide uppercase opacity-80">prof</span>}
             </span>
           </div>
         )

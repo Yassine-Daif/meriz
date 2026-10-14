@@ -6,6 +6,19 @@ export function formatDate(iso: string): string {
   return Number.isNaN(date.getTime()) ? 'date inconnue' : dateFormat.format(date)
 }
 
+const longDayFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' })
+
+/**
+ * « 15 septembre 2026 », sans heure. Une date d'arrivée dans une classe
+ * ou un groupe n'a que faire de la minute. null quand la date manque ou
+ * ne se lit pas : l'appelant garde alors sa place vide.
+ */
+export function formatDay(iso: string | null): string | null {
+  if (iso === null) return null
+  const date = new Date(iso)
+  return Number.isNaN(date.getTime()) ? null : longDayFormat.format(date)
+}
+
 /* ------------------------------------------------------------------ */
 /* Date relative                                                      */
 

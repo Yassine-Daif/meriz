@@ -4,6 +4,7 @@ import { AccountStatus } from './AccountStatus'
 import { UiScaleControl } from './UiScaleControl'
 import { Button } from './ui/Button'
 import { Lockup } from './ui/Lockup'
+import { BackToTop } from './ui/BackToTop'
 import { Notice } from './ui/Notice'
 import { SkipLink } from './ui/SkipLink'
 import { ThemeToggle } from './ui/ThemeToggle'
@@ -158,6 +159,13 @@ export function ConnectedShell({ user, page, onNavigate, notice, onClearNotice, 
           </div>
         </main>
       </div>
+
+      {/*
+        * Posé une seule fois : c'est la zone de contenu qui défile, donc
+        * toutes les pages de l'espace connecté en profitent, et le bouton
+        * ne se montre que lorsqu'elle défile vraiment.
+        */}
+      <BackToTop targetId="contenu" />
     </div>
   )
 }

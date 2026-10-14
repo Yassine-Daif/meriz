@@ -15,10 +15,10 @@ import { GroupView } from './GroupView'
 import type { GroupTab } from './GroupView'
 import { JoinGroupForm } from './JoinGroupForm'
 
-/** Ce qu'il faut pour rouvrir un groupe, au retour de l'outil MCD. */
 /** En dessous de ce nombre, une recherche encombre plus qu'elle n'aide. */
 const SEARCH_FROM = 6
 
+/** Ce qu'il faut pour rouvrir un groupe, au retour de l'outil MCD. */
 export interface GroupOpening {
   id: string
   /** Groupe déjà connu, affiché sans attendre le serveur. */
@@ -142,6 +142,9 @@ export function GroupsPage({ client, opening = null, onOpenGroupDocument }: Grou
                   id: group.id,
                   initial: group,
                   message: `Groupe « ${group.name} » créé. Partagez son code pour que les autres vous rejoignent.`,
+                  // À la création seulement : le créateur voit son code
+                  // tout de suite. Les visites suivantes ouvrent les membres.
+                  tab: 'reglages',
                 })
               }
             />

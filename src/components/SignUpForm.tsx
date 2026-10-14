@@ -4,7 +4,7 @@ import type { ApiUser } from '../lib/authApi'
 import { useSession } from './sessionContext'
 import { FormField } from './FormField'
 import { FormAlert } from './FormAlert'
-import { primaryButtonClass } from './buttonStyles'
+import { Button } from './ui/Button'
 
 interface SignUpFormProps {
   onSuccess: (user: ApiUser) => void
@@ -128,9 +128,9 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
         error={fieldErrors.password}
         inputRef={passwordRef}
       />
-      <button type="submit" disabled={pending} className={`${primaryButtonClass} w-full`}>
-        {pending ? 'Création du compte…' : 'Créer mon compte'}
-      </button>
+      <Button type="submit" variant="primary" block loading={pending} loadingLabel="Création du compte…">
+        Créer mon compte
+      </Button>
       <p className="text-center text-sm text-ink-soft">
         Déjà un compte ?{' '}
         <button
