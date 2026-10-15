@@ -94,4 +94,9 @@ Une règle guide le code : le modèle MCD est la seule source de vérité. C'est
 
 ## Licence
 
-Meriz est distribué sous licence MIT. Voir le fichier [LICENSE](LICENSE).
+Meriz est un logiciel libre, publié sous licence [GNU AGPL 3.0](LICENSE).
+Toute version modifiée et distribuée, y compris simplement accessible par le
+réseau, doit rester ouverte sous la même licence et créditer l'auteur.
+
+Les dépendances gardent leur propre licence : React et Vite, par exemple,
+restent sous licence MIT, et la police Outfit sous licence OFL.

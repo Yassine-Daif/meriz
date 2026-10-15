@@ -1,7 +1,7 @@
 {
   "name": "meriz",
   "private": true,
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "version": "0.0.0",
   "type": "module",
   "scripts": {

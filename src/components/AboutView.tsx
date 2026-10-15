@@ -1,27 +1,5 @@
 import { LogoMark } from './ui/Lockup'
 
-const MIT_LICENSE = `MIT License
-
-Copyright (c) 2026 Yassine Daif
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.`
-
 /** À propos : le logiciel, son auteur et sa licence. */
 export function AboutView() {
   return (
@@ -73,18 +51,27 @@ export function AboutView() {
         <div className="rounded-card border border-line bg-surface p-5 shadow-soft">
           <h3 className="text-base font-semibold tracking-tight">Licence</h3>
           <p className="mt-2 text-sm leading-6 text-ink-soft">
-            Meriz est distribué sous licence MIT : vous pouvez l'utiliser, le copier, le
-            modifier et le redistribuer librement, y compris dans un cadre commercial, à
-            condition de conserver la notice ci-dessous.
+            Meriz est un logiciel libre, publié sous licence GNU AGPL 3.0. Vous pouvez
+            l'utiliser, l'étudier, le modifier et le partager, y compris dans un cadre
+            commercial.
           </p>
-          <pre
-            tabIndex={0}
-            role="region"
-            aria-label="Texte de la licence MIT"
-            className="mt-3 overflow-x-auto rounded-control border border-line bg-shell p-3 font-mono text-micro leading-5 text-ink-soft"
-          >
-            {MIT_LICENSE}
-          </pre>
+          <p className="mt-2 text-sm leading-6 text-ink-soft">
+            Une condition vient avec, et elle compte : si vous distribuez une version
+            modifiée, ou si vous la rendez accessible par le réseau, elle doit rester
+            ouverte sous la même licence et créditer l'auteur.
+          </p>
+          <p className="mt-2 text-sm leading-6 text-ink-soft">
+            Le texte complet est dans le fichier LICENSE du dépôt, et sur{' '}
+            <a
+              href="https://www.gnu.org/licenses/agpl-3.0.html"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-accent-ink underline underline-offset-2 hover:text-ink"
+            >
+              gnu.org
+            </a>
+            . Les dépendances gardent leur propre licence.
+          </p>
         </div>
       </div>
     </section>

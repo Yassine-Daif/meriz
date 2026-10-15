@@ -49,7 +49,7 @@ Les treize étapes prévues sont livrées. La stabilisation a réglé les quatre
 | Version PC (Tauri) | Fait | Configuration complète, workflow de release, `v0.1.0` publiée avec neuf fichiers. |
 | Version web (déploiement) | Partiel | Workflow réparé et poussé. Il attend les secrets du VPS, à créer à la main. |
 | Tests automatisés | Fait | 22 tests Vitest sur `mcdToMld`, `buildMpd` et `mpdToSql`. |
-| README et licence | Fait | README complet, licence MIT déjà présente et confirmée. |
+| README et licence | Fait | README complet. Le projet est passé de MIT à la GNU AGPL 3.0 : une version modifiée et distribuée reste ouverte et crédite l'auteur. |
 
 ### Détail par domaine
 
