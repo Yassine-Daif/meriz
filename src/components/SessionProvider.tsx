@@ -7,6 +7,8 @@ import type { Outcome } from '../lib/apiClient'
 import { getApiBaseUrl } from '../lib/apiConfig'
 import { browserStorage } from '../lib/browserStorage'
 import { createCloudCache } from '../lib/cloudCache'
+import { deleteAccount } from '../lib/accountApi'
+import { eraseAccountTraces } from '../lib/accountErasure'
 import { fetchCurrentUser, login, logout, register } from '../lib/authApi'
 import type { ApiUser, AuthSuccess, Credentials, SignUpData } from '../lib/authApi'
 import { sessionAfterRestore } from '../lib/sessionState'
@@ -52,9 +54,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         ? "1 document a des modifications non envoyées : elles partiront à votre prochaine connexion sur ce compte."
         : `${count} documents ont des modifications non envoyées : elles partiront à votre prochaine connexion sur ce compte.`
 
+  // Le cache, les liens de devoir et les traces de compte partagent le
+  // même stockage.
+  const [storage] = useState(() => browserStorage().storage)
+
   const [controller] = useState(() => {
-    // Le cache et les liens de devoir partagent le même stockage.
-    const { storage } = browserStorage()
     const cache = createCloudCache(storage)
     return createAccountController({
       cache,
@@ -164,6 +168,31 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return stashed
   }, [client, controller, applySession])
 
+  /**
+   * Suppression définitive du compte. Rien n'est touché ici tant que le
+   * serveur n'a pas confirmé : un mot de passe faux laisse la session
+   * intacte, et son message repart au formulaire.
+   */
+  const deleteOwnAccount = useCallback(
+    async (password: string): Promise<Outcome<void>> => {
+      const outcome = await deleteAccount(client, password)
+      if (!outcome.ok) {
+        return outcome
+      }
+      const userId = account.kind === 'cloud' ? account.userId : null
+      controller.deleted()
+      if (userId !== null) {
+        eraseAccountTraces(storage, userId)
+      }
+      clearToken()
+      setAccount(LOCAL_SPACE)
+      applySession({ status: 'signed-out' })
+      setNotice(null)
+      return outcome
+    },
+    [client, controller, applySession, account, storage],
+  )
+
   const retry = useCallback(() => {
     if (readToken() === null) {
       applySession({ status: 'signed-out' })
@@ -186,8 +215,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<SessionContextValue>(
-    () => ({ session, account, signIn, signUp, signOut, retry, notice, clearNotice, updateUser }),
-    [session, account, signIn, signUp, signOut, retry, notice, clearNotice, updateUser],
+    () => ({
+      session,
+      account,
+      signIn,
+      signUp,
+      signOut,
+      deleteOwnAccount,
+      retry,
+      notice,
+      clearNotice,
+      updateUser,
+    }),
+    [session, account, signIn, signUp, signOut, deleteOwnAccount, retry, notice, clearNotice, updateUser],
   )
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>

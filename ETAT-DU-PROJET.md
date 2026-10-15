@@ -44,6 +44,7 @@ Les treize étapes prévues sont livrées. La stabilisation a réglé les quatre
 | Finition du schéma | Fait | Focus clavier rendu visible dans la zone de dessin, sélection qui se signale par la forme, aide d'accessibilité en français, et plus aucune valeur de taille écrite en dur dans l'application. |
 | Cadrage du MPD | Fait | La vue s'ouvre centrée à la bonne échelle, et garde son cadrage et ses tables déplacées au retour. |
 | Vérification d'email | Fait | Le lien reçu par courrier ouvre une page qui annonce son résultat, sans exiger de compte. Le profil montre l'état de l'adresse et renvoie le lien. |
+| Mes données | Fait | Export de toutes ses données en un fichier, et suppression définitive du compte après mot de passe et case cochée, sans trace locale. |
 | Système de design | Fait | Palettes chaudes en clair et en sombre, composants de base élevés, barres de défilement, bouton retour unique. Soixante paires de contrastes tenues au niveau AA. |
 | Version PC (Tauri) | Fait | Configuration complète, workflow de release, `v0.1.0` publiée avec neuf fichiers. |
 | Version web (déploiement) | Partiel | Workflow réparé et poussé. Il attend les secrets du VPS, à créer à la main. |
@@ -123,6 +124,16 @@ Le renvoi est une brique unique, posée à trois endroits : la page de retour, l
 Le profil montre l'adresse de connexion et son état, **porté par un mot autant que par la pastille**. Le mode prof, lui, demande désormais deux choses, une adresse scolaire et une adresse confirmée. Une adresse scolaire non confirmée ne voit plus le bouton d'activation, qui mènerait à un refus prévisible, mais le renvoi du lien. La règle reste au serveur : l'application lit `email_verified_at` et n'en recalcule rien.
 
 Au passage, la coquille des écrans hors connexion, logo, thème, taille d'interface et carte centrée, que `AuthPage` écrivait pour elle seule, devient une brique partagée avec la page de retour.
+
+**Emporter ses données, et fermer son compte.** Le serveur servait déjà les deux droits, l'export en JSON et la suppression vérifiée par mot de passe. L'application ne les appelait pas : on ne pouvait ni emporter ses données ni partir.
+
+La section **Mes données** du profil télécharge le fichier par le même chemin que les autres exports du logiciel, donc la personne choisit où le déposer. Un mot dit ce qu'il contient, et surtout ce qu'il ne contient pas : les fichiers envoyés y figurent par leur adresse, pas par leur contenu.
+
+La suppression demande **deux gestes de nature différente** : le mot de passe courant, que le serveur exige et vérifie avant d'effacer quoi que ce soit, et une case à cocher. Le bouton rouge reste inerte tant que les deux manquent. Le dialogue dit les conséquences en trois temps, sans détour : ce qui disparaît, ce qui reste sans le nom sous « Compte supprimé », parce qu'un rendu noté et un commentaire appartiennent aussi aux autres, et, **pour un prof seulement**, que ses classes, devoirs et cours partent avec lui et que ses élèves en perdent l'accès.
+
+Le nettoyage local demandait plus qu'une déconnexion. Une déconnexion ordinaire **met de côté** le travail non envoyé dans la boîte d'envoi du compte, qui survit au vidage du cache, pour la prochaine visite. Un compte supprimé n'a pas de prochaine visite : le contrôleur reçoit un chemin à lui, qui vide le cache **sans rien mettre de côté**, et les trois clés que le compte laisse dans ce navigateur, sa boîte d'envoi, ses liens de devoir et la trace de ses imports proposés, sont retirées. L'espace local d'avant compte, lui, ne bouge pas : il n'appartient pas au compte. Deux essais tiennent cette frontière, un sur le contrôleur et un sur l'effacement.
+
+Rien n'est touché tant que le serveur n'a pas répondu : un mot de passe faux laisse la session entière, et le refus s'affiche dans le dialogue, qui reste ouvert, le focus revenu au champ.
 
 **Système de design.** Les couleurs sont des tokens sémantiques, définis une fois en clair et une fois en sombre dans `src/index.css`. Aucun composant ne porte de couleur en dur, et `src/design/contrast.test.ts` lit les tokens dans la feuille de style pour vérifier **soixante paires** de texte sur fond, dans les deux thèmes : 4,5 pour du texte, 3 pour un contour ou un trait. On ne baisse jamais un minimum pour faire passer une couleur, on change la couleur.
 

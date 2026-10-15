@@ -137,6 +137,16 @@ export function createAccountController({
       return clearCache(null)
     },
 
+    /**
+     * Compte supprimé pour de bon. Rien n'est mis de côté : garder le
+     * travail en attente d'un compte effacé serait exactement la trace
+     * qu'on ne veut pas laisser dans ce navigateur.
+     */
+    deleted: (): void => {
+      close()
+      cache.reset(null)
+    },
+
     /** Jeton refusé par le serveur. Renvoie le nombre de documents mis de côté. */
     expired: (): number => {
       close()

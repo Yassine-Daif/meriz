@@ -133,6 +133,33 @@ describe('changement de compte, cache toujours vidé', () => {
   })
 })
 
+describe('compte supprimé, rien ne reste', () => {
+  // Une déconnexion garde le travail en attente pour la prochaine visite.
+  // Un compte supprimé n'en a pas : sa boîte d'envoi ne doit pas naître.
+  it('vide le cache sans rien mettre de côté', async () => {
+    const { server, cache, controller } = setup()
+    const repo = repositoryOf(controller.signedIn('1', server.tokenFor('1')))
+    await editOffline(server, repo, 42)
+    expect(cache.pending()).toHaveLength(1)
+
+    controller.deleted()
+
+    expect(cache.owner()).toBeNull()
+    expect(cache.list()).toEqual([])
+    expect(cache.takeOutbox('1')).toEqual([])
+  })
+
+  it('là où une déconnexion, elle, met de côté', async () => {
+    const { server, cache, controller } = setup()
+    const repo = repositoryOf(controller.signedIn('1', server.tokenFor('1')))
+    await editOffline(server, repo, 42)
+
+    await controller.signingOut(100)
+
+    expect(cache.takeOutbox('1')).toHaveLength(1)
+  })
+})
+
 describe("modifications non envoyées, jamais perdues ni partagées", () => {
   it("déconnexion hors ligne : mises de côté pour ce compte, reprises à son retour seulement", async () => {
     const { server, cache, controller } = setup()

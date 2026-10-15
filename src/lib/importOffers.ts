@@ -5,7 +5,7 @@ import type { StorageLike } from './documentStore'
  * La proposition ne revient que pour des documents locaux nouveaux,
  * jamais pour ceux auxquels ce compte a déjà répondu.
  */
-const OFFERED_PREFIX = 'meriz-import-offered:'
+export const OFFERED_PREFIX = 'meriz-import-offered:'
 
 function readOffered(storage: StorageLike, userId: string): Set<string> {
   try {

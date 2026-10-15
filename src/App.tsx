@@ -864,6 +864,11 @@ export function App() {
               user={session.user}
               client={account.client}
               onShowClasses={() => navigate('classes')}
+              onAccountDeleted={() =>
+                setHomeAnnouncement(
+                  'Votre compte a été supprimé. Vos documents de cet appareil sont toujours là.',
+                )
+              }
             />
           )}
         </ConnectedShell>

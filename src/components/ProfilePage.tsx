@@ -12,6 +12,7 @@ import { FormField } from './FormField'
 import { FormAlert } from './FormAlert'
 import { PageShell } from './PageShell'
 import { ToggleSwitch } from './ToggleSwitch'
+import { AccountDataSection } from './AccountDataSection'
 import { EmailVerificationSection } from './EmailVerificationSection'
 import { TeacherModeSection } from './TeacherModeSection'
 import { Button } from './ui/Button'
@@ -21,6 +22,8 @@ interface ProfilePageProps {
   /** Client lié au compte connecté. */
   client: ApiClient
   onShowClasses: () => void
+  /** Compte supprimé : l'application repart de l'accueil public. */
+  onAccountDeleted: () => void
 }
 
 type Field = 'firstName' | 'name' | 'bio' | 'contact' | 'avatar'
@@ -37,7 +40,7 @@ const SERVER_FIELD: Record<Field, string> = {
  * non. L'email de connexion reste privé ; pour être contacté, on remplit
  * le champ Contact et on active son partage.
  */
-export function ProfilePage({ user, client, onShowClasses }: ProfilePageProps) {
+export function ProfilePage({ user, client, onShowClasses, onAccountDeleted }: ProfilePageProps) {
   const { updateUser } = useSession()
   const [firstName, setFirstName] = useState(user.firstName ?? '')
   const [name, setName] = useState(user.name)
@@ -254,6 +257,8 @@ export function ProfilePage({ user, client, onShowClasses }: ProfilePageProps) {
       <EmailVerificationSection user={user} client={client} />
 
       <TeacherModeSection user={user} client={client} onShowClasses={onShowClasses} />
+
+      <AccountDataSection user={user} client={client} onDeleted={onAccountDeleted} />
     </PageShell>
   )
 }

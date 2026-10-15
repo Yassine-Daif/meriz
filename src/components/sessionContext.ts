@@ -21,6 +21,12 @@ export interface SessionContextValue {
    * pour la prochaine connexion de ce compte.
    */
   signOut: () => Promise<number>
+  /**
+   * Supprime définitivement son compte, après vérification du mot de
+   * passe par le serveur. Au succès, la session se ferme et ce
+   * navigateur ne garde plus aucune trace de ce compte.
+   */
+  deleteOwnAccount: (password: string) => Promise<Outcome<void>>
   /** Nouvelle tentative de vérification du jeton (serveur injoignable). */
   retry: () => void
   /** Message à annoncer une fois (session expirée, travail mis de côté). */
