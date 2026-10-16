@@ -12,8 +12,11 @@ import { DocumentsHome } from './components/DocumentsHome'
 const Editor = lazy(() => import('./components/Editor').then((m) => ({ default: m.Editor })))
 import { readVerification, urlWithoutVerification } from './lib/verificationLanding'
 import type { VerificationResult } from './lib/verificationLanding'
+import { readPasswordReset, urlWithoutPasswordReset } from './lib/passwordResetLanding'
+import type { PasswordResetLink } from './lib/passwordResetLanding'
 import { AuthPage } from './components/AuthPage'
 import { EmailVerifiedPage } from './components/EmailVerifiedPage'
+import { NewPasswordPage } from './components/NewPasswordPage'
 import type { AuthMode } from './components/AuthPage'
 import { ImportLocalDialog } from './components/ImportLocalDialog'
 import { AccountLoading } from './components/AccountLoading'
@@ -73,6 +76,15 @@ export function App() {
   const [verification, setVerification] = useState<VerificationResult | null>(() =>
     typeof window === 'undefined' ? null : readVerification(window.location.href),
   )
+  /*
+   * Lien de réinitialisation de mot de passe, lu une seule fois lui
+   * aussi. Il mène droit ici, sans passer par l'API, et porte le jeton.
+   */
+  const [resetLink, setResetLink] = useState<PasswordResetLink | null>(() =>
+    typeof window === 'undefined' ? null : readPasswordReset(window.location.href),
+  )
+  /** Adresse connue d'avance, posée dans le champ de la connexion. */
+  const [knownEmail, setKnownEmail] = useState<string | undefined>(undefined)
   const [homeAnnouncement, setHomeAnnouncement] = useState<string | null>(null)
   // Page de l'espace connecté, gardée pendant l'édition : fermer un
   // document ramène à la page d'où on l'a ouvert.
@@ -179,10 +191,37 @@ export function App() {
     )
   }
 
+  if (resetLink !== null) {
+    // Un jeton de réinitialisation ouvre un compte : il quitte l'adresse
+    // dès qu'on a fini, comme le résultat de vérification.
+    const leave = () => {
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(null, '', urlWithoutPasswordReset(window.location.href))
+      }
+      setResetLink(null)
+    }
+    return (
+      <NewPasswordPage
+        link={resetLink}
+        onContinue={leave}
+        onSignIn={(email) => {
+          leave()
+          setKnownEmail(email)
+          showAuth('sign-in')
+        }}
+        onAskNewLink={() => {
+          leave()
+          showAuth('forgot')
+        }}
+      />
+    )
+  }
+
   if (!current && authMode) {
     return (
       <AuthPage
         mode={authMode}
+        initialEmail={knownEmail}
         onModeChange={setAuthMode}
         onBack={() => setAuthMode(null)}
         onAuthenticated={(message) => {

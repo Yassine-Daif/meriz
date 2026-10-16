@@ -47,6 +47,7 @@ Les treize étapes prévues sont livrées. La stabilisation a réglé les quatre
 | Mes données | Fait | Export de toutes ses données en un fichier, et suppression définitive du compte après mot de passe et case cochée, sans trace locale. |
 | Poids du premier chargement | Fait | L'éditeur, React Flow et Yjs arrivent à l'ouverture d'un document : l'entrée passe de 278 à 148 kilos compressés. |
 | Lisibilité d'App.tsx | Fait | Les onze chemins d'ouverture, l'observation en direct et l'offre d'import vivent dans des hooks nommés. La fonction App passe de 693 à 354 lignes. |
+| Mot de passe oublié | Fait | Demande depuis la connexion, réponse identique pour une adresse connue ou non, et le lien du courrier ouvre le choix d'un nouveau mot de passe. |
 | Système de design | Fait | Palettes chaudes en clair et en sombre, composants de base élevés, barres de défilement, bouton retour unique. Soixante paires de contrastes tenues au niveau AA. |
 | Version PC (Tauri) | Fait | Configuration complète, workflow de release, `v0.1.0` publiée avec neuf fichiers. |
 | Version web (déploiement) | Partiel | Workflow réparé et poussé. Il attend les secrets du VPS, à créer à la main. |
@@ -150,6 +151,14 @@ Quatre morceaux en sortent, et chacun fait une chose. `editorTarget.ts` tient ce
 **Le gain le plus net est ailleurs que dans le compte de lignes.** Les quarante lignes qui décident où revenir en fermant l'éditeur étaient noyées dans une fonction qui faisait aussi l'envoi en attente et la libération. Elles deviennent `returnTarget`, une fonction pure : un rendu ouvert depuis « À corriger » y retourne, un travail depuis « Mon travail » aussi, un document de groupe revient à l'onglet documents de son groupe, un travail observé ou corrigé à deux revient au suivi. **Treize essais neufs tiennent ces portes**, là où rien ne les vérifiait hors des essais de bout en bout.
 
 `App` garde la navigation, l'état d'écran et les branches de rendu : **354 lignes au lieu de 693, neuf hooks au lieu de vingt-cinq**. Aucune ligne de comportement n'a changé, et c'est la suite entière de bout en bout qui le dit, puisque ces chemins ne sont couverts que là.
+
+**Mot de passe oublié.** Le serveur servait déjà les deux temps, demander un lien puis poser un nouveau mot de passe. L'application n'en branchait aucun : la page de connexion n'offrait aucune porte de sortie, et le lien du courrier tombait dans le vide.
+
+Depuis la connexion, un lien mène à un formulaire d'adresse. **La réponse est la même pour une adresse connue et pour une inconnue**, et c'est le serveur qui la fournit : l'application n'en fabrique aucune, donc elle ne peut rien laisser deviner. Un essai compare les deux réponses mot pour mot. Le message prend ensuite la place du formulaire, car il n'y a plus rien à y faire.
+
+Le lien du courrier mène droit à l'application, sans passer par l'API, et porte le jeton et l'adresse. La page se reconnaît comme celle de vérification, au chemin **ou** aux seuls paramètres, pour la même raison de sous-dossier. Deux champs, le mot de passe et sa confirmation : **cette confirmation est une courtoisie de l'application**, le serveur ne la demande pas, donc elle se vérifie ici et ne part jamais sur le réseau.
+
+Au succès, l'écran dit ce qui vient de se passer pour de bon : **toutes les sessions sont tombées, y compris sur les autres appareils**. Le serveur ne rend aucun jeton, et c'est délibéré de sa part, un lien reçu par courrier ne doit pas suffire à ouvrir une session. On repasse donc par la connexion, avec l'adresse déjà posée dans le champ, puisqu'elle vient du lien. Le jeton, lui, quitte la barre d'adresse : il ne vaut qu'une fois et il ouvre un compte.
 
 **Système de design.** Les couleurs sont des tokens sémantiques, définis une fois en clair et une fois en sombre dans `src/index.css`. Aucun composant ne porte de couleur en dur, et `src/design/contrast.test.ts` lit les tokens dans la feuille de style pour vérifier **soixante paires** de texte sur fond, dans les deux thèmes : 4,5 pour du texte, 3 pour un contour ou un trait. On ne baisse jamais un minimum pour faire passer une couleur, on change la couleur.
 

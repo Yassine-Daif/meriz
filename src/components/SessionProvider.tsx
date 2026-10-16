@@ -8,6 +8,8 @@ import { getApiBaseUrl } from '../lib/apiConfig'
 import { browserStorage } from '../lib/browserStorage'
 import { createCloudCache } from '../lib/cloudCache'
 import { deleteAccount } from '../lib/accountApi'
+import { requestPasswordReset, resetPassword } from '../lib/passwordApi'
+import type { NewPassword } from '../lib/passwordApi'
 import { eraseAccountTraces } from '../lib/accountErasure'
 import { fetchCurrentUser, login, logout, register } from '../lib/authApi'
 import type { ApiUser, AuthSuccess, Credentials, SignUpData } from '../lib/authApi'
@@ -193,6 +195,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [client, controller, applySession, account, storage],
   )
 
+  /*
+   * Mot de passe oublié. Les deux appels marchent sans session, c'est
+   * tout leur objet, et ils ne touchent jamais à la session courante :
+   * le serveur n'ouvre rien, on repasse par la connexion.
+   */
+  const requestReset = useCallback(
+    (email: string) => requestPasswordReset(client, email),
+    [client],
+  )
+
+  const applyNewPassword = useCallback(
+    (data: NewPassword) => resetPassword(client, data),
+    [client],
+  )
+
   const retry = useCallback(() => {
     if (readToken() === null) {
       applySession({ status: 'signed-out' })
@@ -222,12 +239,27 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       signUp,
       signOut,
       deleteOwnAccount,
+      requestPasswordReset: requestReset,
+      resetPassword: applyNewPassword,
       retry,
       notice,
       clearNotice,
       updateUser,
     }),
-    [session, account, signIn, signUp, signOut, deleteOwnAccount, retry, notice, clearNotice, updateUser],
+    [
+      session,
+      account,
+      signIn,
+      signUp,
+      signOut,
+      deleteOwnAccount,
+      requestReset,
+      applyNewPassword,
+      retry,
+      notice,
+      clearNotice,
+      updateUser,
+    ],
   )
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>

@@ -9,15 +9,23 @@ import { Button } from './ui/Button'
 interface SignInFormProps {
   onSuccess: (user: ApiUser) => void
   onSwitchToSignUp: () => void
+  onForgotPassword: () => void
+  /** Adresse déjà connue, après une réinitialisation : on la repose. */
+  initialEmail?: string
 }
 
 /** Message unique : on ne révèle jamais si l'email ou le mot de passe est en cause. */
 const WRONG_CREDENTIALS = 'Email ou mot de passe incorrect.'
 
 /** Connexion par email et mot de passe. */
-export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
+export function SignInForm({
+  onSuccess,
+  onSwitchToSignUp,
+  onForgotPassword,
+  initialEmail = '',
+}: SignInFormProps) {
   const { signIn } = useSession()
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(initialEmail)
   const [password, setPassword] = useState('')
   const [pending, setPending] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
@@ -62,6 +70,15 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
       <Button type="submit" variant="primary" block loading={pending} loadingLabel="Connexion…">
         Se connecter
       </Button>
+      <p className="text-center text-sm">
+        <button
+          type="button"
+          onClick={onForgotPassword}
+          className="font-medium text-accent-ink underline underline-offset-2 hover:text-ink"
+        >
+          Mot de passe oublié ?
+        </button>
+      </p>
       <p className="text-center text-sm text-ink-soft">
         Pas encore de compte ?{' '}
         <button

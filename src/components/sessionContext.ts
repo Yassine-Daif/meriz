@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react'
 import type { Outcome } from '../lib/apiClient'
 import type { AccountSpace } from '../lib/accountController'
 import type { ApiUser, Credentials, SignUpData } from '../lib/authApi'
+import type { NewPassword } from '../lib/passwordApi'
 import type { SessionState } from '../lib/sessionState'
 
 export interface SessionContextValue {
@@ -27,6 +28,16 @@ export interface SessionContextValue {
    * navigateur ne garde plus aucune trace de ce compte.
    */
   deleteOwnAccount: (password: string) => Promise<Outcome<void>>
+  /**
+   * Demande un lien de réinitialisation. La réponse ne dit jamais si
+   * l'adresse existe : c'est le même message dans les deux cas.
+   */
+  requestPasswordReset: (email: string) => Promise<Outcome<string>>
+  /**
+   * Pose un nouveau mot de passe avec le jeton reçu par courrier.
+   * Aucune session ne s'ouvre : on repasse par la connexion.
+   */
+  resetPassword: (data: NewPassword) => Promise<Outcome<string>>
   /** Nouvelle tentative de vérification du jeton (serveur injoignable). */
   retry: () => void
   /** Message à annoncer une fois (session expirée, travail mis de côté). */

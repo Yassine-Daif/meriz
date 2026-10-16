@@ -1,15 +1,18 @@
 import type { ApiUser } from '../lib/authApi'
 import { displayName } from '../lib/authApi'
 import { useSession } from './sessionContext'
+import { ForgotPasswordForm } from './ForgotPasswordForm'
 import { SignInForm } from './SignInForm'
 import { SignUpForm } from './SignUpForm'
 import { Notice } from './ui/Notice'
 import { PublicShell } from './ui/PublicShell'
 
-export type AuthMode = 'sign-in' | 'sign-up'
+export type AuthMode = 'sign-in' | 'sign-up' | 'forgot'
 
 interface AuthPageProps {
   mode: AuthMode
+  /** Adresse déjà connue, posée dans la connexion. */
+  initialEmail?: string
   onModeChange: (mode: AuthMode) => void
   onBack: () => void
   /** Connexion ou inscription réussie : message à annoncer sur l'accueil. */
@@ -25,10 +28,14 @@ const TITLES: Record<AuthMode, { title: string; lede: string }> = {
     title: 'Créer un compte',
     lede: 'Un compte gratuit, pour retrouver bientôt vos documents partout. Meriz reste utilisable sans compte.',
   },
+  forgot: {
+    title: 'Mot de passe oublié',
+    lede: 'Indiquez votre adresse : si un compte existe, un lien pour choisir un nouveau mot de passe vous sera envoyé.',
+  },
 }
 
 /** Écran de connexion ou d'inscription, hors de l'éditeur. */
-export function AuthPage({ mode, onModeChange, onBack, onAuthenticated }: AuthPageProps) {
+export function AuthPage({ mode, initialEmail, onModeChange, onBack, onAuthenticated }: AuthPageProps) {
   const { session } = useSession()
 
   const handleSuccess = (user: ApiUser) => {
@@ -55,7 +62,16 @@ export function AuthPage({ mode, onModeChange, onBack, onAuthenticated }: AuthPa
       </p>
     )
   } else if (mode === 'sign-in') {
-    content = <SignInForm onSuccess={handleSuccess} onSwitchToSignUp={() => onModeChange('sign-up')} />
+    content = (
+      <SignInForm
+        onSuccess={handleSuccess}
+        onSwitchToSignUp={() => onModeChange('sign-up')}
+        onForgotPassword={() => onModeChange('forgot')}
+        initialEmail={initialEmail}
+      />
+    )
+  } else if (mode === 'forgot') {
+    content = <ForgotPasswordForm onSwitchToSignIn={() => onModeChange('sign-in')} />
   } else {
     content = <SignUpForm onSuccess={handleSuccess} onSwitchToSignIn={() => onModeChange('sign-in')} />
   }
