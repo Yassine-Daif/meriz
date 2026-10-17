@@ -60,10 +60,33 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Sans ces adresses, l'application de bureau se construirait
+          # sans serveur : les comptes y seraient désactivés, et le
+          # direct muet. Ce sont les mêmes valeurs que la version web.
+          #
+          # Aucun secret ici : ce sont des adresses publiques, et la clé
+          # Reverb circule déjà dans le navigateur de chaque visiteur.
+          # Elle n'autorise rien à elle seule, chaque canal étant
+          # autorisé au jeton du compte. Le secret Reverb, lui, reste
+          # sur le serveur et n'apparaît jamais ici.
+          VITE_API_URL: 'https://api.meriz.fr'
+          VITE_REVERB_APP_KEY: '0t421vha7ydml81l0c2i'
+          VITE_REVERB_HOST: 'api.meriz.fr'
+          VITE_REVERB_PORT: '443'
+          VITE_REVERB_SCHEME: 'https'
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Meriz ${{ github.ref_name }}'
-          releaseBody: 'Installateurs Windows, macOS et Linux de Meriz.'
+          releaseBody: |
+            Installateurs de Meriz pour Windows, macOS et Linux.
+
+            **Windows** : `Meriz_<version>_x64-setup.exe`, ou le `.msi` pour un déploiement en salle machine.
+            **macOS** : `aarch64.dmg` pour un Mac Apple Silicon, `x64.dmg` pour un Mac Intel.
+            **Linux** : `.AppImage` à lancer tel quel, ou les paquets `.deb` et `.rpm`.
+
+            L'application se connecte à https://api.meriz.fr, et fonctionne aussi sans compte,
+            vos modèles restant alors sur votre appareil. Le téléchargement direct, par système,
+            est sur https://meriz.fr/telecharger.html
           # Publication directe : les boutons du site pointent sur
           # releases/latest, qui ignore les brouillons.
           releaseDraft: false
