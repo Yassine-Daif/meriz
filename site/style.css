@@ -5,9 +5,11 @@
  * encre presque noire en clair, nuit indigo et encre ivoire en sombre,
  * un seul accent indigo pour les liens, les boutons et le focus.
  *
- * Aucun script sur ce site. Le thème suit le réglage du système, les
- * captures aussi, et tout le texte est dans la source : c'est ce qui se
- * lit le mieux, pour un moteur de recherche comme pour un assistant.
+ * Le site est clair par défaut, et le sombre s'obtient par le sélecteur
+ * de l'en-tête, qui pose data-theme sur la racine et retient le choix.
+ * Sans script, tout reste lisible, en clair : le contenu ne dépend
+ * jamais du JavaScript, ce qui se lit le mieux pour un moteur de
+ * recherche comme pour un assistant.
  */
 
 /* La police est servie ici, pas par un service tiers : le site reste
@@ -40,6 +42,7 @@
   --shell: #f7f3ec;
   --surface: #ffffff;
   --surface-soft: #fbf8f2;
+  --canvas: #fcfaf5;
   --ink: #2a2320;
   --ink-soft: #6b5f55;
   --line: #e8e0d4;
@@ -61,32 +64,38 @@
   --radius-card: 1.5rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
+[data-theme='dark'] {
+  color-scheme: dark;
 
-    --shell: #171428;
-    --surface: #221d38;
-    --surface-soft: #2a2543;
-    --ink: #f2efe9;
-    --ink-soft: #ada6bf;
-    --line: #322c4d;
-    --line-strong: #827ba0;
-    --accent: #5b52ec;
-    --accent-hover: #4f46e5;
-    --accent-ink: #c6c9ff;
-    --accent-soft: #312b60;
-    --logo: #6366f1;
-    --sage: #8edcb3;
-    --sage-soft: #193232;
-    --shadow: 0 0 0;
-  }
+  --shell: #171428;
+  --surface: #221d38;
+  --surface-soft: #2a2543;
+  --canvas: #1b172d;
+  --ink: #f2efe9;
+  --ink-soft: #ada6bf;
+  --line: #322c4d;
+  --line-strong: #827ba0;
+  --accent: #5b52ec;
+  --accent-hover: #4f46e5;
+  --accent-ink: #c6c9ff;
+  --accent-soft: #312b60;
+  --logo: #6366f1;
+  --sage: #8edcb3;
+  --sage-soft: #193232;
+  --shadow: 0 0 0;
 }
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+/* Une règle d'affichage posée sur une classe l'emporte sinon sur le
+   display:none que le navigateur applique à [hidden] : les éléments
+   cachés par script resteraient visibles. */
+[hidden] {
+  display: none !important;
 }
 
 body {
@@ -161,7 +170,7 @@ svg {
 
 .contenant {
   width: 100%;
-  max-width: 68rem;
+  max-width: 60rem;
   margin: 0 auto;
   padding: 0 1.5rem;
 }
@@ -239,6 +248,53 @@ svg {
   font-weight: 600;
 }
 
+/* Sélecteur de thème ---------------------------------------------- */
+
+/*
+ * Deux boutons dans un étui, comme le réglage de thème de
+ * l'application. L'état actif se lit à son fond et à aria-pressed,
+ * jamais à la seule couleur. Sans script, l'étui reste affiché mais
+ * inerte : le site est clair, et c'est le bon défaut.
+ */
+.theme {
+  display: inline-flex;
+  gap: 0.15rem;
+  padding: 0.15rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+}
+
+.theme button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.theme button:hover {
+  color: var(--ink);
+}
+
+.theme button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.theme svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
 /* Boutons -------------------------------------------------------- */
 
 .bouton {
@@ -311,7 +367,7 @@ main {
 .chapeau {
   color: var(--ink-soft);
   font-size: 1.1rem;
-  max-width: 44rem;
+  max-width: 38rem;
 }
 
 .heros {
@@ -339,7 +395,14 @@ main {
   display: grid;
   gap: 1.25rem;
   margin-top: 2rem;
+  align-items: stretch;
   grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+/* Deux colonnes larges : des cartes basses plutôt que hautes, et une
+   page qui descend moins. */
+.grille-large {
+  grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr));
 }
 
 .carte {
@@ -373,6 +436,224 @@ main {
   font-size: 0.95rem;
 }
 
+/* La grammaire du schéma ------------------------------------------ */
+
+/*
+ * Le site emprunte le vocabulaire de la zone de dessin : l'entité et son
+ * en-tête teinté, la capsule de l'association, la pilule de cardinalité,
+ * le trait de patte, le point d'accroche, et la grille du fond. Rien
+ * d'autre : ni dégradé, ni verre, ni ombre épaisse.
+ */
+
+/* L'entité : un en-tête teinté, un corps. Comme EntityNode. */
+.entite {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgb(var(--shadow) / 0.07);
+  position: relative;
+}
+
+.entite > h3,
+.entite > .entite-nom {
+  margin: 0;
+  padding: 0.7rem 1.1rem;
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+}
+
+.entite > p,
+.entite > .entite-corps {
+  margin: 0;
+  padding: 0.9rem 1.1rem 1.1rem;
+  color: var(--ink-soft);
+  font-size: 0.97rem;
+}
+
+/* Le point d'accroche, comme une poignée de nœud. */
+.entite::before {
+  content: '';
+  position: absolute;
+  top: 1.45rem;
+  left: -4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--mark, var(--accent));
+  opacity: 0.45;
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.entite:hover::before {
+  opacity: 1;
+  transform: scale(1.25);
+}
+
+.entite:hover {
+  border-color: var(--ink-soft);
+}
+
+/* La capsule : le nom d'une association. */
+.capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 620;
+}
+
+/* La pilule de cardinalité, en mono, posée sur un trait. */
+.cardinalite {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* La grille du fond de dessin, très pâle, réservée aux bandes. */
+.grille-points {
+  background-image: radial-gradient(currentColor 1px, transparent 1px);
+  background-size: 16px 16px;
+  opacity: 0.09;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* La bande d'accent : le moment fort de la page. */
+.bande {
+  position: relative;
+  overflow: hidden;
+  /* La bande est le moment fort : elle s'autorise plus de largeur. */
+  background: #171428;
+  color: #f2efe9;
+  border-top: 1px solid #322c4d;
+  border-bottom: 1px solid #322c4d;
+}
+
+.bande .contenant {
+  max-width: 68rem;
+}
+
+.bande h2 {
+  color: #f2efe9;
+}
+
+.bande .chapeau {
+  color: #ada6bf;
+}
+
+.bande .entite {
+  background: #221d38;
+  border-color: #827ba0;
+  box-shadow: none;
+}
+
+.bande .entite > h3,
+.bande .entite > .entite-nom {
+  background: #312b60;
+  border-bottom-color: #322c4d;
+  color: #f2efe9;
+}
+
+.bande .entite > p {
+  color: #ada6bf;
+}
+
+.bande .cardinalite,
+.bande .capsule {
+  background: #221d38;
+  border-color: #827ba0;
+  color: #f2efe9;
+}
+
+.bande .entite::before {
+  background: #969bf8;
+}
+
+/* Le schéma de la démarche : quatre blocs, reliés deux à deux. */
+.schema {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: 2.75rem;
+  position: relative;
+}
+
+/* Quatre blocs de front, et une gouttière assez large pour que la patte
+   se voie de part et d'autre de sa cardinalité. */
+@media (min-width: 64rem) {
+  .schema {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: 3.5rem;
+  }
+}
+
+@media (min-width: 40rem) and (max-width: 63.99rem) {
+  .schema {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.schema > li {
+  position: relative;
+  list-style: none;
+  display: flex;
+}
+
+.schema > li > .entite {
+  flex: 1;
+}
+
+/* La patte entre deux blocs. Elle traverse toute la gouttière, et sa
+   cardinalité se pose au-dessus plutôt que de la masquer. */
+.schema > li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 1.85rem;
+  right: -3.5rem;
+  width: 3.5rem;
+  height: 1px;
+  background: var(--line-strong);
+}
+
+.bande .schema > li:not(:last-child)::after {
+  background: #827ba0;
+}
+
+.schema .cardinalite {
+  position: absolute;
+  top: 0.35rem;
+  right: -2.6rem;
+  z-index: 1;
+}
+
+/* Sous quatre colonnes, les pattes ne relient plus rien de lisible. */
+@media (max-width: 63.99rem) {
+  .schema > li:not(:last-child)::after,
+  .schema .cardinalite {
+    display: none;
+  }
+}
+
 /* Aperçu de l'outil ---------------------------------------------- */
 
 .apercu {
@@ -404,7 +685,7 @@ figcaption {
 /* Texte long ----------------------------------------------------- */
 
 .prose {
-  max-width: 44rem;
+  max-width: 38rem;
 }
 
 .prose h2 {
@@ -452,16 +733,49 @@ figcaption {
   color: var(--ink);
 }
 
+/*
+ * Un exemple est un fragment de schéma : on le présente comme tel, avec
+ * son étiquette en capsule et le fond de la zone de dessin.
+ */
 .exemple {
+  position: relative;
   font-family: var(--mono);
   font-size: 0.92rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-control);
-  padding: 1rem 1.25rem;
+  background: var(--canvas, var(--surface-soft));
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-card);
+  padding: 1.6rem 1.25rem 1.25rem;
   overflow-x: auto;
   white-space: pre;
   color: var(--ink);
+  line-height: 1.7;
+}
+
+.exemple::before {
+  content: attr(data-etiquette);
+  position: absolute;
+  top: -0.65rem;
+  left: 1rem;
+  padding: 0.05rem 0.6rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  font-weight: 620;
+  letter-spacing: 0.02em;
+}
+
+/* Une pause visuelle entre deux grandes parties. */
+.prose h2 {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+}
+
+.prose h2:first-child {
+  padding-top: 0;
+  border-top: 0;
 }
 
 .tableau {
@@ -490,10 +804,18 @@ figcaption {
 }
 
 .tableau tbody th {
-  font-family: var(--mono);
-  font-size: 0.92rem;
-  font-weight: 500;
   white-space: nowrap;
+}
+
+/* Les couples de cardinalité se lisent comme dans l'éditeur. */
+.tableau tbody th code,
+.tableau tbody th .cardinalite {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+}
+
+.tableau tbody tr:hover {
+  background: var(--surface-soft);
 }
 
 /* Téléchargements ------------------------------------------------- */
@@ -540,6 +862,156 @@ figcaption {
   font-size: 0.8rem;
   font-weight: 600;
   vertical-align: 0.1em;
+}
+
+/*
+ * Le système reconnu passe devant : un liseré, un fond, et une étiquette
+ * en toutes lettres. La reconnaissance ne fait que mettre en avant, les
+ * autres systèmes restent entiers juste en dessous.
+ */
+.telechargement.recommande {
+  border-left: 3px solid var(--accent);
+  background: var(--surface-soft);
+  border-radius: var(--radius-control);
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.poids {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.version {
+  margin-top: 0.75rem;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+/* Le sommaire de la page Merise ------------------------------------ */
+
+/*
+ * Sur grand écran, le sommaire suit la lecture et marque la partie
+ * courante. Sous 60 rem il repasse en tête, sans position fixe : un
+ * sommaire collant sur un téléphone mange l'écran.
+ */
+.avec-sommaire {
+  display: grid;
+  gap: 2.5rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.sommaire {
+  font-size: 0.93rem;
+}
+
+.sommaire h2 {
+  font-size: 0.8rem;
+  font-weight: 620;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 0.75rem;
+}
+
+.sommaire ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid var(--line);
+}
+
+.sommaire li + li {
+  margin-top: 0.1rem;
+}
+
+.sommaire a {
+  display: block;
+  padding: 0.3rem 0 0.3rem 0.9rem;
+  margin-left: -1px;
+  border-left: 2px solid transparent;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.sommaire a:hover {
+  color: var(--ink);
+  border-left-color: var(--line-strong);
+}
+
+.sommaire a[aria-current='true'] {
+  color: var(--accent-ink);
+  border-left-color: var(--accent);
+  font-weight: 620;
+}
+
+@media (min-width: 60rem) {
+  .avec-sommaire {
+    grid-template-columns: 13rem minmax(0, 1fr);
+  }
+
+  .sommaire {
+    position: sticky;
+    top: 2rem;
+    align-self: start;
+    max-height: calc(100dvh - 4rem);
+    overflow-y: auto;
+  }
+}
+
+/* Les entrées animées ---------------------------------------------- */
+
+/*
+ * L'état d'arrivée est l'état par défaut : sans script, ou sous
+ * mouvement réduit, tout est simplement là. L'animation ne fait que
+ * rejoindre cet état, elle ne le crée pas.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .js .entre {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 420ms ease-out, transform 420ms ease-out;
+    transition-delay: var(--retard, 0ms);
+  }
+
+  .js .entre.vu {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* La liaison se trace : le trait pousse depuis le bloc précédent. */
+  .js .schema > li:not(:last-child)::after {
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 380ms ease-out;
+    transition-delay: var(--retard, 0ms);
+  }
+
+  .js .schema > li.vu:not(:last-child)::after {
+    transform: scaleX(1);
+  }
+
+  /* La cardinalité arrive une fois le trait posé. */
+  .js .schema .cardinalite {
+    opacity: 0;
+    transition: opacity 260ms ease-out;
+    transition-delay: calc(var(--retard, 0ms) + 320ms);
+  }
+
+  .js .schema > li.vu .cardinalite {
+    opacity: 1;
+  }
+
+  /* Le trait tracé des figures en SVG. */
+  .js .trace {
+    stroke-dasharray: var(--longueur, 300);
+    stroke-dashoffset: var(--longueur, 300);
+    transition: stroke-dashoffset 900ms ease-out;
+  }
+
+  .js .vu .trace {
+    stroke-dashoffset: 0;
+  }
 }
 
 /* Pied de page --------------------------------------------------- */

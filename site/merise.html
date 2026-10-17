@@ -12,6 +12,15 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <link rel="stylesheet" href="style.css" />
+    <script>
+      /* Le thème retenu est posé avant le premier rendu : sinon un
+         visiteur en sombre verrait un éclair blanc à chaque page. */
+      try {
+        if (localStorage.getItem('meriz-theme') === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark')
+        }
+      } catch (e) {}
+    </script>
     <meta name="theme-color" content="#f7f3ec" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#171428" media="(prefers-color-scheme: dark)" />
     <meta property="og:type" content="article" />
@@ -114,6 +123,21 @@
           <a href="merise.html" aria-current="page">La méthode Merise</a>
           <a href="telecharger.html">Télécharger</a>
           <!-- Application web : servie à la racine de son sous-domaine. -->
+          <div class="theme" role="group" aria-label="Thème du site">
+            <button type="button" data-theme-choix="light" aria-pressed="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round" />
+              </svg>
+              Clair
+            </button>
+            <button type="button" data-theme-choix="dark" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" stroke-linejoin="round" />
+              </svg>
+              Sombre
+            </button>
+          </div>
           <a class="bouton bouton-principal bouton-petit" href="https://app.meriz.fr">Essayer en ligne</a>
         </nav>
       </div>
@@ -121,8 +145,9 @@
 
     <main id="contenu">
       <div class="heros">
-        <div class="contenant prose">
-          <h1>La méthode Merise, expliquée</h1>
+        <div class="contenant">
+          <p class="capsule">La méthode</p>
+          <h1 style="margin-top: 0.9rem">La méthode Merise, expliquée</h1>
           <p class="chapeau">
             Merise sépare ce que les données <em>sont</em> de la façon dont elles seront
             <em>rangées</em>. On décrit d'abord le domaine, sans penser aux tables, puis on en
@@ -132,7 +157,21 @@
       </div>
 
       <div class="section">
-        <div class="contenant prose">
+        <div class="contenant avec-sommaire">
+          <nav class="sommaire" aria-label="Sommaire de la page">
+            <h2>Sur cette page</h2>
+            <ol>
+              <li><a href="#origine">D'où vient Merise</a></li>
+              <li><a href="#dictionnaire">Le dictionnaire des données</a></li>
+              <li><a href="#entites">Les entités</a></li>
+              <li><a href="#associations">Les associations</a></li>
+              <li><a href="#cardinalites">Les cardinalités</a></li>
+              <li><a href="#passage">Du MCD au relationnel</a></li>
+              <li><a href="#sql">Du relationnel au SQL</a></li>
+              <li><a href="#pratiquer">Pratiquer la méthode</a></li>
+            </ol>
+          </nav>
+          <div class="prose">
           <h2 id="origine">D'où vient Merise</h2>
           <p>
             Merise est une méthode française d'analyse et de conception des systèmes
@@ -179,7 +218,7 @@
           <p>
             Dans notre bibliothèque, deux entités suffisent pour commencer.
           </p>
-          <div class="exemple">Adherent
+          <div class="exemple" data-etiquette="Deux entités">Adherent
   <u>numeroAdherent</u> : entier     ← identifiant
   nomAdherent : texte
 
@@ -203,7 +242,7 @@ Livre
             l'adhérent, ni une propriété du livre. Elle n'existe que parce que les deux se
             rencontrent.
           </p>
-          <div class="exemple">Adherent ──(0,n)── Emprunter ──(1,1)── Livre
+          <div class="exemple" data-etiquette="Une association">Adherent ──(0,n)── Emprunter ──(1,1)── Livre
                        emprunteLe : date</div>
 
           <h2 id="cardinalites">Les cardinalités, le cœur du modèle</h2>
@@ -229,19 +268,19 @@ Livre
             </thead>
             <tbody>
               <tr>
-                <th scope="row">0,1</th>
+                <th scope="row"><span class="cardinalite">0,1</span></th>
                 <td>peut ne pas participer, et au plus une fois</td>
               </tr>
               <tr>
-                <th scope="row">1,1</th>
+                <th scope="row"><span class="cardinalite">1,1</span></th>
                 <td>participe exactement une fois, ni plus ni moins</td>
               </tr>
               <tr>
-                <th scope="row">0,n</th>
+                <th scope="row"><span class="cardinalite">0,n</span></th>
                 <td>peut ne pas participer, ou participer plusieurs fois</td>
               </tr>
               <tr>
-                <th scope="row">1,n</th>
+                <th scope="row"><span class="cardinalite">1,n</span></th>
                 <td>participe au moins une fois, et peut-être beaucoup</td>
               </tr>
             </tbody>
@@ -284,7 +323,7 @@ Livre
             est composée des identifiants des entités reliées. Ses attributs deviennent ses
             colonnes.
           </p>
-          <div class="exemple">MCD   Adherent ──(0,n)── Emprunter ──(1,1)── Livre
+          <div class="exemple" data-etiquette="Du MCD au MLD">MCD   Adherent ──(0,n)── Emprunter ──(1,1)── Livre
 
 MLD   Adherent (<u>numeroAdherent</u>, nomAdherent)
       Livre (<u>isbn</u>, titre, #numeroAdherent, emprunteLe)</div>
@@ -293,7 +332,7 @@ MLD   Adherent (<u>numeroAdherent</u>, nomAdherent)
             la patte deviendrait 0,n des deux côtés, et <code>Emprunter</code> deviendrait une
             table :
           </p>
-          <div class="exemple">MLD   Adherent (<u>numeroAdherent</u>, nomAdherent)
+          <div class="exemple" data-etiquette="Si l'historique est gardé">MLD   Adherent (<u>numeroAdherent</u>, nomAdherent)
       Livre (<u>isbn</u>, titre)
       Emprunter (<u>#numeroAdherent</u>, <u>#isbn</u>, <u>emprunteLe</u>)</div>
 
@@ -304,7 +343,7 @@ MLD   Adherent (<u>numeroAdherent</u>, nomAdherent)
             <code>INT</code>, une date devient <code>DATE</code>. Le modèle conceptuel, lui,
             n'a jamais eu à les connaître.
           </p>
-          <div class="exemple">CREATE TABLE Adherent (
+          <div class="exemple" data-etiquette="Le script MySQL">CREATE TABLE Adherent (
   numeroAdherent INT NOT NULL AUTO_INCREMENT,
   nomAdherent VARCHAR(255) NOT NULL,
   PRIMARY KEY (numeroAdherent)
@@ -335,6 +374,7 @@ ALTER TABLE Livre
             <a class="bouton bouton-principal" href="https://app.meriz.fr">Modéliser maintenant</a>
             <a class="bouton" href="fonctionnalites.html">Voir toutes les fonctions</a>
           </div>
+          </div>
         </div>
       </div>
     </main>
@@ -350,5 +390,8 @@ ALTER TABLE Livre
         </nav>
       </div>
     </footer>
+    <script src="theme.js" defer></script>
+    <script src="anime.js" defer></script>
+    <script src="sommaire.js" defer></script>
   </body>
 </html>

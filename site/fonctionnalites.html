@@ -12,6 +12,15 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <link rel="stylesheet" href="style.css" />
+    <script>
+      /* Le thème retenu est posé avant le premier rendu : sinon un
+         visiteur en sombre verrait un éclair blanc à chaque page. */
+      try {
+        if (localStorage.getItem('meriz-theme') === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark')
+        }
+      } catch (e) {}
+    </script>
     <meta name="theme-color" content="#f7f3ec" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#171428" media="(prefers-color-scheme: dark)" />
     <meta property="og:type" content="website" />
@@ -56,6 +65,21 @@
           <a href="merise.html">La méthode Merise</a>
           <a href="telecharger.html">Télécharger</a>
           <!-- Application web : servie à la racine de son sous-domaine. -->
+          <div class="theme" role="group" aria-label="Thème du site">
+            <button type="button" data-theme-choix="light" aria-pressed="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round" />
+              </svg>
+              Clair
+            </button>
+            <button type="button" data-theme-choix="dark" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" stroke-linejoin="round" />
+              </svg>
+              Sombre
+            </button>
+          </div>
           <a class="bouton bouton-principal bouton-petit" href="https://app.meriz.fr">Essayer en ligne</a>
         </nav>
       </div>
@@ -72,11 +96,13 @@
         </div>
       </div>
 
-      <section class="section" aria-labelledby="modeliser-titre">
+      <section class="section bande" aria-labelledby="modeliser-titre">
+        <span class="grille-points" aria-hidden="true"></span>
         <div class="contenant">
-          <h2 id="modeliser-titre">Modéliser, du MCD au SQL</h2>
-          <div class="grille">
-            <article class="carte">
+          <p class="capsule">Le cœur de l'outil</p>
+          <h2 id="modeliser-titre" style="margin-top: 0.9rem">Modéliser, du MCD au SQL</h2>
+          <div class="grille" data-anime>
+            <article class="entite">
               <h3>Dictionnaire des données</h3>
               <p>
                 Chaque propriété est définie une seule fois, avec son type conceptuel, puis placée
@@ -84,14 +110,14 @@
                 par l'outil.
               </p>
             </article>
-            <article class="carte">
+            <article class="entite">
               <h3>Dessin du MCD</h3>
               <p>
                 Entités, associations, pattes et cardinalités, à la souris ou au clavier. Les
                 liens restent accrochés quand vous déplacez un bloc.
               </p>
             </article>
-            <article class="carte">
+            <article class="entite">
               <h3>Vérification du modèle</h3>
               <p>
                 Dix-sept règles contrôlées en continu : identifiant manquant, propriété placée
@@ -99,7 +125,7 @@
                 à l'élément concerné.
               </p>
             </article>
-            <article class="carte">
+            <article class="entite">
               <h3>MLD et MPD</h3>
               <p>
                 Les tables, clés primaires, clés étrangères et tables de jonction sont déduites
@@ -107,14 +133,14 @@
                 PostgreSQL, et restent modifiables colonne par colonne.
               </p>
             </article>
-            <article class="carte">
+            <article class="entite">
               <h3>Script SQL</h3>
               <p>
                 Le <code>CREATE TABLE</code> complet, avec les contraintes, à copier ou à exporter
                 en <code>.sql</code>. Les <code>DROP TABLE</code> préalables sont optionnels.
               </p>
             </article>
-            <article class="carte">
+            <article class="entite">
               <h3>Code Laravel et Symfony</h3>
               <p>
                 Les migrations et les modèles Eloquent, ou les entités Doctrine et leur migration,
@@ -129,43 +155,43 @@
       <section class="section section-douce" aria-labelledby="classe-titre">
         <div class="contenant">
           <h2 id="classe-titre">Enseigner et apprendre</h2>
-          <div class="grille">
-            <article class="carte">
+          <div class="grille" data-anime>
+            <article class="entite">
               <h3>Classes et codes d'accès</h3>
               <p>
                 Un prof crée sa classe, partage un code, et ses élèves la rejoignent. Le mode prof
                 demande une adresse scolaire ou universitaire, confirmée par son lien.
               </p>
             </article>
-            <article class="carte">
+            <article class="entite">
               <h3>Devoirs et rendus</h3>
               <p>
                 Un énoncé, une image facultative, une base de départ et un corrigé. Les élèves
                 travaillent dans l'outil et rendent leur modèle quand ils le décident.
               </p>
             </article>
-            <article class="carte">
+            <article class="entite">
               <h3>Correction et commentaires</h3>
               <p>
                 Un fil de correction par travail, des bulles posées directement sur le schéma, et
                 un crayon rouge éphémère pour montrer un détail pendant la correction à deux.
               </p>
             </article>
-            <article class="carte">
+            <article class="entite">
               <h3>Comparaison automatique</h3>
               <p>
                 Le rendu d'un élève se compare au corrigé : ce qui correspond, ce qui manque, ce
                 qui diffère. Le prof garde la main sur la note.
               </p>
             </article>
-            <article class="carte">
+            <article class="entite">
               <h3>Cours</h3>
               <p>
                 Des cours composés de blocs, texte, images, vidéos et exemples, publiés à la
                 classe quand ils sont prêts.
               </p>
             </article>
-            <article class="carte">
+            <article class="entite">
               <h3>Suivi en direct</h3>
               <p>
                 Quand le suivi est ouvert, le prof voit le travail avancer pendant la séance, et
@@ -179,22 +205,22 @@
       <section class="section" aria-labelledby="ensemble-titre">
         <div class="contenant">
           <h2 id="ensemble-titre">Travailler ensemble</h2>
-          <div class="grille">
-            <article class="carte">
+          <div class="grille" data-anime>
+            <article class="entite">
               <h3>Co-édition en temps réel</h3>
               <p>
                 Plusieurs personnes sur le même modèle, chacune avec son curseur et sa couleur.
                 Les modifications fusionnent sans écraser le travail des autres.
               </p>
             </article>
-            <article class="carte">
+            <article class="entite">
               <h3>Groupes</h3>
               <p>
                 Des groupes de travail entre pairs, avec leurs documents partagés et leur propre
                 code d'invitation, indépendants des classes.
               </p>
             </article>
-            <article class="carte">
+            <article class="entite">
               <h3>Hors ligne, puis synchronisé</h3>
               <p>
                 Le travail continue sans réseau et repart au serveur dès qu'il revient. Rien n'est
@@ -208,15 +234,15 @@
       <section class="section section-douce" aria-labelledby="partout-titre">
         <div class="contenant">
           <h2 id="partout-titre">Partout, et à vous</h2>
-          <div class="grille">
-            <article class="carte">
+          <div class="grille" data-anime>
+            <article class="entite">
               <h3>Navigateur ou logiciel</h3>
               <p>
                 La même application en ligne et en version bureau pour Windows, macOS et Linux,
                 avec le même format de fichier <code>.meriz.json</code>.
               </p>
             </article>
-            <article class="carte">
+            <article class="entite">
               <h3>Vos données vous appartiennent</h3>
               <p>
                 Sans compte, tout reste dans votre navigateur. Avec un compte, vous pouvez
@@ -224,7 +250,7 @@
                 voulez.
               </p>
             </article>
-            <article class="carte">
+            <article class="entite">
               <h3>Accessible</h3>
               <p>
                 Utilisable entièrement au clavier, contrastes tenus au niveau AA, taille
@@ -252,5 +278,7 @@
         </nav>
       </div>
     </footer>
+    <script src="theme.js" defer></script>
+    <script src="anime.js" defer></script>
   </body>
 </html>

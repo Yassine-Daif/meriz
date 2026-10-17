@@ -12,6 +12,15 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <link rel="stylesheet" href="style.css" />
+    <script>
+      /* Le thème retenu est posé avant le premier rendu : sinon un
+         visiteur en sombre verrait un éclair blanc à chaque page. */
+      try {
+        if (localStorage.getItem('meriz-theme') === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark')
+        }
+      } catch (e) {}
+    </script>
     <meta name="theme-color" content="#f7f3ec" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#171428" media="(prefers-color-scheme: dark)" />
     <meta property="og:type" content="website" />
@@ -56,6 +65,21 @@
           <a href="merise.html">La méthode Merise</a>
           <a href="telecharger.html" aria-current="page">Télécharger</a>
           <!-- Application web : servie à la racine de son sous-domaine. -->
+          <div class="theme" role="group" aria-label="Thème du site">
+            <button type="button" data-theme-choix="light" aria-pressed="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round" />
+              </svg>
+              Clair
+            </button>
+            <button type="button" data-theme-choix="dark" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" stroke-linejoin="round" />
+              </svg>
+              Sombre
+            </button>
+          </div>
           <a class="bouton bouton-principal bouton-petit" href="https://app.meriz.fr">Essayer en ligne</a>
         </nav>
       </div>
@@ -81,59 +105,89 @@
         <div class="contenant">
           <h2 id="systemes-titre">Pour votre système</h2>
           <p class="chapeau">
-            Chaque bouton ouvre la page des versions, où se trouve le fichier correspondant à
-            votre machine. La dernière version publiée y est toujours en tête.
+            Un bouton, un fichier : le téléchargement part directement, sans détour. Les adresses
+            suivent la dernière version publiée, donc elles restent justes sans qu'on y touche.
           </p>
+          <p class="version" data-version hidden></p>
           <ul class="liste-nue" style="margin-top: 1.5rem">
-            <li class="telechargement">
+            <li class="telechargement" data-systeme="windows">
               <div class="telechargement-texte">
-                <h3>Windows <span class="etiquette">64 bits</span></h3>
+                <h3>
+                  Windows
+                  <span class="etiquette" data-detecte hidden>Votre système</span>
+                </h3>
                 <p>
-                  Installateur <code>.exe</code>, ou paquet <code>.msi</code> pour un déploiement
-                  en salle machine.
+                  Installateur <code>.exe</code>, le choix habituel.
+                  <span class="poids" data-poids></span>
+                </p>
+                <p class="sous-texte">
+                  Pour un déploiement en salle machine, le paquet
+                  <a href="https://github.com/Yassine-Daif/meriz/releases/latest" data-fichier="windows-msi" rel="noopener">.msi</a>
+                  est aussi publié.
                 </p>
               </div>
-              <!-- Page des versions. Les fichiers portent leur numéro de version,
-                   donc un lien direct se périmerait à chaque sortie. -->
-              <a class="bouton" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noopener">
+              <!-- Repli sans script : la page des versions. telechargement.js
+                   remplace l'adresse par celle du fichier de la dernière version. -->
+              <a class="bouton bouton-principal" href="https://github.com/Yassine-Daif/meriz/releases/latest" data-fichier="windows-exe" rel="noopener">
                 Télécharger pour Windows
               </a>
             </li>
-            <li class="telechargement">
+            <li class="telechargement" data-systeme="macos">
               <div class="telechargement-texte">
-                <h3>macOS <span class="etiquette">Intel et Apple Silicon</span></h3>
+                <h3>
+                  macOS
+                  <span class="etiquette" data-detecte hidden>Votre système</span>
+                </h3>
                 <p>
-                  Image disque <code>.dmg</code>. Choisissez <code>aarch64</code> pour un Mac
-                  Apple Silicon, <code>x64</code> pour un Mac Intel.
+                  Image disque <code>.dmg</code>. Deux versions, selon la puce de votre Mac :
+                  Apple Silicon pour les M1 et suivants, Intel pour les plus anciens. Le menu
+                  Pomme, « À propos de ce Mac », vous le dit.
                 </p>
               </div>
-              <!-- Page des versions, valable à chaque publication. -->
-              <a class="bouton" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noopener">
-                Télécharger pour macOS
-              </a>
+              <div class="actions">
+                <a class="bouton bouton-principal" href="https://github.com/Yassine-Daif/meriz/releases/latest" data-fichier="macos-arm" rel="noopener">
+                  Apple Silicon
+                </a>
+                <a class="bouton" href="https://github.com/Yassine-Daif/meriz/releases/latest" data-fichier="macos-intel" rel="noopener">
+                  Intel
+                </a>
+              </div>
             </li>
-            <li class="telechargement">
+            <li class="telechargement" data-systeme="linux">
               <div class="telechargement-texte">
-                <h3>Linux <span class="etiquette">64 bits</span></h3>
+                <h3>
+                  Linux
+                  <span class="etiquette" data-detecte hidden>Votre système</span>
+                </h3>
                 <p>
-                  <code>.AppImage</code> à lancer tel quel, ou paquet <code>.deb</code> pour
-                  Debian et Ubuntu, <code>.rpm</code> pour Fedora et openSUSE.
+                  <code>.AppImage</code> à lancer tel quel, sans installation.
+                  <span class="poids" data-poids></span>
+                </p>
+                <p class="sous-texte">
+                  Ou les paquets
+                  <a href="https://github.com/Yassine-Daif/meriz/releases/latest" data-fichier="linux-deb" rel="noopener">.deb</a>
+                  pour Debian et Ubuntu, et
+                  <a href="https://github.com/Yassine-Daif/meriz/releases/latest" data-fichier="linux-rpm" rel="noopener">.rpm</a>
+                  pour Fedora et openSUSE.
                 </p>
               </div>
-              <!-- Page des versions, valable à chaque publication. -->
-              <a class="bouton" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noopener">
+              <a class="bouton bouton-principal" href="https://github.com/Yassine-Daif/meriz/releases/latest" data-fichier="linux-appimage" rel="noopener">
                 Télécharger pour Linux
               </a>
             </li>
           </ul>
+          <p class="sous-texte">
+            Tous les fichiers, y compris ceux des versions précédentes, sont sur la
+            <a href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noopener">page des versions</a>.
+          </p>
         </div>
       </section>
 
       <section class="section section-douce" aria-labelledby="savoir-titre">
         <div class="contenant">
           <h2 id="savoir-titre">Bon à savoir</h2>
-          <div class="grille">
-            <article class="carte">
+          <div class="grille" data-anime>
+            <article class="entite">
               <h3>À la première ouverture</h3>
               <p>
                 L'application n'est pas signée par un éditeur payant. Windows et macOS peuvent
@@ -141,21 +195,21 @@
                 « Exécuter quand même », ou par un clic droit, « Ouvrir », sur macOS.
               </p>
             </article>
-            <article class="carte">
+            <article class="entite">
               <h3>Le même fichier partout</h3>
               <p>
                 Un modèle enregistré dans la version bureau s'ouvre dans le navigateur, et
                 l'inverse. Rien ne vous enferme dans l'une des deux.
               </p>
             </article>
-            <article class="carte">
+            <article class="entite">
               <h3>Mises à jour</h3>
               <p>
                 Les nouvelles versions paraissent sur la page des versions. Téléchargez la
                 dernière et réinstallez par-dessus : vos fichiers ne sont pas touchés.
               </p>
             </article>
-            <article class="carte">
+            <article class="entite">
               <h3>Le code source</h3>
               <p>
                 Meriz est libre, sous licence AGPL 3.0. Vous pouvez lire le code, le compiler
@@ -178,5 +232,8 @@
         </nav>
       </div>
     </footer>
+    <script src="theme.js" defer></script>
+    <script src="anime.js" defer></script>
+    <script src="telechargement.js" defer></script>
   </body>
 </html>
