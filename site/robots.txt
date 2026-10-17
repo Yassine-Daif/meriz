@@ -1,0 +1,9 @@
+# Le site est ouvert : moteurs de recherche comme assistants.
+User-agent: *
+Allow: /
+
+# L'application elle-même n'a rien à indexer : c'est un outil, pas du
+# contenu, et ses pages sont construites par le navigateur.
+Disallow: /app/
+
+Sitemap: https://meriz.fr/sitemap.xml

@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>La méthode Merise expliquée : MCD, cardinalités et passage au SQL</title>
+    <meta
+      name="description"
+      content="Comprendre Merise : entités, associations, cardinalités, identifiant, puis les règles de passage du MCD au relationnel et au SQL, sur un exemple suivi."
+    />
+    <link rel="canonical" href="https://meriz.fr/merise.html" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="stylesheet" href="style.css" />
+    <meta name="theme-color" content="#f7f3ec" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#171428" media="(prefers-color-scheme: dark)" />
+    <meta property="og:type" content="article" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:site_name" content="Meriz" />
+    <meta property="og:title" content="La méthode Merise expliquée : MCD, cardinalités et passage au SQL" />
+    <meta
+      property="og:description"
+      content="Entités, associations, cardinalités, identifiant, règles de passage au relationnel : la méthode Merise expliquée sur un exemple suivi de bout en bout."
+    />
+    <meta property="og:url" content="https://meriz.fr/merise.html" />
+    <meta property="og:image" content="https://meriz.fr/partage.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "La méthode Merise expliquée : MCD, cardinalités et passage au SQL",
+        "description": "Le dictionnaire des données, les entités, les associations, les cardinalités, l'identifiant, puis les règles de passage du modèle conceptuel au modèle relationnel et au SQL.",
+        "inLanguage": "fr",
+        "author": { "@type": "Person", "name": "Yassine Daif" },
+        "publisher": { "@type": "Organization", "name": "Meriz", "url": "https://meriz.fr/" },
+        "mainEntityOfPage": "https://meriz.fr/merise.html",
+        "about": [
+          { "@type": "Thing", "name": "Merise" },
+          { "@type": "Thing", "name": "Modèle conceptuel de données" },
+          { "@type": "Thing", "name": "Modèle relationnel" }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "inLanguage": "fr",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Qu'est-ce que la méthode Merise ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Merise est une méthode française d'analyse et de conception de systèmes d'information, née à la fin des années 1970. Pour les données, elle décrit d'abord le domaine sans se soucier de la base, c'est le modèle conceptuel de données, puis elle en déduit le modèle logique, les tables, et enfin le modèle physique, les types propres au moteur choisi."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Comment lit-on une cardinalité en Merise ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "La cardinalité se lit depuis l'entité, vers l'association. Elle répond à la question : une occurrence de cette entité participe au minimum combien de fois, et au maximum combien de fois, à cette association. Un client qui peut n'avoir passé aucune commande et en passer plusieurs porte donc 0,n, et une commande qui appartient à un client et un seul porte 1,1."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Quelle est la différence entre MCD, MLD et MPD ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Le MCD décrit le domaine : des entités, des associations et des cardinalités, sans aucune notion de table. Le MLD en déduit des tables, des clés primaires et des clés étrangères, toujours sans moteur précis. Le MPD ajoute les types concrets du moteur visé, comme VARCHAR(255) ou INT, et donne le script SQL."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Comment passe-t-on d'une association many-to-many au SQL ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Quand les deux pattes d'une association portent un maximum n, l'association devient une table à part entière. Sa clé primaire est composée des identifiants des entités reliées, et les éventuelles propriétés de l'association deviennent ses colonnes."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="lien-evitement" href="#contenu">Aller au contenu</a>
+
+    <header class="entete">
+      <div class="contenant entete-rang">
+        <a class="marque" href="/" aria-label="Meriz, accueil">
+          <svg viewBox="0 0 191 64" height="30" width="89.5" aria-hidden="true">
+            <rect width="64" height="64" rx="15" fill="var(--logo)" />
+            <path
+              d="M24.3 32 32 15.2 39.7 32"
+              fill="none"
+              stroke="#fff"
+              stroke-width="4.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <circle cx="24.3" cy="40.4" r="10.5" fill="#fff" />
+            <circle cx="39.7" cy="40.4" r="10.5" fill="#fff" stroke="var(--logo)" stroke-width="3.36" />
+            <path
+              fill="currentColor"
+              d="M86.19 48L80 48L80 16L84.37 16L96.07 34.75L107.77 16L112.14 16L112.14 48L105.99 48L105.99 28.88L98.16 41.45L93.97 41.45L86.19 28.93L86.19 48M128.57 48.46Q125.11 48.46 122.42 46.98Q119.74 45.50 118.17 42.90Q116.60 40.31 116.60 36.98Q116.60 33.71 118.12 31.14Q119.65 28.56 122.29 27.04Q124.93 25.51 128.16 25.51Q131.35 25.51 133.78 26.95Q136.22 28.38 137.60 30.86Q138.99 33.34 138.99 36.48Q138.99 37.08 138.92 37.69Q138.86 38.30 138.67 39.08L122.61 39.12Q122.79 39.81 123.11 40.35Q123.83 41.85 125.25 42.65Q126.66 43.45 128.52 43.45Q130.21 43.45 131.57 42.88Q132.94 42.31 133.94 41.17L137.45 44.68Q135.85 46.54 133.55 47.50Q131.25 48.46 128.57 48.46M122.61 34.66L133.26 34.62Q133.08 33.84 132.80 33.21Q132.17 31.89 131 31.18Q129.84 30.48 128.16 30.48Q126.38 30.48 125.06 31.27Q123.74 32.07 123.06 33.48Q122.79 34.03 122.61 34.66M148.64 48L142.68 48L142.68 26.01L148.64 26.01L148.64 27.97Q148.64 27.93 148.69 27.88Q150.65 25.56 154.33 25.56Q155.93 25.56 157.20 26.08Q158.48 26.61 159.52 27.79L155.79 32.07Q155.29 31.52 154.58 31.25Q153.88 30.98 152.97 30.98Q151.06 30.98 149.85 32.18Q148.64 33.39 148.64 35.85L148.64 48M167.62 48L161.62 48L161.62 26.01L167.62 26.01L167.62 48M164.62 22.46Q163.16 22.46 162.21 21.49Q161.25 20.51 161.25 19.05Q161.25 17.64 162.21 16.64Q163.16 15.64 164.62 15.64Q166.12 15.64 167.06 16.64Q167.99 17.64 167.99 19.05Q167.99 20.51 167.06 21.49Q166.12 22.46 164.62 22.46M189.93 48L171.36 48L171.36 44.59L181.64 31.20L172.18 31.20L172.18 26.01L190.20 26.01L190.20 29.43L179.91 42.81L189.93 42.81"
+            />
+          </svg>
+        </a>
+        <nav class="navigation" aria-label="Navigation principale">
+          <a href="/">Accueil</a>
+          <a href="fonctionnalites.html">Fonctions</a>
+          <a href="merise.html" aria-current="page">La méthode Merise</a>
+          <a href="telecharger.html">Télécharger</a>
+          <!-- LIEN À FINALISER : adresse de l'application web. -->
+          <a class="bouton bouton-principal bouton-petit" href="app/">Essayer en ligne</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="contenu">
+      <div class="heros">
+        <div class="contenant prose">
+          <h1>La méthode Merise, expliquée</h1>
+          <p class="chapeau">
+            Merise sépare ce que les données <em>sont</em> de la façon dont elles seront
+            <em>rangées</em>. On décrit d'abord le domaine, sans penser aux tables, puis on en
+            déduit la base. Voici la méthode, avec un seul exemple suivi du début à la fin.
+          </p>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="contenant prose">
+          <h2 id="origine">D'où vient Merise</h2>
+          <p>
+            Merise est une méthode française d'analyse et de conception des systèmes
+            d'information, mise au point à la fin des années 1970 à la demande du ministère de
+            l'Industrie. Elle est encore enseignée en France, en BTS, en BUT et à l'université,
+            parce qu'elle met des mots précis sur une question qui ne vieillit pas : de quoi
+            parle-t-on, et comment le ranger.
+          </p>
+          <p>
+            Pour les données, Merise avance par niveaux. Le <strong>modèle conceptuel</strong>
+            décrit le domaine. Le <strong>modèle logique</strong> en tire des tables. Le
+            <strong>modèle physique</strong> ajoute les types d'un moteur précis. Chaque niveau
+            se déduit du précédent par des règles, ce qui veut dire qu'une erreur de conception
+            se voit avant d'avoir écrit la moindre ligne de SQL.
+          </p>
+
+          <h2 id="dictionnaire">Le dictionnaire des données</h2>
+          <p>
+            Tout commence par la liste des informations à gérer : le dictionnaire des données.
+            Chaque propriété y est écrite <strong>une seule fois</strong>, avec un nom et un type.
+            C'est la règle d'unicité : une donnée appartient à un seul endroit du modèle, sinon
+            elle finira recopiée, donc contradictoire.
+          </p>
+          <p>
+            Prenons une bibliothèque. Les données utiles : le numéro d'adhérent, le nom de
+            l'adhérent, le titre d'un livre, son ISBN, et la date d'un emprunt.
+          </p>
+          <div class="encadre">
+            <p>
+              <strong>Un piège classique.</strong> Noter « nom » deux fois, une fois pour
+              l'adhérent et une fois pour l'auteur, ce sont deux propriétés différentes. Nommez-les
+              distinctement, <code>nomAdherent</code> et <code>nomAuteur</code>, et la suite du
+              modèle vous le rendra.
+            </p>
+          </div>
+
+          <h2 id="entites">Les entités</h2>
+          <p>
+            Une <strong>entité</strong> est un objet du domaine dont on veut garder des
+            informations : un adhérent, un livre, une salle. Elle porte des
+            <strong>attributs</strong>, pris dans le dictionnaire, et parmi eux un
+            <strong>identifiant</strong> qui distingue une occurrence de toutes les autres.
+          </p>
+          <p>
+            Dans notre bibliothèque, deux entités suffisent pour commencer.
+          </p>
+          <div class="exemple">Adherent
+  <u>numeroAdherent</u> : entier     ← identifiant
+  nomAdherent : texte
+
+Livre
+  <u>isbn</u> : texte                ← identifiant
+  titre : texte</div>
+          <p>
+            L'identifiant peut être composé de plusieurs attributs quand un seul ne suffit pas :
+            une séance de cinéma, par exemple, s'identifie par la salle <em>et</em> l'horaire.
+          </p>
+
+          <h2 id="associations">Les associations</h2>
+          <p>
+            Une <strong>association</strong> relie des entités. Elle porte un verbe, parce qu'elle
+            décrit ce qui se passe entre elles : un adhérent <em>emprunte</em> un livre. Une
+            association peut elle aussi porter des attributs, quand l'information n'appartient ni
+            à l'une ni à l'autre des entités reliées.
+          </p>
+          <p>
+            La date d'un emprunt en est l'exemple parfait : elle n'est ni une propriété de
+            l'adhérent, ni une propriété du livre. Elle n'existe que parce que les deux se
+            rencontrent.
+          </p>
+          <div class="exemple">Adherent ──(0,n)── Emprunter ──(1,1)── Livre
+                       emprunteLe : date</div>
+
+          <h2 id="cardinalites">Les cardinalités, le cœur du modèle</h2>
+          <p>
+            Chaque patte entre une entité et une association porte un couple de nombres, la
+            <strong>cardinalité</strong>. Elle se lit <strong>depuis l'entité</strong>, et répond
+            à une question précise :
+          </p>
+          <div class="encadre">
+            <p>
+              <strong>Une occurrence de cette entité participe au minimum combien de fois, et au
+              maximum combien de fois, à cette association ?</strong>
+            </p>
+          </div>
+          <p>Quatre couples suffisent dans l'immense majorité des cas.</p>
+          <table class="tableau">
+            <caption>Les quatre cardinalités, et ce qu'elles disent</caption>
+            <thead>
+              <tr>
+                <th scope="col">Couple</th>
+                <th scope="col">Lecture</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">0,1</th>
+                <td>peut ne pas participer, et au plus une fois</td>
+              </tr>
+              <tr>
+                <th scope="row">1,1</th>
+                <td>participe exactement une fois, ni plus ni moins</td>
+              </tr>
+              <tr>
+                <th scope="row">0,n</th>
+                <td>peut ne pas participer, ou participer plusieurs fois</td>
+              </tr>
+              <tr>
+                <th scope="row">1,n</th>
+                <td>participe au moins une fois, et peut-être beaucoup</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            Sur notre exemple : un adhérent peut n'avoir jamais emprunté, ou avoir emprunté
+            souvent, donc <strong>0,n</strong>. Un exemplaire de livre, lui, est emprunté par un
+            adhérent et un seul à la fois, donc <strong>1,1</strong>.
+          </p>
+          <div class="encadre">
+            <p>
+              <strong>L'erreur la plus fréquente.</strong> Lire la cardinalité dans le mauvais
+              sens, c'est-à-dire depuis l'association. Placez-vous toujours sur l'entité, et
+              demandez-vous combien de fois <em>une seule</em> de ses occurrences apparaît dans
+              l'association. Le reste du modèle en dépend, car c'est cette lecture qui décide où
+              ira la clé étrangère.
+            </p>
+          </div>
+
+          <h2 id="passage">Du MCD au modèle relationnel</h2>
+          <p>
+            Le passage au modèle logique suit des règles mécaniques. Il n'y a rien à inventer :
+            si le MCD est juste, les tables le sont.
+          </p>
+          <h3>Règle 1 : chaque entité devient une table</h3>
+          <p>
+            Ses attributs deviennent des colonnes, son identifiant devient la clé primaire.
+          </p>
+          <h3>Règle 2 : une association avec un côté 1,1 ou 0,1 donne une clé étrangère</h3>
+          <p>
+            La clé étrangère se place <strong>du côté du maximum 1</strong>. Dans notre exemple,
+            c'est le livre qui participe une seule fois, donc c'est la table
+            <code>Livre</code> qui reçoit le numéro de l'adhérent. Les attributs de l'association
+            la suivent : la date d'emprunt atterrit dans <code>Livre</code>.
+          </p>
+          <h3>Règle 3 : une association n des deux côtés devient une table</h3>
+          <p>
+            Quand les deux pattes portent un maximum n, aucune des deux tables ne peut accueillir
+            l'autre. L'association devient alors une table à part entière, dont la clé primaire
+            est composée des identifiants des entités reliées. Ses attributs deviennent ses
+            colonnes.
+          </p>
+          <div class="exemple">MCD   Adherent ──(0,n)── Emprunter ──(1,1)── Livre
+
+MLD   Adherent (<u>numeroAdherent</u>, nomAdherent)
+      Livre (<u>isbn</u>, titre, #numeroAdherent, emprunteLe)</div>
+          <p>
+            Si la bibliothèque gardait l'historique, un livre aurait été emprunté plusieurs fois,
+            la patte deviendrait 0,n des deux côtés, et <code>Emprunter</code> deviendrait une
+            table :
+          </p>
+          <div class="exemple">MLD   Adherent (<u>numeroAdherent</u>, nomAdherent)
+      Livre (<u>isbn</u>, titre)
+      Emprunter (<u>#numeroAdherent</u>, <u>#isbn</u>, <u>emprunteLe</u>)</div>
+
+          <h2 id="sql">Du modèle relationnel au SQL</h2>
+          <p>
+            Reste à choisir un moteur. C'est seulement là qu'apparaissent les types concrets :
+            un texte devient <code>VARCHAR(255)</code> ou <code>TEXT</code>, un entier devient
+            <code>INT</code>, une date devient <code>DATE</code>. Le modèle conceptuel, lui,
+            n'a jamais eu à les connaître.
+          </p>
+          <div class="exemple">CREATE TABLE Adherent (
+  numeroAdherent INT NOT NULL AUTO_INCREMENT,
+  nomAdherent VARCHAR(255) NOT NULL,
+  PRIMARY KEY (numeroAdherent)
+);
+
+CREATE TABLE Livre (
+  isbn VARCHAR(255) NOT NULL,
+  titre VARCHAR(255) NOT NULL,
+  numeroAdherent INT NOT NULL,
+  emprunteLe DATE NOT NULL,
+  PRIMARY KEY (isbn)
+);
+
+ALTER TABLE Livre
+  ADD CONSTRAINT fk_livre_adherent
+  FOREIGN KEY (numeroAdherent) REFERENCES Adherent (numeroAdherent);</div>
+
+          <h2 id="pratiquer">Pratiquer la méthode</h2>
+          <p>
+            Merise s'apprend en modélisant, pas en lisant. C'est pour cela que Meriz existe :
+            vous dessinez le MCD, l'outil vérifie les règles au fur et à mesure, puis il applique
+            lui-même les règles de passage et vous montre le MLD, le MPD et le SQL qui en
+            découlent. Vous voyez donc immédiatement l'effet d'une cardinalité sur la base
+            finale, ce qui est la façon la plus rapide de comprendre pourquoi elle compte.
+          </p>
+          <div class="actions" style="margin-top: 1.5rem">
+            <!-- LIEN À FINALISER : adresse de l'application web. -->
+            <a class="bouton bouton-principal" href="app/">Modéliser maintenant</a>
+            <a class="bouton" href="fonctionnalites.html">Voir toutes les fonctions</a>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="pied">
+      <div class="contenant pied-rang">
+        <p>Meriz, logiciel libre sous licence AGPL 3.0. Développé par Yassine Daif.</p>
+        <nav class="pied-liens" aria-label="Liens de pied de page">
+          <a href="/">Accueil</a>
+          <a href="fonctionnalites.html">Fonctions</a>
+          <a href="telecharger.html">Télécharger</a>
+          <a href="https://github.com/Yassine-Daif/meriz" rel="noopener">Code source</a>
+        </nav>
+      </div>
+    </footer>
+  </body>
+</html>
