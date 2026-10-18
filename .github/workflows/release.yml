@@ -57,6 +57,24 @@ jobs:
         # échouait.
         run: npm ci
 
+      # Tauri compresse les ressources web dans le binaire : une fois
+      # l'installateur produit, on ne peut plus y lire l'adresse de
+      # l'API. On la vérifie donc ici, tant que le paquet est lisible.
+      # Si les variables n'arrivaient pas, la publication s'arrête.
+      - name: Vérifier que le paquet vise la production
+        env:
+          VITE_API_URL: 'https://api.meriz.fr'
+          VITE_REVERB_APP_KEY: '0t421vha7ydml81l0c2i'
+          VITE_REVERB_HOST: 'api.meriz.fr'
+          VITE_REVERB_PORT: '443'
+          VITE_REVERB_SCHEME: 'https'
+        shell: bash
+        run: |
+          npm run build
+          grep -q 'api.meriz.fr' dist/assets/index-*.js             || { echo "::error::Le paquet ne vise pas api.meriz.fr"; exit 1; }
+          grep -q '0t421vha7ydml81l0c2i' dist/assets/index-*.js             || { echo "::error::Le paquet n'a pas la clé du direct"; exit 1; }
+          echo "Le paquet vise bien https://api.meriz.fr"
+
       - name: Construire et publier
         uses: tauri-apps/tauri-action@v0
         env:
