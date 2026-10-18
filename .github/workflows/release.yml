@@ -51,10 +51,11 @@ jobs:
           workspaces: './src-tauri -> target'
 
       - name: Installer les dépendances npm
-        # Le lock est écrit par npm 11 : on aligne le runner dessus.
-        run: |
-          npm install -g npm@11
-          npm ci
+        # Le npm livré avec Node 22 lit le verrou en version 3 sans
+        # difficulté : réinstaller npm globalement n'apportait rien et
+        # faisait tomber l'étape entière quand cette installation
+        # échouait.
+        run: npm ci
 
       - name: Construire et publier
         uses: tauri-apps/tauri-action@v0

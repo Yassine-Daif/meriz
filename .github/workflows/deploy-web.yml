@@ -62,9 +62,8 @@ jobs:
           cache: npm
 
       - name: Installer les dépendances
-        # Le lock est écrit par npm 11 : on aligne le runner dessus.
+        # Le npm livré avec Node 22 lit le verrou sans difficulté.
         run: |
-          npm install -g npm@11
           npm ci
 
       - name: Tester
