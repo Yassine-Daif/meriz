@@ -11,10 +11,16 @@
     <link rel="canonical" href="https://meriz.fr/telecharger.html" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <!-- La police est demandée tout de suite : sans cela, le premier rendu
+         attend la feuille de style pour la découvrir. -->
+    <link rel="preload" href="polices/outfit-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="style.css" />
     <script>
-      /* Le thème retenu est posé avant le premier rendu : sinon un
-         visiteur en sombre verrait un éclair blanc à chaque page. */
+      /* Deux choses avant le premier rendu : le thème retenu, sinon un
+         visiteur en sombre verrait un éclair blanc à chaque page, et la
+         marque qui dit que les scripts tournent, pour que le menu des
+         petits écrans parte fermé plutôt que de se fermer sous les yeux. */
+      document.documentElement.classList.add('js')
       try {
         if (localStorage.getItem('meriz-theme') === 'dark') {
           document.documentElement.setAttribute('data-theme', 'dark')
@@ -35,205 +41,140 @@
     <meta property="og:image" content="https://meriz.fr/partage.png" />
     <meta name="twitter:card" content="summary_large_image" />
   </head>
-  <body>
+  <body class="mz p-telecharger">
     <a class="lien-evitement" href="#contenu">Aller au contenu</a>
 
-    <header class="entete">
-      <div class="contenant entete-rang">
-        <a class="marque" href="/" aria-label="Meriz, accueil">
-          <svg viewBox="0 0 191 64" height="30" width="89.5" aria-hidden="true">
-            <rect width="64" height="64" rx="15" fill="var(--logo)" />
-            <path
-              d="M24.3 32 32 15.2 39.7 32"
-              fill="none"
-              stroke="#fff"
-              stroke-width="4.2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <circle cx="24.3" cy="40.4" r="10.5" fill="#fff" />
-            <circle cx="39.7" cy="40.4" r="10.5" fill="#fff" stroke="var(--logo)" stroke-width="3.36" />
-            <path
-              fill="currentColor"
-              d="M86.19 48L80 48L80 16L84.37 16L96.07 34.75L107.77 16L112.14 16L112.14 48L105.99 48L105.99 28.88L98.16 41.45L93.97 41.45L86.19 28.93L86.19 48M128.57 48.46Q125.11 48.46 122.42 46.98Q119.74 45.50 118.17 42.90Q116.60 40.31 116.60 36.98Q116.60 33.71 118.12 31.14Q119.65 28.56 122.29 27.04Q124.93 25.51 128.16 25.51Q131.35 25.51 133.78 26.95Q136.22 28.38 137.60 30.86Q138.99 33.34 138.99 36.48Q138.99 37.08 138.92 37.69Q138.86 38.30 138.67 39.08L122.61 39.12Q122.79 39.81 123.11 40.35Q123.83 41.85 125.25 42.65Q126.66 43.45 128.52 43.45Q130.21 43.45 131.57 42.88Q132.94 42.31 133.94 41.17L137.45 44.68Q135.85 46.54 133.55 47.50Q131.25 48.46 128.57 48.46M122.61 34.66L133.26 34.62Q133.08 33.84 132.80 33.21Q132.17 31.89 131 31.18Q129.84 30.48 128.16 30.48Q126.38 30.48 125.06 31.27Q123.74 32.07 123.06 33.48Q122.79 34.03 122.61 34.66M148.64 48L142.68 48L142.68 26.01L148.64 26.01L148.64 27.97Q148.64 27.93 148.69 27.88Q150.65 25.56 154.33 25.56Q155.93 25.56 157.20 26.08Q158.48 26.61 159.52 27.79L155.79 32.07Q155.29 31.52 154.58 31.25Q153.88 30.98 152.97 30.98Q151.06 30.98 149.85 32.18Q148.64 33.39 148.64 35.85L148.64 48M167.62 48L161.62 48L161.62 26.01L167.62 26.01L167.62 48M164.62 22.46Q163.16 22.46 162.21 21.49Q161.25 20.51 161.25 19.05Q161.25 17.64 162.21 16.64Q163.16 15.64 164.62 15.64Q166.12 15.64 167.06 16.64Q167.99 17.64 167.99 19.05Q167.99 20.51 167.06 21.49Q166.12 22.46 164.62 22.46M189.93 48L171.36 48L171.36 44.59L181.64 31.20L172.18 31.20L172.18 26.01L190.20 26.01L190.20 29.43L179.91 42.81L189.93 42.81"
-            />
-          </svg>
-        </a>
-        <nav class="navigation" aria-label="Navigation principale">
-          <a href="/">Accueil</a>
-          <a href="fonctionnalites.html">Fonctions</a>
-          <a href="merise.html">La méthode Merise</a>
-          <a href="telecharger.html" aria-current="page">Télécharger</a>
-          <!-- Application web : servie à la racine de son sous-domaine. -->
-          <div class="theme" role="group" aria-label="Thème du site">
-            <button type="button" data-theme-choix="light" aria-pressed="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round" />
-              </svg>
-              Clair
-            </button>
-            <button type="button" data-theme-choix="dark" aria-pressed="false">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" stroke-linejoin="round" />
-              </svg>
-              Sombre
-            </button>
-          </div>
-          <a class="bouton bouton-principal bouton-petit" href="https://app.meriz.fr">Essayer en ligne</a>
-        </nav>
+<header class="mz-nav">
+  <div class="mz-wrap" style="display: flex; align-items: center; gap: 16px; height: 72px">
+    <a href="/" class="mz-logo" aria-label="Meriz, accueil"><svg viewBox="0 0 191 64" height="28" width="83.6" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--logo)" /><path d="M24.3 32 32 15.2 39.7 32" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" /><circle cx="24.3" cy="40.4" r="10.5" fill="#fff" /><circle cx="39.7" cy="40.4" r="10.5" fill="#fff" stroke="var(--logo)" stroke-width="3.36" /><path fill="currentColor" d="M86.19 48L80 48L80 16L84.37 16L96.07 34.75L107.77 16L112.14 16L112.14 48L105.99 48L105.99 28.88L98.16 41.45L93.97 41.45L86.19 28.93L86.19 48M128.57 48.46Q125.11 48.46 122.42 46.98Q119.74 45.50 118.17 42.90Q116.60 40.31 116.60 36.98Q116.60 33.71 118.12 31.14Q119.65 28.56 122.29 27.04Q124.93 25.51 128.16 25.51Q131.35 25.51 133.78 26.95Q136.22 28.38 137.60 30.86Q138.99 33.34 138.99 36.48Q138.99 37.08 138.92 37.69Q138.86 38.30 138.67 39.08L122.61 39.12Q122.79 39.81 123.11 40.35Q123.83 41.85 125.25 42.65Q126.66 43.45 128.52 43.45Q130.21 43.45 131.57 42.88Q132.94 42.31 133.94 41.17L137.45 44.68Q135.85 46.54 133.55 47.50Q131.25 48.46 128.57 48.46M122.61 34.66L133.26 34.62Q133.08 33.84 132.80 33.21Q132.17 31.89 131 31.18Q129.84 30.48 128.16 30.48Q126.38 30.48 125.06 31.27Q123.74 32.07 123.06 33.48Q122.79 34.03 122.61 34.66M148.64 48L142.68 48L142.68 26.01L148.64 26.01L148.64 27.97Q148.64 27.93 148.69 27.88Q150.65 25.56 154.33 25.56Q155.93 25.56 157.20 26.08Q158.48 26.61 159.52 27.79L155.79 32.07Q155.29 31.52 154.58 31.25Q153.88 30.98 152.97 30.98Q151.06 30.98 149.85 32.18Q148.64 33.39 148.64 35.85L148.64 48M167.62 48L161.62 48L161.62 26.01L167.62 26.01L167.62 48M164.62 22.46Q163.16 22.46 162.21 21.49Q161.25 20.51 161.25 19.05Q161.25 17.64 162.21 16.64Q163.16 15.64 164.62 15.64Q166.12 15.64 167.06 16.64Q167.99 17.64 167.99 19.05Q167.99 20.51 167.06 21.49Q166.12 22.46 164.62 22.46M189.93 48L171.36 48L171.36 44.59L181.64 31.20L172.18 31.20L172.18 26.01L190.20 26.01L190.20 29.43L179.91 42.81L189.93 42.81" /></svg></a>
+    <span class="mz-ver mz-hide-sm" data-version-courte>v1.0.1</span>
+    <nav class="mz-navlinks" aria-label="Navigation principale" style="display: flex; gap: 2px; margin-left: 12px">
+      <a class="mz-nl" href="/">Accueil</a>
+      <a class="mz-nl" href="fonctionnalites.html">Fonctions</a>
+      <a class="mz-nl" href="merise.html">La méthode Merise</a>
+      <a class="mz-nl is-on" href="telecharger.html" aria-current="page">Télécharger</a>
+    </nav>
+    <div style="flex: 1"></div>
+    <div class="mz-tg" role="group" aria-label="Thème du site">
+        <button type="button" data-theme-choix="light" aria-pressed="true" class="is-on"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>Clair</button>
+        <button type="button" data-theme-choix="dark" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"></path></svg>Sombre</button>
       </div>
-    </header>
-
-    <main id="contenu">
-      <div class="heros">
-        <div class="contenant">
-          <h1>Télécharger Meriz</h1>
-          <p class="chapeau">
-            La version bureau fait exactement ce que fait la version en ligne, et fonctionne sans
-            connexion. Vos fichiers restent sur votre ordinateur, au format
-            <code>.meriz.json</code>, lisible par les deux versions.
-          </p>
-          <div class="actions">
-            <!-- Application web : servie à la racine de son sous-domaine. -->
-            <a class="bouton bouton-principal" href="https://app.meriz.fr">Ouvrir en ligne, sans installer</a>
-          </div>
-        </div>
+    <a class="mz-iconbtn mz-hide-sm" href="https://github.com/Yassine-Daif/meriz" rel="noopener" aria-label="Code source sur GitHub"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6"></path></svg></a>
+    <a class="mz-btn mz-btn-p mz-btn-sm mz-hide-sm" href="https://app.meriz.fr">Essayer en ligne</a>
+    <button type="button" class="mz-burger" data-menu-bouton aria-expanded="false" aria-controls="menu-mobile" aria-label="Ouvrir le menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"></path></svg></button>
+  </div>
+  <div class="mz-menu" id="menu-mobile" data-menu hidden>
+    <div class="mz-wrap">
+        <a class="mz-nl" href="/">Accueil</a>
+        <a class="mz-nl" href="fonctionnalites.html">Fonctions</a>
+        <a class="mz-nl" href="merise.html">La méthode Merise</a>
+        <a class="mz-nl is-on" href="telecharger.html" aria-current="page">Télécharger</a>
+      <div class="mz-menu-bas">
+        <div class="mz-tg" role="group" aria-label="Thème du site">
+        <button type="button" data-theme-choix="light" aria-pressed="true" class="is-on"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>Clair</button>
+        <button type="button" data-theme-choix="dark" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"></path></svg>Sombre</button>
       </div>
+        <a class="mz-btn mz-btn-p mz-btn-sm" href="https://app.meriz.fr">Essayer en ligne</a>
+      </div>
+    </div>
+  </div>
+</header>
 
-      <section class="section" aria-labelledby="systemes-titre">
-        <div class="contenant">
-          <h2 id="systemes-titre">Pour votre système</h2>
-          <p class="chapeau">
-            Un bouton, un fichier : le téléchargement part directement, sans détour. Les adresses
-            suivent la dernière version publiée, donc elles restent justes sans qu'on y touche.
-          </p>
-          <p class="version" data-version hidden></p>
-          <ul class="liste-nue" style="margin-top: 1.5rem">
-            <li class="telechargement" data-systeme="windows">
-              <div class="telechargement-texte">
-                <h3>
-                  Windows
-                  <span class="etiquette" data-detecte hidden>Votre système</span>
-                </h3>
-                <p>
-                  Installateur <code>.exe</code>, le choix habituel.
-                  <span class="poids" data-poids></span>
-                </p>
-                <p class="sous-texte">
-                  Pour un déploiement en salle machine, le paquet
-                  <a href="https://github.com/Yassine-Daif/meriz/releases/latest" data-fichier="windows-msi" rel="noopener">.msi</a>
-                  est aussi publié.
-                </p>
-              </div>
-              <!-- Repli sans script : la page des versions. telechargement.js
-                   remplace l'adresse par celle du fichier de la dernière version. -->
-              <a class="bouton bouton-principal" href="https://github.com/Yassine-Daif/meriz/releases/latest" data-fichier="windows-exe" rel="noopener">
-                Télécharger pour Windows
-              </a>
-            </li>
-            <li class="telechargement" data-systeme="macos">
-              <div class="telechargement-texte">
-                <h3>
-                  macOS
-                  <span class="etiquette" data-detecte hidden>Votre système</span>
-                </h3>
-                <p>
-                  Image disque <code>.dmg</code>. Deux versions, selon la puce de votre Mac :
-                  Apple Silicon pour les M1 et suivants, Intel pour les plus anciens. Le menu
-                  Pomme, « À propos de ce Mac », vous le dit.
-                </p>
-              </div>
-              <div class="actions">
-                <a class="bouton bouton-principal" href="https://github.com/Yassine-Daif/meriz/releases/latest" data-fichier="macos-arm" rel="noopener">
-                  Apple Silicon
-                </a>
-                <a class="bouton" href="https://github.com/Yassine-Daif/meriz/releases/latest" data-fichier="macos-intel" rel="noopener">
-                  Intel
-                </a>
-              </div>
-            </li>
-            <li class="telechargement" data-systeme="linux">
-              <div class="telechargement-texte">
-                <h3>
-                  Linux
-                  <span class="etiquette" data-detecte hidden>Votre système</span>
-                </h3>
-                <p>
-                  <code>.AppImage</code> à lancer tel quel, sans installation.
-                  <span class="poids" data-poids></span>
-                </p>
-                <p class="sous-texte">
-                  Ou les paquets
-                  <a href="https://github.com/Yassine-Daif/meriz/releases/latest" data-fichier="linux-deb" rel="noopener">.deb</a>
-                  pour Debian et Ubuntu, et
-                  <a href="https://github.com/Yassine-Daif/meriz/releases/latest" data-fichier="linux-rpm" rel="noopener">.rpm</a>
-                  pour Fedora et openSUSE.
-                </p>
-              </div>
-              <a class="bouton bouton-principal" href="https://github.com/Yassine-Daif/meriz/releases/latest" data-fichier="linux-appimage" rel="noopener">
-                Télécharger pour Linux
-              </a>
-            </li>
-          </ul>
-          <p class="sous-texte">
-            Tous les fichiers, y compris ceux des versions précédentes, sont sur la
-            <a href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noopener">page des versions</a>.
-          </p>
+<main id="contenu">
+
+<section class="mz-dots" style="padding: 64px 0 88px">
+  <div class="mz-wrap" style="display: flex; flex-wrap: wrap; gap: 48px 64px; align-items: flex-start">
+    <div style="flex: 1 1 420px; max-width: 520px; display: flex; flex-direction: column; gap: 22px; padding-top: 8px">
+      <div class="mz-eb"><span class="mz-eb-d"></span><span class="mz-eb-l"></span><span class="mz-eb-t">Version bureau</span></div>
+      <h1 class="mz-h1">Télécharger Meriz</h1>
+      <p class="mz-lead">La version bureau fait exactement ce que fait la version en ligne, et fonctionne sans connexion. Vos fichiers restent sur votre ordinateur, au format <span class="mz-ic">.meriz.json</span>, lisible par les deux versions.</p>
+      <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap">
+        <a class="mz-btn mz-btn-g" href="https://app.meriz.fr">Ouvrir en ligne, sans installer</a>
+      </div>
+      <div class="mz-hide-sm" aria-hidden="true" style="display: flex; align-items: center; margin-top: 18px; font-size: 14px; font-weight: 600">
+        <span style="padding: 10px 14px; border-radius: 12px; border: 1.5px solid var(--edge); background: var(--surface)">En ligne</span>
+        <span style="flex: 1; height: 2px; position: relative"><span class="mz-a-leg" style="position: absolute; inset: 0; background: var(--accent); animation-delay: .5s"></span><span class="mz-card mz-a-popc" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); animation-delay: .95s">.meriz.json</span></span>
+        <span class="mz-a-snap" style="animation-delay: 1.1s; padding: 10px 14px; border-radius: 12px; background: var(--accent); color: #ffffff">Bureau</span>
+      </div>
+    </div>
+
+    <div class="mz-dl mz-a-snap" style="flex: 1 1 500px; min-width: 0; animation-delay: .15s">
+      <div style="padding: 26px 28px 20px; display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap">
+          <h2 class="mz-h2" style="font-size: 26px">Pour votre système</h2>
+          <span class="mz-card" style="font-family: inherit; font-weight: 500" data-version-carte hidden>v1.0.1, publiée le 18 octobre 2026</span>
         </div>
-      </section>
-
-      <section class="section section-douce" aria-labelledby="savoir-titre">
-        <div class="contenant">
-          <h2 id="savoir-titre">Bon à savoir</h2>
-          <div class="grille" data-anime>
-            <article class="entite">
-              <h3>À la première ouverture</h3>
-              <p>
-                L'application n'est pas signée par un éditeur payant. Windows et macOS peuvent
-                donc afficher un avertissement : passez par « Informations complémentaires » puis
-                « Exécuter quand même », ou par un clic droit, « Ouvrir », sur macOS.
-              </p>
-            </article>
-            <article class="entite">
-              <h3>Le même fichier partout</h3>
-              <p>
-                Un modèle enregistré dans la version bureau s'ouvre dans le navigateur, et
-                l'inverse. Rien ne vous enferme dans l'une des deux.
-              </p>
-            </article>
-            <article class="entite">
-              <h3>Mises à jour</h3>
-              <p>
-                Les nouvelles versions paraissent sur la page des versions. Téléchargez la
-                dernière et réinstallez par-dessus : vos fichiers ne sont pas touchés.
-              </p>
-            </article>
-            <article class="entite">
-              <h3>Le code source</h3>
-              <p>
-                Meriz est libre, sous licence AGPL 3.0. Vous pouvez lire le code, le compiler
-                vous-même, et proposer des améliorations.
-              </p>
-            </article>
+        <p class="mz-small" style="font-size: 15px">Un bouton, un fichier : le téléchargement part directement, sans détour. Les adresses suivent la dernière version publiée, donc elles restent justes sans qu'on y touche.</p>
+      </div>
+      <div role="tablist" aria-label="Système" style="margin: 0 28px; padding: 4px; border-radius: 14px; background: var(--bg2); border: 1px solid var(--line); display: flex; gap: 4px">
+        <a class="mz-os is-on" href="#systeme-win" id="onglet-systeme-win" data-onglet="win">Windows</a>
+        <a class="mz-os" href="#systeme-mac" id="onglet-systeme-mac" data-onglet="mac">macOS</a>
+        <a class="mz-os" href="#systeme-lin" id="onglet-systeme-lin" data-onglet="lin">Linux</a>
+      </div>
+      <div role="tabpanel" style="padding: 24px 28px 26px; min-height: 230px">
+        <div class="mz-panneau" id="systeme-win" data-panneau="win" aria-labelledby="onglet-systeme-win">
+          <div class="mz-a-snap" data-systeme="windows" style="display: flex; flex-direction: column; gap: 14px">
+            <div style="display: flex; align-items: center; gap: 10px"><span style="font-size: 20px; font-weight: 600">Windows</span><span data-detecte hidden style="font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--ok-bg); color: var(--ok)">Votre système</span></div>
+            <p>Installateur <span class="mz-ic">.exe</span>, le choix habituel. <span class="mz-muted" data-poids></span></p>
+            <a class="mz-btn mz-btn-p" data-fichier="windows-exe" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noopener" style="align-self: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>Télécharger pour Windows</a>
+            <p class="mz-small">Pour un déploiement en salle machine, le paquet <a data-fichier="windows-msi" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noopener">.msi</a> est aussi publié.</p>
           </div>
         </div>
-      </section>
-    </main>
-
-    <footer class="pied">
-      <div class="contenant pied-rang">
-        <p>Meriz, logiciel libre sous licence AGPL 3.0. Développé par Yassine Daif.</p>
-        <nav class="pied-liens" aria-label="Liens de pied de page">
-          <a href="/">Accueil</a>
-          <a href="fonctionnalites.html">Fonctions</a>
-          <a href="merise.html">La méthode Merise</a>
-          <a href="https://github.com/Yassine-Daif/meriz" rel="noopener">Code source</a>
-        </nav>
+        <div class="mz-panneau" id="systeme-mac" data-panneau="mac" aria-labelledby="onglet-systeme-mac">
+          <div class="mz-a-snap" data-systeme="macos" style="display: flex; flex-direction: column; gap: 14px">
+            <div style="display: flex; align-items: center; gap: 10px"><span style="font-size: 20px; font-weight: 600">macOS</span><span data-detecte hidden style="font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--ok-bg); color: var(--ok)">Votre système</span></div>
+            <p>Image disque <span class="mz-ic">.dmg</span>. Deux versions, selon la puce de votre Mac : Apple Silicon pour les M1 et suivants, Intel pour les plus anciens.</p>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap">
+              <a class="mz-btn mz-btn-p" data-fichier="macos-arm" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>Apple Silicon</a>
+              <a class="mz-btn mz-btn-g" data-fichier="macos-intel" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noopener">Intel</a>
+            </div>
+            <p class="mz-small">Le menu Pomme, « À propos de ce Mac », vous le dit.</p>
+          </div>
+        </div>
+        <div class="mz-panneau" id="systeme-lin" data-panneau="lin" aria-labelledby="onglet-systeme-lin">
+          <div class="mz-a-snap" data-systeme="linux" style="display: flex; flex-direction: column; gap: 14px">
+            <div style="display: flex; align-items: center; gap: 10px"><span style="font-size: 20px; font-weight: 600">Linux</span><span data-detecte hidden style="font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--ok-bg); color: var(--ok)">Votre système</span></div>
+            <p><span class="mz-ic">.AppImage</span> à lancer tel quel, sans installation. <span class="mz-muted" data-poids></span></p>
+            <a class="mz-btn mz-btn-p" data-fichier="linux-appimage" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noopener" style="align-self: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>Télécharger pour Linux</a>
+            <p class="mz-small">Ou les paquets <a data-fichier="linux-deb" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noopener">.deb</a> pour Debian et Ubuntu, et <a data-fichier="linux-rpm" href="https://github.com/Yassine-Daif/meriz/releases/latest" rel="noopener">.rpm</a> pour Fedora et openSUSE.</p>
+          </div>
+        </div>
       </div>
-    </footer>
-    <script src="theme.js" defer></script>
-    <script src="anime.js" defer></script>
+      <p class="mz-small" style="padding: 14px 28px; border-top: 1px solid var(--line); background: var(--raise)">Tous les fichiers, y compris ceux des versions précédentes, sont sur la <a href="https://github.com/Yassine-Daif/meriz/releases" rel="noopener">page des versions</a>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="mz-alt" style="padding: 80px 0">
+  <div class="mz-wrap" style="display: flex; flex-direction: column; gap: 32px">
+    <div class="mz-eb"><span class="mz-eb-d"></span><span class="mz-eb-l"></span><span class="mz-eb-t">Bon à savoir</span></div>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px">
+      <div class="mz-item mz-rv-snap" style="flex: 1 1 250px; min-width: 0"><span class="mz-mono" style="font-size: 12px; font-weight: 700; color: var(--atext)">01</span><h3 class="mz-h3">À la première ouverture</h3><p class="mz-muted" style="font-size: 14.5px">L'application n'est pas signée par un éditeur payant. Windows et macOS peuvent donc afficher un avertissement : passez par « Informations complémentaires » puis « Exécuter quand même », ou par un clic droit, « Ouvrir », sur macOS.</p></div>
+      <div class="mz-item mz-rv-snap mz-rv-2" style="flex: 1 1 250px; min-width: 0"><span class="mz-mono" style="font-size: 12px; font-weight: 700; color: var(--atext)">02</span><h3 class="mz-h3">Le même fichier partout</h3><p class="mz-muted" style="font-size: 14.5px">Un modèle enregistré dans la version bureau s'ouvre dans le navigateur, et l'inverse. Rien ne vous enferme dans l'une des deux.</p></div>
+      <div class="mz-item mz-rv-snap mz-rv-3" style="flex: 1 1 250px; min-width: 0"><span class="mz-mono" style="font-size: 12px; font-weight: 700; color: var(--atext)">03</span><h3 class="mz-h3">Mises à jour</h3><p class="mz-muted" style="font-size: 14.5px">Les nouvelles versions paraissent sur la page des versions. Téléchargez la dernière et réinstallez par-dessus : vos fichiers ne sont pas touchés.</p></div>
+      <div class="mz-item mz-rv-snap mz-rv-4" style="flex: 1 1 250px; min-width: 0"><span class="mz-mono" style="font-size: 12px; font-weight: 700; color: var(--atext)">04</span><h3 class="mz-h3">Le code source</h3><p class="mz-muted" style="font-size: 14.5px">Meriz est libre, sous licence AGPL 3.0. Vous pouvez lire le code, le compiler vous-même, et proposer des améliorations.</p></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer style="padding: 56px 0 40px; background: var(--surface); border-top: 1px solid var(--line)">
+  <div class="mz-wrap" style="display: flex; flex-direction: column; gap: 36px">
+    <div style="display: flex; flex-wrap: wrap; gap: 32px 56px">
+      <div style="flex: 2 1 280px; display: flex; flex-direction: column; gap: 12px">
+        <a href="/" class="mz-logo" aria-label="Meriz, accueil" style="font-size: 19px"><svg viewBox="0 0 191 64" height="26" width="77.6" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--logo)" /><path d="M24.3 32 32 15.2 39.7 32" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" /><circle cx="24.3" cy="40.4" r="10.5" fill="#fff" /><circle cx="39.7" cy="40.4" r="10.5" fill="#fff" stroke="var(--logo)" stroke-width="3.36" /><path fill="currentColor" d="M86.19 48L80 48L80 16L84.37 16L96.07 34.75L107.77 16L112.14 16L112.14 48L105.99 48L105.99 28.88L98.16 41.45L93.97 41.45L86.19 28.93L86.19 48M128.57 48.46Q125.11 48.46 122.42 46.98Q119.74 45.50 118.17 42.90Q116.60 40.31 116.60 36.98Q116.60 33.71 118.12 31.14Q119.65 28.56 122.29 27.04Q124.93 25.51 128.16 25.51Q131.35 25.51 133.78 26.95Q136.22 28.38 137.60 30.86Q138.99 33.34 138.99 36.48Q138.99 37.08 138.92 37.69Q138.86 38.30 138.67 39.08L122.61 39.12Q122.79 39.81 123.11 40.35Q123.83 41.85 125.25 42.65Q126.66 43.45 128.52 43.45Q130.21 43.45 131.57 42.88Q132.94 42.31 133.94 41.17L137.45 44.68Q135.85 46.54 133.55 47.50Q131.25 48.46 128.57 48.46M122.61 34.66L133.26 34.62Q133.08 33.84 132.80 33.21Q132.17 31.89 131 31.18Q129.84 30.48 128.16 30.48Q126.38 30.48 125.06 31.27Q123.74 32.07 123.06 33.48Q122.79 34.03 122.61 34.66M148.64 48L142.68 48L142.68 26.01L148.64 26.01L148.64 27.97Q148.64 27.93 148.69 27.88Q150.65 25.56 154.33 25.56Q155.93 25.56 157.20 26.08Q158.48 26.61 159.52 27.79L155.79 32.07Q155.29 31.52 154.58 31.25Q153.88 30.98 152.97 30.98Q151.06 30.98 149.85 32.18Q148.64 33.39 148.64 35.85L148.64 48M167.62 48L161.62 48L161.62 26.01L167.62 26.01L167.62 48M164.62 22.46Q163.16 22.46 162.21 21.49Q161.25 20.51 161.25 19.05Q161.25 17.64 162.21 16.64Q163.16 15.64 164.62 15.64Q166.12 15.64 167.06 16.64Q167.99 17.64 167.99 19.05Q167.99 20.51 167.06 21.49Q166.12 22.46 164.62 22.46M189.93 48L171.36 48L171.36 44.59L181.64 31.20L172.18 31.20L172.18 26.01L190.20 26.01L190.20 29.43L179.91 42.81L189.93 42.81" /></svg></a>
+        <p class="mz-small" style="max-width: 320px">Meriz, logiciel libre sous licence AGPL 3.0. Développé par Yassine Daif.</p>
+      </div>
+      <nav class="mz-fl" aria-label="Produit" style="flex: 1 1 140px"><p class="mz-fh">Produit</p><a href="https://app.meriz.fr">Essayer en ligne</a><a href="fonctionnalites.html">Fonctions</a><a href="telecharger.html">Télécharger</a></nav>
+      <nav class="mz-fl" aria-label="Apprendre" style="flex: 1 1 140px"><p class="mz-fh">Apprendre</p><a href="merise.html">La méthode Merise</a></nav>
+      <nav class="mz-fl" aria-label="Projet" style="flex: 1 1 140px"><p class="mz-fh">Projet</p><a href="https://github.com/Yassine-Daif/meriz" rel="noopener">Code source</a><a href="https://github.com/Yassine-Daif/meriz/releases" rel="noopener">Page des versions</a></nav>
+    </div>
+    <p class="mz-small" style="padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px" data-version hidden>Dernière version : v1.0.1, publiée le 18 octobre 2026.</p>
+  </div>
+</footer>
+
+    <script src="site.js" defer></script>
     <script src="telechargement.js" defer></script>
   </body>
 </html>

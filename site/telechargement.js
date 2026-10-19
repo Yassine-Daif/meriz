@@ -58,9 +58,13 @@
     if (etiquette) {
       etiquette.hidden = false
     }
-    // Le système reconnu passe en tête, sans que les autres bougent
-    // d'ordre entre eux.
-    bloc.parentElement?.prepend(bloc)
+    // Les trois systèmes sont en onglets : plutôt que de changer leur
+    // ordre, on ouvre celui du visiteur. Sans le script des onglets,
+    // les trois restent visibles et il n'y a rien à ouvrir.
+    var panneau = bloc.closest('[data-panneau]')
+    if (!panneau) return
+    var onglet = document.querySelector('[data-onglet="' + panneau.dataset.panneau + '"]')
+    if (onglet && onglet.getAttribute('role') === 'tab') onglet.click()
   }
 
   async function dernierePublication() {
@@ -109,20 +113,31 @@
       place += 1
     }
 
+    if (place === 0 || typeof publication.tag_name !== 'string') return
+
+    var date = publication.published_at
+      ? ', publiée le ' +
+        new Date(publication.published_at).toLocaleDateString('fr-FR', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
+      : ''
+
+    // Le numéro paraît à trois endroits : le badge de la barre, la
+    // carte de téléchargement et le pied de page.
+    var badge = document.querySelector('[data-version-courte]')
+    if (badge) badge.textContent = publication.tag_name
+
+    var carte = document.querySelector('[data-version-carte]')
+    if (carte) {
+      carte.textContent = publication.tag_name + date
+      carte.hidden = false
+    }
+
     var version = document.querySelector('[data-version]')
-    if (version && place > 0 && typeof publication.tag_name === 'string') {
-      version.textContent =
-        'Dernière version : ' +
-        publication.tag_name +
-        (publication.published_at
-          ? ', publiée le ' +
-            new Date(publication.published_at).toLocaleDateString('fr-FR', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })
-          : '') +
-        '.'
+    if (version) {
+      version.textContent = 'Dernière version : ' + publication.tag_name + date + '.'
       version.hidden = false
     }
   }
