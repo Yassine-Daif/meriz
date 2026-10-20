@@ -172,9 +172,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_ID: ${{ needs.prepare.outputs.release_id }}
         run: |
           gh release download "$RELEASE_TAG" --pattern latest.json --dir "$RUNNER_TEMP/updater"
-          gh api "repos/$GH_REPO/releases/tags/$RELEASE_TAG" > "$RUNNER_TEMP/updater/release.json"
+          gh api "repos/$GH_REPO/releases/$RELEASE_ID" > "$RUNNER_TEMP/updater/release.json"
           node --input-type=module -e '
             import fs from "node:fs";
             const manifest = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+"/updater/latest.json", "utf8"));
@@ -201,6 +202,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_ID: ${{ needs.prepare.outputs.release_id }}
         run: gh release edit "$RELEASE_TAG" --draft=false --latest
 
   deploy:
