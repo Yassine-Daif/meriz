@@ -5,6 +5,7 @@ import { BackButton } from './BackButton'
 import { Card } from './Card'
 import { Lockup } from './Lockup'
 import { SkipLink } from './SkipLink'
+import { EffectsControl } from './EffectsControl'
 import { ThemeToggle } from './ThemeToggle'
 
 interface PublicShellProps {
@@ -47,11 +48,12 @@ export function PublicShell({
         {onBack && <BackButton label={backLabel} onClick={onBack} />}
         <div className="ml-auto flex flex-wrap items-center gap-3">
           <ThemeToggle />
+          <EffectsControl />
           <UiScaleControl />
         </div>
       </header>
 
-      <main id="contenu" className="mx-auto w-full max-w-md px-4 py-10 sm:py-14">
+      <main id="contenu" className="meriz-page-enter mx-auto w-full max-w-md px-4 py-10 sm:py-14">
         <Card className="p-6 sm:p-8">
           <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
             {title}

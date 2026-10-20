@@ -101,7 +101,7 @@ export function RecentDocuments({
             )}
           </div>
         ) : (
-          <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+          <ul className="meriz-list-enter mt-3 grid gap-3 sm:grid-cols-2">
             {documents.map((meta) => {
               const provenance = provenanceFor(meta, assignments)
               return (

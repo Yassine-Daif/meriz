@@ -11,6 +11,7 @@ import type { CollabUser, RemotePresence } from '../model/collabProvider'
 import { BackButton } from './ui/BackButton'
 import { Badge } from './ui/Badge'
 import { Lockup } from './ui/Lockup'
+import { EffectsControl } from './ui/EffectsControl'
 import { ThemeToggle } from './ui/ThemeToggle'
 
 interface TopBarProps {
@@ -156,6 +157,7 @@ export function TopBar({
       <div className="ml-auto flex flex-wrap items-center gap-3">
         <AccountStatus compact />
         <ThemeToggle />
+          <EffectsControl />
         <UiScaleControl />
       </div>
     </header>

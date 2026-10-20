@@ -7,6 +7,7 @@ import { Lockup } from './ui/Lockup'
 import { BackToTop } from './ui/BackToTop'
 import { Notice } from './ui/Notice'
 import { SkipLink } from './ui/SkipLink'
+import { EffectsControl } from './ui/EffectsControl'
 import { ThemeToggle } from './ui/ThemeToggle'
 
 export type ConnectedPage = 'home' | 'classes' | 'groups' | 'corrections' | 'work' | 'profile'
@@ -87,6 +88,7 @@ export function ConnectedShell({ user, page, onNavigate, notice, onClearNotice, 
         </span>
         <div className="ml-auto flex flex-wrap items-center gap-3">
           <ThemeToggle />
+          <EffectsControl />
           <UiScaleControl />
           <AccountStatus compact />
         </div>

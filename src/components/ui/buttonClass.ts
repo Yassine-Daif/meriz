@@ -33,15 +33,13 @@ const SIZES: Record<ButtonSize, string> = {
  * Classes d'un bouton, aussi pour un lien qui en a l'allure.
  *
  * La transition couvre l'ombre en plus des couleurs, et le bouton
- * s'enfonce d'un pixel au clic : le geste se sent. L'enfoncement est sous
- * motion-safe, donc il disparaît quand le système demande moins de
- * mouvement.
+ * s'enfonce d'un pixel au clic. La préférence Effets et la réduction des
+ * mouvements du système contrôlent ces réactions dans index.css.
  */
 export function buttonClass({ variant = 'secondary', size = 'md', block = false }: ButtonClassOptions = {}): string {
   return [
-    'inline-flex items-center justify-center rounded-control border font-medium',
+    'meriz-button inline-flex items-center justify-center rounded-control border font-medium',
     'transition-[color,background-color,border-color,box-shadow,transform] duration-150',
-    'motion-safe:active:translate-y-px',
     'disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none',
     VARIANTS[variant],
     SIZES[size],

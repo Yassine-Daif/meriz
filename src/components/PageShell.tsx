@@ -42,7 +42,7 @@ export function PageShell({
   }, [focusKey, title])
 
   return (
-    <div>
+    <div className="meriz-page-enter">
       {onBack && (
         <BackButton label={backLabel} onClick={onBack} className="-ml-3 mb-3" />
       )}

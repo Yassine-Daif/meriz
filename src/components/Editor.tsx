@@ -1,3 +1,4 @@
+import { useViewEntrance } from './useViewEntrance'
 import { registerUpdateGuard } from '../lib/updateSafety'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
@@ -125,6 +126,8 @@ export function Editor({
     [selection],
   )
   const [activeView, setActiveView] = useState<ViewId>('mcd')
+  const viewRef = useRef<HTMLElement>(null)
+  useViewEntrance(viewRef, activeView)
   const collab = useCollaboration({
     sync,
     info: collaboration ?? null,
@@ -345,7 +348,7 @@ export function Editor({
         <div className="flex min-h-0 flex-1">
           <NavRail activeView={activeView} onSelectView={setActiveView} />
 
-          <main id="contenu" className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <main ref={viewRef} id="contenu" className="flex min-h-0 min-w-0 flex-1 flex-col">
             {activeView === 'dictionnaire' && (
               <DictionaryView mcd={state.mcd} dispatch={dispatch} readOnly={locked} />
             )}

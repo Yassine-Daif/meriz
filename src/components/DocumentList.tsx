@@ -239,7 +239,7 @@ export function DocumentList({
           </div>
         </div>
       ) : (
-        <ul className="mt-3 flex flex-col gap-2">
+        <ul className="meriz-list-enter mt-3 flex flex-col gap-2">
           {documents.map((meta) => (
             <DocumentRow
               key={meta.id}

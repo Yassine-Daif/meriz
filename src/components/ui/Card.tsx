@@ -18,7 +18,7 @@ export function Card({ as: Tag = 'div', tone = 'default', lift = false, classNam
     'rounded-card border border-line p-5 shadow-soft',
     tone === 'soft' ? 'bg-surface-soft' : 'bg-surface',
     lift
-      ? 'transition-[box-shadow,transform] duration-150 hover:shadow-lift motion-safe:hover:-translate-y-0.5'
+      ? 'meriz-card-lift transition-[box-shadow,transform] duration-150 hover:shadow-lift motion-safe:hover:-translate-y-0.5'
       : '',
     className ?? '',
   ].join(' ')

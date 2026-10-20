@@ -396,3 +396,62 @@
   border-radius: inherit;
   box-shadow: none;
 }
+
+/* Effets courts, sans boucle. Aucun déplacement de la zone de dessin. */
+@keyframes meriz-arrive {
+  from { opacity: 0.65; translate: 0 7px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes meriz-dialog {
+  from { opacity: 0; translate: 0 8px; scale: 0.985; }
+  to { opacity: 1; translate: 0 0; scale: 1; }
+}
+@keyframes meriz-veil {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html[data-motion='on'] .meriz-page-enter {
+    animation: meriz-arrive 220ms ease-out backwards;
+  }
+  html[data-motion='on'] .meriz-list-enter > :nth-child(-n+6) {
+    animation: meriz-arrive 220ms ease-out backwards;
+  }
+  html[data-motion='on'] .meriz-list-enter > :nth-child(2) { animation-delay: 25ms; }
+  html[data-motion='on'] .meriz-list-enter > :nth-child(3) { animation-delay: 50ms; }
+  html[data-motion='on'] .meriz-list-enter > :nth-child(4) { animation-delay: 75ms; }
+  html[data-motion='on'] .meriz-list-enter > :nth-child(5) { animation-delay: 100ms; }
+  html[data-motion='on'] .meriz-list-enter > :nth-child(6) { animation-delay: 125ms; }
+  html[data-motion='on'] dialog[open] {
+    animation: meriz-dialog 200ms cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+  }
+  html[data-motion='on'] dialog[open]::backdrop {
+    animation: meriz-veil 180ms ease-out backwards;
+  }
+  html[data-motion='on'] .meriz-button {
+    transition-property: color, background-color, border-color, box-shadow, translate;
+    transition-duration: 160ms;
+  }
+  html[data-motion='on'] .meriz-button:active:not(:disabled) { translate: 0 1px; }
+  html[data-motion='on'] .meriz-card-lift {
+    transition: box-shadow 180ms ease, translate 180ms ease;
+  }
+  html[data-motion='on'] nav button {
+    transition: color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    html[data-motion='on'] .meriz-button:hover:not(:disabled) { translate: 0 -1px; }
+    html[data-motion='on'] .meriz-button:hover:active:not(:disabled) { translate: 0 1px; }
+    html[data-motion='on'] .meriz-card-lift:hover { translate: 0 -2px; }
+  }
+}
+/* Le choix local coupe aussi les effets préexistants, sans toucher au
+   transform de React Flow ni aux rotations qui indiquent un état ouvert. */
+html[data-motion='off'] *,
+html[data-motion='off'] *::before,
+html[data-motion='off'] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+html[data-motion='off'] [class*='motion-safe:'] { translate: none !important; }

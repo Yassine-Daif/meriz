@@ -8,6 +8,7 @@ import { Card } from './ui/Card'
 import { Lockup } from './ui/Lockup'
 import { Notice } from './ui/Notice'
 import { SkipLink } from './ui/SkipLink'
+import { EffectsControl } from './ui/EffectsControl'
 import { ThemeToggle } from './ui/ThemeToggle'
 
 interface DocumentsHomeProps {
@@ -90,11 +91,12 @@ export function DocumentsHome({
         <div className="ml-auto flex flex-wrap items-center gap-3">
           <AccountStatus onShowSignIn={onShowSignIn} onShowSignUp={onShowSignUp} />
           <ThemeToggle />
+          <EffectsControl />
           <UiScaleControl />
         </div>
       </header>
 
-      <main id="contenu" className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 md:px-8">
+      <main id="contenu" className="meriz-page-enter mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 md:px-8">
         <section
           aria-labelledby="bienvenue-titre"
           className="rounded-panel bg-accent-soft px-6 py-7 sm:px-8"

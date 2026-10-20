@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { motionStore } from '../../lib/motion'
 
 /** On ne propose le retour qu'au-delà d'un écran de défilement. */
 const SEUIL = 600
@@ -39,7 +40,7 @@ export function BackToTop({ targetId }: BackToTopProps) {
   const remonter = () => {
     const zone = document.getElementById(targetId)
     if (zone === null) return
-    const calme = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+    const calme = !motionStore.getState().enabled
     zone.scrollTo({ top: 0, behavior: calme ? 'auto' : 'smooth' })
     // Le titre de la page porte déjà tabIndex={-1} : c'est la cible prévue.
     zone.querySelector<HTMLElement>('h1[tabindex="-1"]')?.focus()
