@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { createCollabProvider } from '../model/collabProvider'
+import { createCollabProvider, visibleCollaborators } from '../model/collabProvider'
 import type {
   CollabCursor,
+  CollabView,
   CollabDraftLink,
   CollabInk,
   CollabProvider,
@@ -16,8 +17,8 @@ import { browserHidden, browserVisibility } from '../lib/poller'
 
 /**
  * Co-édition d'un document : la connexion, la présence et les curseurs.
- * Entrer dans le canal, c'est y travailler : le prof qui se contente de
- * lire un travail n'ouvre rien du tout.
+ * Entrer dans le canal permet aussi l'observation silencieuse : ce mode reçoit
+ * les mises à jour, sans publier de présence ni d'écriture.
  *
  * Le cycle de vie tient en une phrase : la connexion s'ouvre en entrant
  * dans le contexte collaboratif, se ferme en le quittant, et se ferme
@@ -39,7 +40,7 @@ const CURSOR_INTERVAL_MS = 66
  * `member` : pair parmi des pairs, dans un groupe. Je pars vide, j'adopte
  * le contenu du serveur si personne ne l'a fait, et j'enregistre.
  */
-export type CollabRole = 'owner' | 'guest' | 'member'
+export type CollabRole = 'owner' | 'guest' | 'member' | 'observer'
 
 export interface CollaborationInfo {
   /** Document partagé : son identifiant côté serveur. */
@@ -50,6 +51,7 @@ export interface CollaborationInfo {
 
 export interface CollaborationHandle {
   /** « off » : pas de contexte collaboratif, aucune connexion. */
+  synced: boolean
   state: ChannelState | 'off'
   /** Les autres présents dans le canal. */
   participants: CollabUser[]
@@ -75,6 +77,7 @@ export interface UseCollaborationOptions {
   info: CollaborationInfo | null
   /** Ma sélection courante, publiée aux autres. */
   selection: string[]
+  view?: CollabView | null
   /* -------- Simulables, pour les essais -------- */
   openPresence?: OpenPresence
   isHidden?: () => boolean
@@ -85,10 +88,12 @@ export function useCollaboration({
   sync,
   info,
   selection,
+  view = null,
   openPresence = openPresenceChannel,
   isHidden = browserHidden,
   subscribeVisibility = browserVisibility,
 }: UseCollaborationOptions): CollaborationHandle {
+  const [synced, setSynced] = useState(false)
   const [state, setState] = useState<ChannelState | 'off'>('off')
   const [participants, setParticipants] = useState<CollabUser[]>([])
   const [others, setOthers] = useState<RemotePresence[]>([])
@@ -97,11 +102,14 @@ export function useCollaboration({
   // reste du temps elle attend son tour.
   const cursorRef = useRef<CollabCursor | null>(null)
   const selectionRef = useRef<string[]>(selection)
+  const viewRef = useRef(view)
   // Le tracé en cours part avec le curseur, dans le même message.
   const draftRef = useRef<CollabDraftLink | null>(null)
   const inkRef = useRef<CollabInk | null>(null)
   const publishRef = useRef<CollabProvider['publish'] | null>(null)
 
+  const observer = info?.role === 'observer'
+  const member = info?.role === 'member'
   const documentId = info?.documentId ?? null
   const meId = info?.me.id ?? null
   const meKey = info === null ? '' : JSON.stringify(info.me)
@@ -118,10 +126,14 @@ export function useCollaboration({
       sync,
       transport: { send: (event, payload) => channel?.send(event, payload) },
       me,
+      readOnly: observer,
     })
     publishRef.current = provider.publish
 
-    const refreshOthers = () => setOthers(provider.others())
+    const refreshOthers = () => {
+      setOthers(provider.others())
+      setSynced(provider.isSynced())
+    }
     const stopPresence = provider.onPresence(refreshOthers)
 
     const open = () => {
@@ -159,6 +171,7 @@ export function useCollaboration({
             provider.publish({
               cursor: cursorRef.current,
               selection: selectionRef.current,
+              view: viewRef.current,
               draft: draftRef.current,
               ink: inkRef.current,
             })
@@ -166,6 +179,7 @@ export function useCollaboration({
             // Le lien reviendra avec une nouvelle poignée de main, donc
             // une nouvelle synchronisation : on repart propre.
             provider.stop()
+            setSynced(false)
           }
         },
       })
@@ -177,6 +191,7 @@ export function useCollaboration({
       channel = null
       setParticipants([])
       setOthers([])
+      setSynced(false)
       // Un tracé ne survit jamais à une fermeture : onglet caché, lien
       // perdu ou démontage, il repart de rien. Le trait de crayon non plus.
       draftRef.current = null
@@ -207,6 +222,7 @@ export function useCollaboration({
       provider.publish({
         cursor: cursorRef.current,
         selection: selectionRef.current,
+        view: viewRef.current,
         draft: draftRef.current,
         ink: inkRef.current,
       })
@@ -221,12 +237,16 @@ export function useCollaboration({
       publishRef.current = null
       setState('off')
     }
-  }, [sync, documentId, meKey, openPresence, isHidden, subscribeVisibility])
+  }, [sync, documentId, meKey, observer, openPresence, isHidden, subscribeVisibility])
 
   // La sélection suit le rendu, sans redémarrer la connexion.
   useEffect(() => {
     selectionRef.current = selection
   }, [selection])
+
+  useEffect(() => {
+    viewRef.current = view
+  }, [view])
 
   const reportCursor = useCallback((cursor: CollabCursor | null) => {
     cursorRef.current = cursor
@@ -242,8 +262,9 @@ export function useCollaboration({
   }, [])
 
   return {
+    synced,
     state: documentId === null ? 'off' : state,
-    participants: meId === null ? [] : participants,
+    participants: meId === null ? [] : visibleCollaborators(participants, others, member),
     others,
     reportCursor,
     reportDraftLink,

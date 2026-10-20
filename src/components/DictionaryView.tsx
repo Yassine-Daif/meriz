@@ -204,7 +204,7 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
                           patch: { type: event.target.value as AttributeType },
                         })
                       }
-                      className="rounded-lg border border-line-strong px-1 py-0.5 font-mono text-xs"
+                      className="rounded-lg border border-line-strong bg-surface px-1 py-0.5 font-mono text-xs"
                     >
                       {ATTRIBUTE_TYPES.map((type) => (
                         <option key={type} value={type}>

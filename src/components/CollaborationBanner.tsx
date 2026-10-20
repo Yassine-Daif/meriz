@@ -2,19 +2,19 @@ import { displayName } from '../lib/authApi'
 import type { CollabUser, RemotePresence } from '../model/collabProvider'
 import type { ChannelState } from '../lib/echoClient'
 import type { CollabRole } from './useCollaboration'
-import { Avatar } from './ui/Avatar'
+import { ParticipantList } from './ParticipantList'
 import { Badge } from './ui/Badge'
 import { Button } from './ui/Button'
 
 /**
  * Bande de co-édition, sous la barre d'outils du MCD. Elle dit qui est
- * là, et ce que cela change. Jamais d'intervention invisible : quand le
- * prof est dans le canal, l'élève le lit en toutes lettres. Entre pairs
+ * là, et ce que cela change. Seule la correction annonce le prof :
+ * l'observation ne publie ni présence ni modification. Entre pairs
  * d'un groupe, on se nomme simplement.
  */
 interface CollaborationBannerProps {
   state: ChannelState | 'off'
-  /** « observe » : on lit un travail suivi, sans canal ni présence. */
+  /** « observe » : réception en direct, sans publier sa présence. */
   mode: 'observe' | 'edit'
   /** Les autres présents, sans moi. */
   participants: CollabUser[]
@@ -50,6 +50,7 @@ export function CollaborationBanner({
           Vous lisez ce travail en lecture seule. Votre élève voit que ce devoir peut être suivi, et la date de
           votre dernière lecture.
         </span>
+        <ParticipantList participants={participants} others={others} />
         {onStart && (
           <Button size="sm" variant="primary" onClick={onStart} aria-label="Corriger en direct ce travail">
             Corriger en direct
@@ -85,9 +86,7 @@ export function CollaborationBanner({
         role="status"
         className="flex flex-wrap items-center gap-2 border-b border-line bg-accent-soft px-4 py-2 text-sm text-accent-ink"
       >
-        {participants.map((person) => (
-          <Avatar key={person.id} person={person} size="sm" labelled />
-        ))}
+        <ParticipantList participants={participants} others={others} />
         <span>
           <strong className="font-semibold">{names}</strong>
           {participants.length > 1 ? ' travaillent' : ' travaille'} avec vous sur ce document du groupe.
@@ -123,13 +122,13 @@ export function CollaborationBanner({
   /*
    * L'élève sur son travail suivi, personne avec lui. Discret mais
    * jamais secret : la ligne reste là tout du long, sans annonce ni
-   * couleur d'alerte. Un prof présent dans ce canal corrige forcément,
+   * couleur d'alerte. Un prof qui publie sa présence corrige,
    * et cela se lit alors en toutes lettres.
    */
   if (role === 'owner' && teacher === undefined) {
     return (
       <p className="border-b border-line bg-surface-soft px-4 py-2 text-sm text-ink-soft">
-        Votre prof peut suivre cet exercice. Il voit votre modèle tel que vous l’enregistrez, et la date de sa
+        Votre prof peut suivre cet exercice. Il voit votre modèle évoluer en direct, et la date de sa
         lecture vous est donnée dans le devoir.
       </p>
     )
@@ -144,9 +143,7 @@ export function CollaborationBanner({
       role="status"
       className="flex flex-wrap items-center gap-2 border-b border-line bg-accent-soft px-4 py-2 text-sm text-accent-ink"
     >
-      {participants.map((person) => (
-        <Avatar key={person.id} person={person} size="sm" labelled />
-      ))}
+      <ParticipantList participants={participants} others={others} />
       {guest ? (
         <span>
           Vous corrigez avec <strong className="font-semibold">{names}</strong>. Vos modifications arrivent

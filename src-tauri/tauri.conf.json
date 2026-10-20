@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Meriz",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "identifier": "dev.meriz.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -37,6 +37,18 @@
     ],
     "android": {
       "debugApplicationIdSuffix": ".debug"
+    },
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDJBNDIyNjEzQTE4MzUzQTcKUldTblU0T2hFeVpDS2c1VVZ5ZmZnZ1hrTytVQi9SK0I0VysrdzFxTUNOaHEwLzh3d05aeUFPL3cK",
+      "endpoints": [
+        "https://github.com/Yassine-Daif/meriz/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }

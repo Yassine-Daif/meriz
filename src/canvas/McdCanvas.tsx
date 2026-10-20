@@ -33,6 +33,8 @@ import { McdDispatchContext } from './dispatchContext'
 import { useGestureStream } from './gestureStream'
 import { CommentPins } from './CommentPins'
 import type { CommentPin } from './CommentPins'
+import { RemoteSelectionContext } from './remoteSelectionContext'
+import { RemoteSelections } from './RemoteSelections'
 import { RemoteCursors } from './RemoteCursors'
 import { RemoteDraftLinks } from './RemoteDraftLinks'
 import { RemoteInk } from './RemoteInk'
@@ -109,6 +111,7 @@ export function McdCanvas({
   ink,
   readOnly = false,
 }: McdCanvasProps) {
+  const canvasOthers = useMemo(() => (others ?? []).filter((other) => !other.view || other.view === 'mcd'), [others])
   const theme = useTheme()
   const { screenToFlowPosition } = useReactFlow()
   const store = useStoreApi<McdFlowNode, LegFlowEdge>()
@@ -465,6 +468,7 @@ export function McdCanvas({
   return (
     <section ref={paneRef} aria-label="Zone de dessin du MCD" className="min-h-0 min-w-0 flex-1 bg-canvas">
       <McdDispatchContext.Provider value={dispatch}>
+      <RemoteSelectionContext.Provider value={canvasOthers}>
       <ReactFlow<McdFlowNode, LegFlowEdge>
         nodes={nodes}
         edges={anchoredEdges}
@@ -503,9 +507,10 @@ export function McdCanvas({
         proOptions={{ hideAttribution: true }}
       >
         <Background gap={16} />
-        {others && others.length > 0 && <RemoteInk others={others} />}
-        {others && others.length > 0 && <RemoteDraftLinks others={others} />}
-        {others && others.length > 0 && <RemoteCursors others={others} teacherTag={teacherTag} />}
+        <RemoteSelections others={canvasOthers} nodes={nodes} />
+        {others && others.length > 0 && <RemoteInk others={canvasOthers} />}
+        {others && others.length > 0 && <RemoteDraftLinks others={canvasOthers} />}
+        {others && others.length > 0 && <RemoteCursors others={canvasOthers} teacherTag={teacherTag} />}
         {pins && pins.length > 0 && onOpenPin && (
           <CommentPins
             pins={pins}
@@ -515,6 +520,7 @@ export function McdCanvas({
           />
         )}
       </ReactFlow>
+      </RemoteSelectionContext.Provider>
       </McdDispatchContext.Provider>
       <ConfirmDialog
         open={pendingDelete !== null}

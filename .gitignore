@@ -33,3 +33,7 @@ src-tauri/target
 # Variables locales
 .env
 .env.local
+
+# Clés privées de signature et de déploiement
+*.key
+*.password

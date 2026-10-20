@@ -1,113 +1,200 @@
-# Construit les installateurs Windows, macOS et Linux à chaque tag v*
-# et les attache à une release GitHub en brouillon.
-# Déclenchement : git tag v0.1.0 && git push origin v0.1.0
+# Une modification de l'application sur main construit les logiciels,
+# publie une release complète, puis déploie le même commit sur le web.
 name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
+    tags: ['v*']
+    paths:
+      - 'src/**'
+      - 'src-tauri/**'
+      - 'public/**'
+      - 'index.html'
+      - 'package*.json'
+      - 'vite.config.*'
+      - 'tsconfig*.json'
+      - 'scripts/release-version.mjs'
+      - '.github/workflows/release.yml'
+      - '.github/workflows/deploy-web.yml'
+      - 'deploy/meriz-deploy-release.py'
+  workflow_dispatch:
+
+concurrency:
+  group: meriz-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      commit: ${{ steps.version.outputs.commit }}
+      release_id: ${{ steps.draft.outputs.result }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run test:release
+      - name: Préparer une version cohérente
+        id: version
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ "$REF_TYPE" = tag ]; then
+            version=$(node -p "require('./package.json').version")
+            test "$REF_NAME" = "v$version"
+            tag="$REF_NAME"
+          else
+            test "$REF_NAME" = main
+            version=$(node scripts/release-version.mjs --next)
+            tag="v$version"
+            git add package.json package-lock.json src-tauri/Cargo.toml src-tauri/Cargo.lock src-tauri/tauri.conf.json
+            if ! git diff --cached --quiet; then
+              git commit -m "Version $version [skip ci]"
+            fi
+            git tag "$tag"
+            # Refuse de passer devant un changement concurrent sur main.
+            git push --atomic origin HEAD:main "$tag"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Créer une release en brouillon
+        id: draft
+        uses: actions/github-script@v7
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_COMMIT: ${{ steps.version.outputs.commit }}
+        with:
+          script: |
+            const tag = process.env.RELEASE_TAG;
+            const releases = await github.paginate(github.rest.repos.listReleases, context.repo);
+            const existing = releases.find(release => release.tag_name === tag);
+            if (existing) {
+              if (!existing.draft) throw new Error('Cette version est déjà publiée.');
+              return existing.id;
+            }
+            const { data } = await github.rest.repos.createRelease({
+              ...context.repo, tag_name: tag, target_commitish: process.env.RELEASE_COMMIT,
+              name: 'Meriz '+tag, draft: true, prerelease: false,
+              body: [
+                'Installateurs de Meriz pour Windows, macOS et Linux.',
+                '',
+                'Le logiciel et app.meriz.fr sont construits depuis le même commit.',
+                'À partir de 1.1.0, les mises à jour signées sont installées au démarrage.',
+                'Les versions 1.0.x doivent installer cette version une première fois.',
+                '',
+                'Téléchargements : https://meriz.fr/telecharger.html',
+              ].join('\n'),
+            });
+            return data.id;
+
   build:
+    needs: prepare
     permissions:
       contents: write
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: 'macos-latest'
-            args: '--target aarch64-apple-darwin'
-          - platform: 'macos-latest'
-            args: '--target x86_64-apple-darwin'
-          - platform: 'ubuntu-22.04'
+          - platform: macos-latest
+            args: --target aarch64-apple-darwin
+          - platform: macos-latest
+            args: --target x86_64-apple-darwin
+          - platform: ubuntu-22.04
             args: ''
-          - platform: 'windows-latest'
+          - platform: windows-latest
             args: ''
-
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Installer les dépendances système (Linux)
+        with:
+          ref: ${{ needs.prepare.outputs.commit }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+      - name: Installer les dépendances Linux
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-
-      - name: Installer Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Installer Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
-
-      - name: Cache Rust
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './src-tauri -> target'
-
-      - name: Installer les dépendances npm
-        # Le npm livré avec Node 22 lit le verrou en version 3 sans
-        # difficulté : réinstaller npm globalement n'apportait rien et
-        # faisait tomber l'étape entière quand cette installation
-        # échouait.
-        run: npm ci
-
-      # Tauri compresse les ressources web dans le binaire : une fois
-      # l'installateur produit, on ne peut plus y lire l'adresse de
-      # l'API. On la vérifie donc ici, tant que le paquet est lisible.
-      # Si les variables n'arrivaient pas, la publication s'arrête.
-      - name: Vérifier que le paquet vise la production
-        env:
-          VITE_API_URL: 'https://api.meriz.fr'
-          VITE_REVERB_APP_KEY: '0t421vha7ydml81l0c2i'
-          VITE_REVERB_HOST: 'api.meriz.fr'
-          VITE_REVERB_PORT: '443'
-          VITE_REVERB_SCHEME: 'https'
-        shell: bash
-        run: |
-          npm run build
-          grep -q 'api.meriz.fr' dist/assets/index-*.js             || { echo "::error::Le paquet ne vise pas api.meriz.fr"; exit 1; }
-          grep -q '0t421vha7ydml81l0c2i' dist/assets/index-*.js             || { echo "::error::Le paquet n'a pas la clé du direct"; exit 1; }
-          echo "Le paquet vise bien https://api.meriz.fr"
-
-      - name: Construire et publier
-        uses: tauri-apps/tauri-action@v0
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils
+      - run: npm ci
+      - name: Construire et signer les installateurs
+        uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Sans ces adresses, l'application de bureau se construirait
-          # sans serveur : les comptes y seraient désactivés, et le
-          # direct muet. Ce sont les mêmes valeurs que la version web.
-          #
-          # Aucun secret ici : ce sont des adresses publiques, et la clé
-          # Reverb circule déjà dans le navigateur de chaque visiteur.
-          # Elle n'autorise rien à elle seule, chaque canal étant
-          # autorisé au jeton du compte. Le secret Reverb, lui, reste
-          # sur le serveur et n'apparaît jamais ici.
-          VITE_API_URL: 'https://api.meriz.fr'
-          VITE_REVERB_APP_KEY: '0t421vha7ydml81l0c2i'
-          VITE_REVERB_HOST: 'api.meriz.fr'
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          VITE_API_URL: https://api.meriz.fr
+          VITE_REVERB_APP_KEY: 0t421vha7ydml81l0c2i
+          VITE_REVERB_HOST: api.meriz.fr
           VITE_REVERB_PORT: '443'
-          VITE_REVERB_SCHEME: 'https'
+          VITE_REVERB_SCHEME: https
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'Meriz ${{ github.ref_name }}'
-          releaseBody: |
-            Installateurs de Meriz pour Windows, macOS et Linux.
-
-            **Windows** : `Meriz_<version>_x64-setup.exe`, ou le `.msi` pour un déploiement en salle machine.
-            **macOS** : `aarch64.dmg` pour un Mac Apple Silicon, `x64.dmg` pour un Mac Intel.
-            **Linux** : `.AppImage` à lancer tel quel, ou les paquets `.deb` et `.rpm`.
-
-            L'application se connecte à https://api.meriz.fr, et fonctionne aussi sans compte,
-            vos modèles restant alors sur votre appareil. Le téléchargement direct, par système,
-            est sur https://meriz.fr/telecharger.html
-          # Publication directe : les boutons du site pointent sur
-          # releases/latest, qui ignore les brouillons.
-          releaseDraft: false
-          prerelease: false
+          releaseId: ${{ needs.prepare.outputs.release_id }}
+          tagName: ${{ needs.prepare.outputs.tag }}
+          releaseDraft: true
+          uploadUpdaterJson: true
+          updaterJsonPreferNsis: true
           args: ${{ matrix.args }}
+
+  publish:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Vérifier le manifeste avant publication
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          gh release download "$RELEASE_TAG" --pattern latest.json --dir "$RUNNER_TEMP/updater"
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const manifest = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+"/updater/latest.json", "utf8"));
+            if ("v"+manifest.version.replace(/^v/, "") !== process.env.RELEASE_TAG) throw new Error("Version du manifeste incorrecte");
+            for (const platform of ["windows-x86_64", "linux-x86_64", "darwin-aarch64", "darwin-x86_64"]) {
+              const entry = manifest.platforms[platform];
+              if (!entry?.signature || !entry.url?.startsWith("https://github.com/"+process.env.GH_REPO+"/releases/download/"+process.env.RELEASE_TAG+"/")) {
+                throw new Error("Mise à jour absente ou invalide : "+platform);
+              }
+            }
+          '
+      - name: Publier la release complète
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+        run: gh release edit "$RELEASE_TAG" --draft=false --latest
+
+  deploy:
+    needs: [prepare, publish]
+    uses: ./.github/workflows/deploy-web.yml
+    with:
+      ref: ${{ needs.prepare.outputs.commit }}
+    secrets: inherit

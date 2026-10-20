@@ -17,6 +17,7 @@ interface MpdViewProps {
   tables: MpdTable[]
   hasErrors: boolean
   settings: MpdSettings
+  readOnly?: boolean
   onDialectChange: (dialect: SqlDialect) => void
   onOverrideChange: (columnId: string, value: string) => void
   /**
@@ -36,6 +37,7 @@ export function MpdView({
   tables,
   hasErrors,
   settings,
+  readOnly = false,
   onDialectChange,
   onOverrideChange,
   isActive,
@@ -73,6 +75,7 @@ export function MpdView({
         <select
           id={dialectSelectId}
           value={settings.dialect}
+          disabled={readOnly}
           onChange={(event) => onDialectChange(event.target.value as SqlDialect)}
           className="rounded-lg border border-line-strong px-1.5 py-1 font-mono text-xs"
         >
@@ -103,6 +106,7 @@ export function MpdView({
           <TypeMappingPanel
             panelId={mappingPanelId}
             tables={tables}
+            readOnly={readOnly}
             onOverrideChange={onOverrideChange}
           />
         )}
@@ -166,12 +170,14 @@ function MpdDiagram({ tables, hasErrors }: { tables: MpdTable[]; hasErrors: bool
  * Colonne latérale repliable, à droite du diagramme.
  */
 function TypeMappingPanel({
+  readOnly,
   panelId,
   tables,
   onOverrideChange,
 }: {
   panelId: string
   tables: MpdTable[]
+  readOnly?: boolean
   onOverrideChange: (columnId: string, value: string) => void
 }) {
   return (
@@ -225,6 +231,7 @@ function TypeMappingPanel({
                         type="text"
                         aria-label={`Type SQL de ${table.name}.${column.name}`}
                         value={column.overridden ? column.sqlType : ''}
+                        disabled={readOnly}
                         placeholder={column.proposedType}
                         onChange={(event) => onOverrideChange(column.id, event.target.value)}
                         className="w-full min-w-0 rounded-control border border-line-strong bg-surface px-1.5 py-0.5 font-mono text-micro placeholder:text-ink-soft"
@@ -233,6 +240,7 @@ function TypeMappingPanel({
                         <button
                           type="button"
                           aria-label={`Revenir au type proposé pour ${column.name}`}
+                          disabled={readOnly}
                           title={`Revenir à ${column.proposedType}`}
                           onClick={() => onOverrideChange(column.id, '')}
                           className="shrink-0 rounded-control border border-line-strong px-1.5 py-0.5 text-xs hover:bg-surface-soft"

@@ -51,7 +51,10 @@ export interface CollabInk {
 }
 
 /** Ce qu'un participant montre de lui : où il est, ce qu'il a choisi. */
+export type CollabView = 'dictionnaire' | 'mcd' | 'mld' | 'mpd' | 'sql' | 'code'
+
 export interface CollabPresence {
+  view?: CollabView | null
   user: CollabUser
   cursor: CollabCursor | null
   /** Identifiants des nœuds et pattes sélectionnés. */
@@ -81,9 +84,12 @@ export interface CollabProviderOptions {
   transport: CollabTransport
   /** Qui je suis, publié dans la présence. */
   me: CollabUser
+  /** Observation : réception seule, aucune présence ni écriture diffusée. */
+  readOnly?: boolean
 }
 
 export interface CollabProvider {
+  isSynced: () => boolean
   start: () => void
   stop: () => void
   /** Message venu du canal, à traiter. */
@@ -94,6 +100,7 @@ export interface CollabProvider {
   publish: (presence: {
     cursor: CollabCursor | null
     selection: string[]
+    view?: CollabView | null
     draft?: CollabDraftLink | null
     ink?: CollabInk | null
   }) => void
@@ -175,9 +182,22 @@ function readSelection(raw: unknown): string[] {
   return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === 'string') : []
 }
 
-export function createCollabProvider({ sync, transport, me }: CollabProviderOptions): CollabProvider {
+/** Un professeur silencieux n'annonce aucune awareness. Dans un groupe,
+ * l'appartenance au canal suffit toujours : tous les pairs restent visibles. */
+export function visibleCollaborators(participants: CollabUser[], others: RemotePresence[], group: boolean): CollabUser[] {
+  return participants.filter((person) =>
+    group || person.role !== 'teacher' || others.some((other) => other.user.id === person.id),
+  )
+}
+
+export function readCollabView(raw: unknown): CollabView | null {
+  return raw === 'dictionnaire' || raw === 'mcd' || raw === 'mld' || raw === 'mpd' || raw === 'sql' || raw === 'code' ? raw : null
+}
+
+export function createCollabProvider({ sync, transport, me, readOnly = false }: CollabProviderOptions): CollabProvider {
   const { awareness } = sync
   let running = false
+  let synced = false
   let stopUpdates: (() => void) | null = null
   const listeners = new Set<() => void>()
 
@@ -192,7 +212,7 @@ export function createCollabProvider({ sync, transport, me }: CollabProviderOpti
     changes: { added: number[]; updated: number[]; removed: number[] },
     origin: unknown,
   ) => {
-    if (running && origin !== REMOTE_PRESENCE) {
+    if (running && !readOnly && origin !== REMOTE_PRESENCE) {
       // Ce qui vient de nous part sur le canal ; ce qui vient du réseau
       // est déjà connu de tout le monde.
       const touched = [...changes.added, ...changes.updated, ...changes.removed]
@@ -202,16 +222,19 @@ export function createCollabProvider({ sync, transport, me }: CollabProviderOpti
   }
 
   return {
+    isSynced: () => synced,
     start: () => {
       if (running) {
         return
       }
       running = true
-      stopUpdates = sync.onLocalUpdate((update) => {
-        transport.send('yjs-update', { kind: 'update', update: toBase64(update) })
-      })
+      if (!readOnly) {
+        stopUpdates = sync.onLocalUpdate((update) => {
+          transport.send('yjs-update', { kind: 'update', update: toBase64(update) })
+        })
+      }
       awareness.on('update', onAwarenessChange)
-      awareness.setLocalState({ user: me, cursor: null, selection: [], draft: null, ink: null })
+      awareness.setLocalState(readOnly ? null : { user: me, cursor: null, selection: [], view: null, draft: null, ink: null })
       // « Voilà ce que j'ai » : chacun répondra par ce qui me manque.
       transport.send('yjs-update', { kind: 'hello', vector: toBase64(sync.stateVector()) })
     },
@@ -225,6 +248,7 @@ export function createCollabProvider({ sync, transport, me }: CollabProviderOpti
       // autres. L'ordre compte : couper d'abord, c'est se taire.
       awareness.setLocalState(null)
       running = false
+      synced = false
       stopUpdates?.()
       stopUpdates = null
       awareness.off('update', onAwarenessChange)
@@ -239,9 +263,11 @@ export function createCollabProvider({ sync, transport, me }: CollabProviderOpti
         const update = readText(payload, 'update')
         if (update !== null) {
           sync.applyRemote(fromBase64(update))
+          synced = true
+          notify()
         }
         const vector = readText(payload, 'vector')
-        if (vector === null) {
+        if (vector === null || readOnly) {
           return
         }
         /*
@@ -291,9 +317,9 @@ export function createCollabProvider({ sync, transport, me }: CollabProviderOpti
       }
     },
 
-    publish: ({ cursor, selection, draft = null, ink = null }) => {
-      if (running) {
-        awareness.setLocalState({ user: me, cursor, selection, draft, ink })
+    publish: ({ cursor, selection, view = null, draft = null, ink = null }) => {
+      if (running && !readOnly) {
+        awareness.setLocalState({ user: me, cursor, selection, view, draft, ink })
       }
     },
 
@@ -310,6 +336,7 @@ export function createCollabProvider({ sync, transport, me }: CollabProviderOpti
             user,
             cursor: readCursor(raw.cursor),
             selection: readSelection(raw.selection),
+            view: readCollabView(raw.view),
             draft: readDraft(raw.draft),
             ink: readInk(raw.ink),
           })

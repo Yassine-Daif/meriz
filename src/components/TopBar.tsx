@@ -6,8 +6,8 @@ import { FileActions } from './FileActions'
 import { DocumentNameField } from './DocumentNameField'
 import { SyncStatus } from './SyncStatus'
 import { UiScaleControl } from './UiScaleControl'
-import type { CollabUser } from '../model/collabProvider'
-import { Avatar } from './ui/Avatar'
+import { ParticipantList } from './ParticipantList'
+import type { CollabUser, RemotePresence } from '../model/collabProvider'
 import { BackButton } from './ui/BackButton'
 import { Badge } from './ui/Badge'
 import { Lockup } from './ui/Lockup'
@@ -35,6 +35,7 @@ interface TopBarProps {
   readOnly?: boolean
   /** Co-édition : qui d'autre est là, en pastilles. */
   participants?: CollabUser[]
+  others?: RemotePresence[]
   mcdVisible: boolean
   canUndo: boolean
   canRedo: boolean
@@ -76,6 +77,7 @@ export function TopBar({
   cloud,
   readOnly = false,
   participants,
+  others = [],
   mcdVisible,
   canUndo,
   canRedo,
@@ -149,14 +151,7 @@ export function TopBar({
       />
       {!readOnly && <SyncStatus status={syncStatus} onRetry={onRetrySync} cloud={cloud} />}
       {participants && participants.length > 0 && (
-        <div
-          aria-label="Participants"
-          className="flex items-center gap-1"
-        >
-          {participants.map((person) => (
-            <Avatar key={person.id} person={person} size="sm" labelled />
-          ))}
-        </div>
+        <ParticipantList participants={participants} others={others} />
       )}
       <div className="ml-auto flex flex-wrap items-center gap-3">
         <AccountStatus compact />

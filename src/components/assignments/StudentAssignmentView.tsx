@@ -263,7 +263,7 @@ export function StudentAssignmentView({
 
       {assignment.liveTracking && (
         <Notice tone="info" announce={false} title="Votre prof peut suivre cet exercice">
-          Il voit votre modèle tel que vous l’enregistrez, sans pouvoir y toucher. Il ne voit ni vos autres
+          Il voit votre modèle évoluer en direct, sans pouvoir y toucher. Il ne voit ni vos autres
           documents, ni votre travail sur d’autres devoirs. S’il décide de corriger avec vous, dans le même
           modèle, l’outil vous le dira clairement.
           <span className="mt-1 block text-ink-soft">

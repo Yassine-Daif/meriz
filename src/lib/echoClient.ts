@@ -56,7 +56,7 @@ async function createEcho(credentials: NonNullable<ReturnType<typeof echoCredent
     wsPort: credentials.port,
     wssPort: credentials.port,
     forceTLS: credentials.secure,
-    enabledTransports: credentials.secure ? ['wss'] : ['ws'],
+    enabledTransports: ['ws'],
     authEndpoint: credentials.authEndpoint,
     bearerToken: credentials.token,
   })

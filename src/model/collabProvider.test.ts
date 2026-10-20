@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createCollabProvider } from './collabProvider'
+import { createCollabProvider, visibleCollaborators, readCollabView } from './collabProvider'
 import type { CollabEvent, CollabProvider, CollabUser } from './collabProvider'
 import { createModelDoc } from './modelDoc'
 import type { ModelDoc } from './modelDoc'
@@ -64,13 +64,14 @@ function bus() {
     },
   })
 
-  const add = (initial: McdEditorState, me: CollabUser, seed: boolean): Pair => {
+  const add = (initial: McdEditorState, me: CollabUser, seed: boolean, readOnly = false): Pair => {
     const doc = createModelDoc(initial, { seed })
     const pair: Pair = { doc, me, provider: null as unknown as CollabProvider }
     pair.provider = createCollabProvider({
       sync: doc.sync,
       transport: transportFor(() => pair),
       me,
+      readOnly,
     })
     pairs.push(pair)
     return pair
@@ -81,6 +82,7 @@ function bus() {
     owner: (initial: McdEditorState) => add(initial, ELEVE, true),
     /** Un arrivant : document vide, rempli par la synchronisation. */
     guest: (me: CollabUser = PROF) => add(EMPTY, me, false),
+    observer: () => add(EMPTY, PROF, false, true),
     /** Un membre de groupe : document vide, qu'il peut adopter lui-même. */
     member: (me: CollabUser) => add(EMPTY, me, false),
     mute: (value: boolean) => {
@@ -659,5 +661,97 @@ describe('co-édition, robustesse', () => {
       expect(vu.cursor).toEqual({ x: 7, y: 8 })
       expect(vu.selection).toEqual(['ent-client'])
     }
+  })
+})
+
+describe('observation silencieuse et contexte de présence', () => {
+  it('synchronise le lecteur sans aucune présence ni écriture sortante', () => {
+    const canal = bus()
+    const eleve = canal.owner(stateOf(clientCommande))
+    const prof = canal.observer()
+    eleve.provider.start()
+    prof.provider.start()
+    expect(prof.provider.isSynced()).toBe(true)
+    expect(prof.doc.snapshot()).toEqual(eleve.doc.snapshot())
+    expect(eleve.provider.others()).toEqual([])
+    expect(prof.provider.others()[0]?.user).toEqual(ELEVE)
+    prof.provider.publish({ cursor: {x: 1, y: 2}, selection: ['ent-client'], view: 'sql' })
+    expect(eleve.provider.others()).toEqual([])
+    const before = eleve.doc.snapshot()
+    const sent = canal.messages()
+    prof.doc.apply({type: 'ADD_ENTITY', position: {x: 500, y: 500}})
+    expect(canal.messages()).toBe(sent)
+    expect(eleve.doc.snapshot()).toEqual(before)
+    eleve.doc.apply({type: 'ADD_ENTITY', position: {x: 100, y: 100}})
+    expect(prof.doc.snapshot().mcd.entities.length).toBe(before.mcd.entities.length + 2)
+    prof.provider.stop()
+    expect(prof.provider.isSynced()).toBe(false)
+    expect(eleve.provider.others()).toEqual([])
+  })
+
+  it('reçoit même un document vide sans le confondre avec une attente de synchronisation', () => {
+    const canal = bus()
+    const eleve = canal.owner(EMPTY)
+    const prof = canal.observer()
+    eleve.provider.start()
+    prof.provider.start()
+    expect(prof.provider.isSynced()).toBe(true)
+    expect(prof.doc.snapshot()).toEqual(EMPTY)
+  })
+
+  it('transmet la vue et les sélections sans changer le modèle', () => {
+    const canal = bus()
+    const eleve = canal.owner(stateOf(clientCommande))
+    const prof = canal.guest()
+    eleve.provider.start()
+    prof.provider.start()
+    const before = prof.doc.snapshot()
+    for (const view of ['dictionnaire', 'mcd', 'mld', 'mpd', 'sql', 'code'] as const) {
+      eleve.provider.publish({ cursor: null, selection: ['ent-client'], view })
+      expect(prof.provider.others()[0]?.view).toBe(view)
+      expect(prof.provider.others()[0]?.selection).toEqual(['ent-client'])
+    }
+    expect(prof.doc.snapshot()).toEqual(before)
+  })
+
+  it('reprend après une déconnexion et devient visible seulement en correction', () => {
+    const canal = bus()
+    const eleve = canal.owner(stateOf(clientCommande))
+    const prof = canal.observer()
+    eleve.provider.start()
+    prof.provider.start()
+    prof.provider.stop()
+    eleve.doc.apply({type: 'ADD_ENTITY', position: {x: 200, y: 200}})
+    prof.provider.start()
+    expect(prof.doc.snapshot()).toEqual(eleve.doc.snapshot())
+    expect(eleve.provider.others()).toEqual([])
+    prof.provider.stop()
+    canal.remove(prof)
+    const correcteur = canal.guest()
+    correcteur.provider.start()
+    expect(eleve.provider.others()[0]?.user).toEqual(PROF)
+    expect(correcteur.doc.snapshot()).toEqual(eleve.doc.snapshot())
+  })
+})
+
+describe('participants affichés', () => {
+  it('masque le prof silencieux, mais jamais les membres de groupe', () => {
+    expect(visibleCollaborators([ELEVE, PROF], [], false)).toEqual([ELEVE])
+    expect(visibleCollaborators([ELEVE, PROF], [], true)).toEqual([ELEVE, PROF])
+    const canal = bus()
+    const eleve = canal.owner(stateOf(clientCommande))
+    const prof = canal.guest()
+    eleve.provider.start()
+    prof.provider.start()
+    expect(visibleCollaborators([PROF], eleve.provider.others(), false)).toEqual([PROF])
+    prof.provider.stop()
+    expect(visibleCollaborators([PROF], eleve.provider.others(), false)).toEqual([])
+  })
+
+  it('accepte les anciennes présences sans vue, et refuse une vue inconnue', () => {
+    expect(readCollabView(undefined)).toBeNull()
+    expect(readCollabView({ view: 'mcd' })).toBeNull()
+    expect(readCollabView('inconnue')).toBeNull()
+    expect(readCollabView('mcd')).toBe('mcd')
   })
 })

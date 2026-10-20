@@ -75,12 +75,9 @@ export type EditorOrigin = 'classes' | 'corrections' | 'work'
 
 /**
  * Le contexte collaboratif d'une cible, ou rien. L'élève partage son
- * travail quand le devoir est suivi, le prof entre dans le canal
- * seulement pour corriger à deux, et les membres d'un groupe se
- * retrouvent sur ses documents partagés. Une simple lecture n'y entre
- * pas :
- * l'élève n'a pas à voir arriver quelqu'un chaque fois qu'on le regarde,
- * la date de lecture suffit à le lui dire.
+ * travail quand le devoir est suivi. Le prof reçoit en observateur
+ * silencieux avant de se présenter pour corriger à deux. Les membres
+ * d'un groupe se retrouvent toujours comme pairs visibles.
  */
 export function collaborationFor(
   target: EditorTarget,
@@ -101,6 +98,9 @@ export function collaborationFor(
   }
   if (target.kind === 'work' && target.live) {
     return { documentId, me, role: 'owner' }
+  }
+  if (target.kind === 'review' && target.live !== null) {
+    return { documentId: target.live.documentId, me, role: 'observer' }
   }
   if (target.kind === 'coedit') {
     return { documentId: target.documentId, me, role: 'guest' }

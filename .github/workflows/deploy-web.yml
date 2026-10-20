@@ -1,29 +1,22 @@
-# Déploie la version web sur le VPS à chaque push sur main :
-# tests et build sur GitHub, puis envoi rsync par SSH.
-#   dist/  -> $VPS_APP_PATH/   (app.meriz.fr, anciens fichiers purges)
-#   site/  -> $VPS_SITE_PATH/  (meriz.fr, anciens fichiers purges)
-#
-# Secrets requis (Settings > Secrets and variables > Actions) :
-#   VPS_HOST         adresse du serveur (nom de domaine ou IP)
-#   VPS_USER         compte SSH qui possède le dossier servi
-#   VPS_SSH_KEY      clé privée SSH dédiée au déploiement
-#   VPS_APP_PATH     dossier servi pour app.meriz.fr, sans / final
-#   VPS_SITE_PATH    dossier servi pour meriz.fr, sans / final
-#   VPS_KNOWN_HOSTS  empreinte d'hôte du serveur (sortie de ssh-keyscan)
-# Secret facultatif :
-#   VPS_PORT         port SSH, 22 par défaut
-#
-# Mise en place pas à pas : deploy/DEPLOIEMENT.md
 name: Deploy web
 
 on:
-  push:
-    branches:
-      - main
-  # Relance manuelle depuis l'onglet Actions.
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: true
   workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit ou tag à déployer
+        default: main
+        required: true
+        type: string
+  push:
+    branches: [main]
+    paths: ['site/**']
 
-# Un déploiement à la fois : le suivant attend la fin du précédent.
 concurrency:
   group: deploy-web
   cancel-in-progress: false
@@ -35,106 +28,57 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Vérifier les secrets
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
-          VPS_APP_PATH: ${{ secrets.VPS_APP_PATH }}
-          VPS_SITE_PATH: ${{ secrets.VPS_SITE_PATH }}
-          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
-        run: |
-          missing=0
-          for name in VPS_HOST VPS_USER VPS_SSH_KEY VPS_APP_PATH VPS_SITE_PATH VPS_KNOWN_HOSTS; do
-            if [ -z "${!name}" ]; then
-              echo "::error::Secret manquant : $name (voir deploy/DEPLOIEMENT.md)"
-              missing=1
-            fi
-          done
-          exit "$missing"
-
       - uses: actions/checkout@v4
-
-      - name: Installer Node
-        uses: actions/setup-node@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
-      - name: Installer les dépendances
-        # Le npm livré avec Node 22 lit le verrou sans difficulté.
-        run: |
-          npm ci
-
-      - name: Tester
-        run: npm test
-
+      - run: npm ci
+      - run: npm test
       - name: Construire
         env:
-          # Sans ces adresses, l'application deployee se construirait sans
-          # serveur : comptes desactives et direct muet. Rien de secret ici,
-          # ce sont des adresses publiques, et la cle Reverb circule deja
-          # dans le navigateur de chaque visiteur.
-          VITE_API_URL: 'https://api.meriz.fr'
-          VITE_REVERB_APP_KEY: '0t421vha7ydml81l0c2i'
-          VITE_REVERB_HOST: 'api.meriz.fr'
+          VITE_API_URL: https://api.meriz.fr
+          VITE_REVERB_APP_KEY: 0t421vha7ydml81l0c2i
+          VITE_REVERB_HOST: api.meriz.fr
           VITE_REVERB_PORT: '443'
-          VITE_REVERB_SCHEME: 'https'
+          VITE_REVERB_SCHEME: https
         run: |
           npm run build
           test -f dist/index.html
           grep -q 'api.meriz.fr' dist/assets/index-*.js
-
-      - name: Préparer la connexion SSH
+      - name: Préparer la connexion de déploiement restreinte
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
-          VPS_APP_PATH: ${{ secrets.VPS_APP_PATH }}
-          VPS_SITE_PATH: ${{ secrets.VPS_SITE_PATH }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
           VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
         run: |
+          set -euo pipefail
+          for name in VPS_HOST VPS_USER VPS_SSH_KEY VPS_KNOWN_HOSTS; do
+            test -n "${!name}" || { echo "::error::Secret manquant : $name"; exit 1; }
+          done
           mkdir -p "$HOME/.ssh"
           chmod 700 "$HOME/.ssh"
-          # tr retire les retours chariot d'un secret collé depuis Windows.
           printf '%s\n' "$VPS_SSH_KEY" | tr -d '\r' > "$HOME/.ssh/id_deploy"
           chmod 600 "$HOME/.ssh/id_deploy"
-          # Empreinte vérifiée à la main, jamais la première clé reçue.
-          printf '%s\n' "$VPS_KNOWN_HOSTS" | tr -d '\r' > "$HOME/.ssh/known_hosts"
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
           chmod 644 "$HOME/.ssh/known_hosts"
-          # Échoue tout de suite si la clé, l'empreinte ou les droits
-          # du dossier cible ne vont pas.
-          ssh -i "$HOME/.ssh/id_deploy" -p "$VPS_PORT" \
-            -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            "$VPS_USER@$VPS_HOST" \
-            "for d in \"$VPS_APP_PATH\" \"$VPS_SITE_PATH\"; do test -d \"$d\" && test -w \"$d\" || exit 1; done" \
-            || { echo "::error::Connexion SSH refusée ou un des deux dossiers servis n'est pas accessible en écriture"; exit 1; }
-
-      - name: Envoyer l'application (app/)
+      - name: Basculer l'application et la vitrine
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
-          VPS_APP_PATH: ${{ secrets.VPS_APP_PATH }}
-          VPS_SITE_PATH: ${{ secrets.VPS_SITE_PATH }}
-        # --delete : les anciens assets empreints disparaissent.
-        # --chmod : droits lisibles par Apache, quels que soient ceux du runner.
         run: |
-          rsync -rltz --delete --chmod=D755,F644 \
-            -e "ssh -i $HOME/.ssh/id_deploy -p $VPS_PORT -o BatchMode=yes -o StrictHostKeyChecking=yes" \
-            dist/ "$VPS_USER@$VPS_HOST:$VPS_APP_PATH/"
-
-      - name: Envoyer la vitrine (racine)
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
-          VPS_APP_PATH: ${{ secrets.VPS_APP_PATH }}
-          VPS_SITE_PATH: ${{ secrets.VPS_SITE_PATH }}
-        # Sans --delete : ni app/ ni un fichier posé à la main ne sont effacés.
+          set -euo pipefail
+          stage=$(mktemp -d)
+          mkdir "$stage/app" "$stage/site"
+          cp -a dist/. "$stage/app/"
+          cp -a site/. "$stage/site/"
+          rm -f "$stage/site/LIENS.md"
+          # La clé ne peut exécuter que le réceptionnaire de ce flux.
+          tar -czf - -C "$stage" app site | ssh -T -i "$HOME/.ssh/id_deploy"             -o BatchMode=yes -o StrictHostKeyChecking=yes             "$VPS_USER@$VPS_HOST"
+      - name: Vérifier les fichiers servis
         run: |
-          rsync -rltz --delete --chmod=D755,F644 \
-            --exclude=LIENS.md \
-            -e "ssh -i $HOME/.ssh/id_deploy -p $VPS_PORT -o BatchMode=yes -o StrictHostKeyChecking=yes" \
-            site/ "$VPS_USER@$VPS_HOST:$VPS_SITE_PATH/"
+          curl -fsS https://app.meriz.fr/ -o "$RUNNER_TEMP/index-public.html"
+          cmp dist/index.html "$RUNNER_TEMP/index-public.html"

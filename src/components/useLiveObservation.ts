@@ -41,6 +41,7 @@ export function useLiveObservation({ account, target, onContent }: LiveObservati
         const result = await getLiveSnapshot(client, liveAssignmentId, liveTarget.studentId)
         if (stillWanted() && result.ok) {
           onContent(result.value.content)
+          await client.request('POST', '/assignments/'+encodeURIComponent(liveAssignmentId)+'/live/'+encodeURIComponent(String(liveTarget.studentId))+'/seen')
         }
       },
       onContent: onContent,
