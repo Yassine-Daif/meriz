@@ -361,6 +361,7 @@ export function Editor({
               isActive={activeView === 'mcd'}
               others={collab.others}
               onPointerFlow={collaboration ? collab.reportCursor : undefined}
+              onSelectionBox={collaboration ? collab.reportSelectionBox : undefined}
               onDraftLink={collaboration ? collab.reportDraftLink : undefined}
               comments={comments}
               onInkStroke={canInk ? collab.reportInk : undefined}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createCollabProvider, visibleCollaborators } from '../model/collabProvider'
 import type {
   CollabCursor,
+  CollabSelectionBox,
   CollabView,
   CollabDraftLink,
   CollabInk,
@@ -69,6 +70,7 @@ export interface CollaborationHandle {
    * Éphémère de bout en bout, il ne touche jamais le modèle.
    */
   reportInk: (points: CollabCursor[] | null) => void
+  reportSelectionBox: (box: CollabSelectionBox | null) => void
 }
 
 export interface UseCollaborationOptions {
@@ -106,6 +108,7 @@ export function useCollaboration({
   // Le tracé en cours part avec le curseur, dans le même message.
   const draftRef = useRef<CollabDraftLink | null>(null)
   const inkRef = useRef<CollabInk | null>(null)
+  const selectionBoxRef = useRef<CollabSelectionBox | null>(null)
   const publishRef = useRef<CollabProvider['publish'] | null>(null)
 
   const observer = info?.role === 'observer'
@@ -174,6 +177,7 @@ export function useCollaboration({
               view: viewRef.current,
               draft: draftRef.current,
               ink: inkRef.current,
+        selectionBox: selectionBoxRef.current,
             })
           } else {
             // Le lien reviendra avec une nouvelle poignée de main, donc
@@ -196,6 +200,7 @@ export function useCollaboration({
       // perdu ou démontage, il repart de rien. Le trait de crayon non plus.
       draftRef.current = null
       inkRef.current = null
+      selectionBoxRef.current = null
     }
 
     /**
@@ -225,6 +230,7 @@ export function useCollaboration({
         view: viewRef.current,
         draft: draftRef.current,
         ink: inkRef.current,
+              selectionBox: selectionBoxRef.current,
       })
     }, CURSOR_INTERVAL_MS)
 
@@ -246,6 +252,7 @@ export function useCollaboration({
 
   useEffect(() => {
     viewRef.current = view
+    selectionBoxRef.current = null
   }, [view])
 
   const reportCursor = useCallback((cursor: CollabCursor | null) => {
@@ -261,6 +268,10 @@ export function useCollaboration({
     inkRef.current = points === null || points.length < 2 ? null : { points }
   }, [])
 
+  const reportSelectionBox = useCallback((box: CollabSelectionBox | null) => {
+    selectionBoxRef.current = box
+  }, [])
+
   return {
     synced,
     state: documentId === null ? 'off' : state,
@@ -269,5 +280,6 @@ export function useCollaboration({
     reportCursor,
     reportDraftLink,
     reportInk,
+    reportSelectionBox,
   }
 }

@@ -325,10 +325,11 @@
   outline-offset: 2px;
 }
 
-/* Zone de sélection : contour tireté, voile léger. */
-.react-flow__selection {
+/* Zone de sélection : contour continu, voile léger. */
+.react-flow__selection,
+.react-flow__nodesselection-rect {
   background: color-mix(in srgb, var(--c-mark) 8%, transparent);
-  border: 1.5px dashed var(--c-mark);
+  border: 1.5px solid var(--c-mark);
   border-radius: 10px;
 }
 

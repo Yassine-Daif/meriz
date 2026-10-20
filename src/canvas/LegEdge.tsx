@@ -83,8 +83,8 @@ export function LegEdge({ id, sourceX, sourceY, targetX, targetY, data, selected
       {remoteSelections.map((other, index) => (
         <g key={other.clientId} data-remote-selection={id} data-participant={other.user.id} role="img" aria-label={'Sélection de '+displayName(other.user)}>
           <title>{'Sélection de '+displayName(other.user)}</title>
-          <path d={path} fill="none" stroke={other.user.avatarBg} strokeWidth={7+index*4} strokeDasharray="10 5 2 5" pointerEvents="none" />
-          <path d={path} fill="none" stroke={other.user.avatarFg} strokeWidth={8+index*4} strokeDasharray="1 21" pointerEvents="none" />
+          <path d={path} fill="none" stroke={other.user.avatarBg} strokeWidth={7+index*4} pointerEvents="none" />
+          <path d={path} fill="none" stroke={other.user.avatarFg} strokeWidth={1} pointerEvents="none" />
         </g>
       ))}
       <BaseEdge

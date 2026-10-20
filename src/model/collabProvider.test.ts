@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createCollabProvider, visibleCollaborators, readCollabView } from './collabProvider'
+import { createCollabProvider, visibleCollaborators, readCollabView, readSelectionBox } from './collabProvider'
 import type { CollabEvent, CollabProvider, CollabUser } from './collabProvider'
 import { createModelDoc } from './modelDoc'
 import type { ModelDoc } from './modelDoc'
@@ -753,5 +753,47 @@ describe('participants affichés', () => {
     expect(readCollabView({ view: 'mcd' })).toBeNull()
     expect(readCollabView('inconnue')).toBeNull()
     expect(readCollabView('mcd')).toBe('mcd')
+  })
+})
+
+
+describe('rectangle de sélection partagé', () => {
+  it('partage le geste sans modifier le document et l’efface au lâcher ou au départ', () => {
+    const channel = bus()
+    const owner = channel.owner(stateOf(clientCommande))
+    const peer = channel.guest()
+    owner.provider.start()
+    peer.provider.start()
+    const before = peer.doc.snapshot()
+    const box = { x: -20, y: 45, width: 180, height: 120 }
+    owner.provider.publish({ cursor: null, selection: [], view: 'mcd', selectionBox: box })
+    expect(peer.provider.others()[0]?.selectionBox).toEqual(box)
+    expect(peer.doc.snapshot()).toEqual(before)
+    owner.provider.publish({ cursor: null, selection: ['ent-client'], view: 'mcd', selectionBox: null })
+    expect(peer.provider.others()[0]?.selectionBox).toBeNull()
+    expect(peer.provider.others()[0]?.selection).toEqual(['ent-client'])
+    owner.provider.publish({ cursor: null, selection: [], selectionBox: box })
+    owner.provider.stop()
+    expect(peer.provider.others()).toEqual([])
+    peer.provider.stop()
+  })
+
+  it('ne rend pas visible un professeur en observation silencieuse', () => {
+    const channel = bus()
+    const owner = channel.owner(stateOf(clientCommande))
+    const observer = channel.observer()
+    owner.provider.start()
+    observer.provider.start()
+    observer.provider.publish({ cursor: null, selection: [], selectionBox: { x: 0, y: 0, width: 10, height: 20 } })
+    expect(owner.provider.others()).toEqual([])
+    observer.provider.stop()
+    owner.provider.stop()
+  })
+
+  it('tolère les anciennes présences et refuse les géométries invalides', () => {
+    for (const value of [undefined, null, {}, { x: NaN, y: 1, width: 2, height: 3 },
+      { x: 1, y: 1, width: -2, height: 3 }, { x: 1, y: 1, width: Infinity, height: 3 },
+      { x: 1, y: 1, width: 1e12, height: 3 }]) expect(readSelectionBox(value)).toBeNull()
+    expect(readSelectionBox({ x: -10, y: -20, width: 40, height: 50 })).toEqual({ x: -10, y: -20, width: 40, height: 50 })
   })
 })

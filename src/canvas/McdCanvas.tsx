@@ -1,3 +1,4 @@
+import { selectionBoxInFlow } from './selectionBox'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { ConfirmDialog } from '../components/ConfirmDialog'
@@ -38,7 +39,7 @@ import { RemoteSelections } from './RemoteSelections'
 import { RemoteCursors } from './RemoteCursors'
 import { RemoteDraftLinks } from './RemoteDraftLinks'
 import { RemoteInk } from './RemoteInk'
-import type { RemotePresence } from '../model/collabProvider'
+import type { RemotePresence, CollabSelectionBox } from '../model/collabProvider'
 import { useTheme } from '../lib/useTheme'
 import { appendInkPoint } from '../model/inkTrace'
 import type { InkPoint } from '../model/inkTrace'
@@ -58,6 +59,7 @@ interface McdCanvasProps {
   others?: RemotePresence[]
   /** Ma position de pointeur, pour que les autres me voient. */
   onPointerFlow?: (position: { x: number; y: number } | null) => void
+  onSelectionBox?: (box: CollabSelectionBox | null) => void
   /**
    * La liaison que je tire, pour que les autres la voient se dessiner.
    * Null au lâcher. Ce tracé ne passe jamais par le modèle.
@@ -101,6 +103,7 @@ export function McdCanvas({
   isActive,
   others,
   onPointerFlow,
+  onSelectionBox,
   onDraftLink,
   teacherTag = true,
   pins,
@@ -112,9 +115,41 @@ export function McdCanvas({
   readOnly = false,
 }: McdCanvasProps) {
   const canvasOthers = useMemo(() => (others ?? []).filter((other) => !other.view || other.view === 'mcd'), [others])
+  const selectionBoxReporter = useRef(onSelectionBox)
+  selectionBoxReporter.current = onSelectionBox
   const theme = useTheme()
   const { screenToFlowPosition } = useReactFlow()
   const store = useStoreApi<McdFlowNode, LegFlowEdge>()
+  // Réutilise le rectangle réel de React Flow, y compris son zoom et son auto-pan.
+  useEffect(() => {
+    const clear = () => selectionBoxReporter.current?.(null)
+    if (!isActive) { clear(); return }
+    let cancelled = false
+    const cancel = () => { cancelled = true; clear() }
+    const publish = (state: ReturnType<typeof store.getState>) => {
+      if (!state.userSelectionActive || !state.userSelectionRect) {
+        cancelled = false
+        clear()
+      } else if (!cancelled) {
+        selectionBoxReporter.current?.(selectionBoxInFlow(state.userSelectionRect, state.transform))
+      }
+    }
+    publish(store.getState())
+    const unsubscribe = store.subscribe((next, previous) => {
+      if (next.userSelectionRect !== previous.userSelectionRect || next.userSelectionActive !== previous.userSelectionActive || next.transform !== previous.transform) publish(next)
+    })
+    window.addEventListener('pointerup', cancel, true)
+    window.addEventListener('pointercancel', cancel, true)
+    window.addEventListener('blur', cancel)
+    return () => {
+      unsubscribe()
+      window.removeEventListener('pointerup', cancel, true)
+      window.removeEventListener('pointercancel', cancel, true)
+      window.removeEventListener('blur', cancel)
+      clear()
+    }
+  }, [isActive, store])
+
   // Un geste de souris se diffuse pendant qu'il se fait, et ne compte
   // que pour une seule étape d'annulation.
   const gesture = useGestureStream(dispatch)

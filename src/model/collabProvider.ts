@@ -50,6 +50,12 @@ export interface CollabInk {
   points: CollabCursor[]
 }
 
+/** Rectangle de sélection en coordonnées du modèle, uniquement dans la présence. */
+export interface CollabSelectionBox extends CollabCursor {
+  width: number
+  height: number
+}
+
 /** Ce qu'un participant montre de lui : où il est, ce qu'il a choisi. */
 export type CollabView = 'dictionnaire' | 'mcd' | 'mld' | 'mpd' | 'sql' | 'code'
 
@@ -59,6 +65,7 @@ export interface CollabPresence {
   cursor: CollabCursor | null
   /** Identifiants des nœuds et pattes sélectionnés. */
   selection: string[]
+  selectionBox?: CollabSelectionBox | null
   /**
    * Liaison en cours, éphémère. Elle ne passe jamais par le modèle :
    * c'est de l'affichage, comme un curseur. Null : personne ne tire rien.
@@ -100,6 +107,7 @@ export interface CollabProvider {
   publish: (presence: {
     cursor: CollabCursor | null
     selection: string[]
+    selectionBox?: CollabSelectionBox | null
     view?: CollabView | null
     draft?: CollabDraftLink | null
     ink?: CollabInk | null
@@ -147,6 +155,15 @@ function readCursor(raw: unknown): CollabCursor | null {
     return null
   }
   return { x: raw.x, y: raw.y }
+}
+
+export function readSelectionBox(raw: unknown): CollabSelectionBox | null {
+  if (!isRecord(raw)) return null
+  const { x, y, width, height } = raw
+  if (typeof x !== 'number' || typeof y !== 'number' || typeof width !== 'number' || typeof height !== 'number'
+    || ![x, y, width, height].every(Number.isFinite) || width <= 0 || height <= 0
+    || Math.abs(x) > 1e9 || Math.abs(y) > 1e9 || width > 1e7 || height > 1e7) return null
+  return { x, y, width, height }
 }
 
 function readDraft(raw: unknown): CollabDraftLink | null {
@@ -234,7 +251,7 @@ export function createCollabProvider({ sync, transport, me, readOnly = false }: 
         })
       }
       awareness.on('update', onAwarenessChange)
-      awareness.setLocalState(readOnly ? null : { user: me, cursor: null, selection: [], view: null, draft: null, ink: null })
+      awareness.setLocalState(readOnly ? null : { user: me, cursor: null, selection: [], view: null, draft: null, ink: null, selectionBox: null })
       // « Voilà ce que j'ai » : chacun répondra par ce qui me manque.
       transport.send('yjs-update', { kind: 'hello', vector: toBase64(sync.stateVector()) })
     },
@@ -317,9 +334,9 @@ export function createCollabProvider({ sync, transport, me, readOnly = false }: 
       }
     },
 
-    publish: ({ cursor, selection, view = null, draft = null, ink = null }) => {
+    publish: ({ cursor, selection, view = null, draft = null, ink = null, selectionBox = null }) => {
       if (running && !readOnly) {
-        awareness.setLocalState({ user: me, cursor, selection, view, draft, ink })
+        awareness.setLocalState({ user: me, cursor, selection, view, draft, ink, selectionBox })
       }
     },
 
@@ -336,6 +353,7 @@ export function createCollabProvider({ sync, transport, me, readOnly = false }: 
             user,
             cursor: readCursor(raw.cursor),
             selection: readSelection(raw.selection),
+            selectionBox: readSelectionBox(raw.selectionBox),
             view: readCollabView(raw.view),
             draft: readDraft(raw.draft),
             ink: readInk(raw.ink),

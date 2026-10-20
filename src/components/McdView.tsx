@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Dispatch, KeyboardEvent, PointerEvent, ReactNode, SetStateAction } from 'react'
 import type { McdAction, McdEditorState } from '../model/mcdReducer'
-import type { RemotePresence } from '../model/collabProvider'
+import type { RemotePresence, CollabSelectionBox } from '../model/collabProvider'
 import type { ValidationProblem } from '../model/validate'
 import { McdCanvas } from '../canvas/McdCanvas'
 import type { CanvasSelection } from '../canvas/selection'
@@ -43,6 +43,7 @@ interface McdViewProps {
   others?: RemotePresence[]
   /** Ma position de pointeur, pour que les autres me voient. */
   onPointerFlow?: (position: { x: number; y: number } | null) => void
+  onSelectionBox?: (box: CollabSelectionBox | null) => void
   /** La liaison que je tire, pour que les autres la voient. */
   onDraftLink?: (from: { x: number; y: number } | null) => void
   /** Faux entre pairs d'un groupe : aucune étiquette prof sur les curseurs. */
@@ -75,6 +76,7 @@ export function McdView({
   isActive,
   others,
   onPointerFlow,
+  onSelectionBox,
   onDraftLink,
   teacherTag,
   banner,
@@ -211,6 +213,7 @@ export function McdView({
           isActive={isActive}
           others={others}
           onPointerFlow={onPointerFlow}
+          onSelectionBox={onSelectionBox}
           onDraftLink={onDraftLink}
           teacherTag={teacherTag}
           readOnly={readOnly}
