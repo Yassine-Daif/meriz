@@ -174,8 +174,10 @@ jobs:
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
           RELEASE_ID: ${{ needs.prepare.outputs.release_id }}
         run: |
-          gh release download "$RELEASE_TAG" --pattern latest.json --dir "$RUNNER_TEMP/updater"
+          mkdir -p "$RUNNER_TEMP/updater"
           gh api "repos/$GH_REPO/releases/$RELEASE_ID" > "$RUNNER_TEMP/updater/release.json"
+          manifest_id=$(jq -er '.assets[] | select(.name == "latest.json") | .id' "$RUNNER_TEMP/updater/release.json")
+          gh api -H "Accept: application/octet-stream" "repos/$GH_REPO/releases/assets/$manifest_id" > "$RUNNER_TEMP/updater/latest.json"
           node --input-type=module -e '
             import fs from "node:fs";
             const manifest = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+"/updater/latest.json", "utf8"));
@@ -196,14 +198,18 @@ jobs:
             }
             fs.writeFileSync(process.env.RUNNER_TEMP+"/updater/latest.json", JSON.stringify(manifest, null, 2)+"\n");
           '
-          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/updater/latest.json" --clobber
+          gh api --method DELETE "repos/$GH_REPO/releases/assets/$manifest_id"
+          curl --fail-with-body --silent --show-error -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" -H "Content-Type: application/json" \
+            --data-binary "@$RUNNER_TEMP/updater/latest.json" \
+            "https://uploads.github.com/repos/$GH_REPO/releases/$RELEASE_ID/assets?name=latest.json" > /dev/null
       - name: Publier la release complète
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
           RELEASE_ID: ${{ needs.prepare.outputs.release_id }}
-        run: gh release edit "$RELEASE_TAG" --draft=false --latest
+        run: gh api --method PATCH "repos/$GH_REPO/releases/$RELEASE_ID" -f tag_name="$RELEASE_TAG" -F draft=false -f make_latest=true > /dev/null
 
   deploy:
     needs: [prepare, publish]
