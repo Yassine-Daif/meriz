@@ -174,9 +174,17 @@ jobs:
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
         run: |
           gh release download "$RELEASE_TAG" --pattern latest.json --dir "$RUNNER_TEMP/updater"
+          gh api "repos/$GH_REPO/releases/tags/$RELEASE_TAG" > "$RUNNER_TEMP/updater/release.json"
           node --input-type=module -e '
             import fs from "node:fs";
             const manifest = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+"/updater/latest.json", "utf8"));
+            const release = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+"/updater/release.json", "utf8"));
+            // tauri-action fournit des URL API : publier les liens publics stables.
+            for (const entry of Object.values(manifest.platforms)) {
+              const asset = release.assets.find(asset => asset.url === entry.url || asset.browser_download_url === entry.url);
+              if (!asset) throw new Error("Paquet absent de cette release");
+              entry.url = asset.browser_download_url;
+            }
             if ("v"+manifest.version.replace(/^v/, "") !== process.env.RELEASE_TAG) throw new Error("Version du manifeste incorrecte");
             for (const platform of ["windows-x86_64", "linux-x86_64", "darwin-aarch64", "darwin-x86_64"]) {
               const entry = manifest.platforms[platform];
@@ -184,7 +192,9 @@ jobs:
                 throw new Error("Mise à jour absente ou invalide : "+platform);
               }
             }
+            fs.writeFileSync(process.env.RUNNER_TEMP+"/updater/latest.json", JSON.stringify(manifest, null, 2)+"\n");
           '
+          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/updater/latest.json" --clobber
       - name: Publier la release complète
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
