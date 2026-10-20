@@ -180,10 +180,11 @@ jobs:
             const manifest = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+"/updater/latest.json", "utf8"));
             const release = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+"/updater/release.json", "utf8"));
             // tauri-action fournit des URL API : publier les liens publics stables.
+            const publicUrl = asset => "https://github.com/"+process.env.GH_REPO+"/releases/download/"+process.env.RELEASE_TAG+"/"+encodeURIComponent(asset.name);
             for (const entry of Object.values(manifest.platforms)) {
-              const asset = release.assets.find(asset => asset.url === entry.url || asset.browser_download_url === entry.url);
+              const asset = release.assets.find(asset => asset.url === entry.url || asset.browser_download_url === entry.url || publicUrl(asset) === entry.url);
               if (!asset) throw new Error("Paquet absent de cette release");
-              entry.url = "https://github.com/"+process.env.GH_REPO+"/releases/download/"+process.env.RELEASE_TAG+"/"+encodeURIComponent(asset.name);
+              entry.url = publicUrl(asset);
             }
             if ("v"+manifest.version.replace(/^v/, "") !== process.env.RELEASE_TAG) throw new Error("Version du manifeste incorrecte");
             for (const platform of ["windows-x86_64", "linux-x86_64", "darwin-aarch64", "darwin-x86_64"]) {
