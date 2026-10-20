@@ -27,6 +27,15 @@ export async function updateBeforeStartup(
   try {
     const update = await updater.check()
     if (!update) return
+    await installUpdate(update, progress, updater.relaunch)
+  } catch {
+    // Hors ligne, téléchargement incomplet ou signature refusée :
+    // la version installée reste disponible et le prochain démarrage réessaiera.
+  }
+}
+
+/** Même installation signée au démarrage et depuis le bouton du logiciel. */
+export async function installUpdate(update: StartupUpdate, progress: (state: UpdateProgress) => void, relaunch: () => Promise<void>): Promise<void> {
     let downloaded = 0
     let total: number | undefined
     progress({ phase: 'downloading', version: update.version, percent: null })
@@ -42,9 +51,5 @@ export async function updateBeforeStartup(
         })
       }
     }, { timeout: 120_000 })
-    await updater.relaunch()
-  } catch {
-    // Hors ligne, téléchargement incomplet ou signature refusée :
-    // la version installée reste disponible et le prochain démarrage réessaiera.
-  }
+    await relaunch()
 }

@@ -1,3 +1,4 @@
+import { registerUpdateGuard } from '../lib/updateSafety'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
 import type { OpenedDocument } from '../model/document'
@@ -213,6 +214,13 @@ export function Editor({
     setSyncStatus(saver.getStatus())
     return saver.subscribe(setSyncStatus)
   }, [saver])
+
+  // La mise à jour native attend la sauvegarde de cet éditeur, devoirs compris.
+  useEffect(() => registerUpdateGuard(async () => {
+    if (locked || !ready) return true
+    saver.save(state, mpdSettings)
+    return saver.flush()
+  }), [saver, state, mpdSettings, locked, ready])
 
   // Fermeture de la page avec un modèle non vide : confirmation native
   // du navigateur (imposée par la plateforme, pas de boîte personnalisée

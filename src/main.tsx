@@ -1,3 +1,4 @@
+import { DesktopUpdates } from './components/DesktopUpdates'
 import { StrictMode } from 'react'
 import { isTauri } from '@tauri-apps/api/core'
 import { StartupUpdate } from './components/StartupUpdate'
@@ -20,7 +21,7 @@ function renderApplication() {
   root.render(
     <StrictMode>
       <SessionProvider>
-        <App />
+        <DesktopUpdates><App /></DesktopUpdates>
       </SessionProvider>
     </StrictMode>,
   )

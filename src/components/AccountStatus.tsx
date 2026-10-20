@@ -1,3 +1,4 @@
+import { DesktopUpdateButton } from './DesktopUpdates'
 import { useState } from 'react'
 import { displayName } from '../lib/authApi'
 import { useSession } from './sessionContext'
@@ -121,6 +122,7 @@ export function AccountStatus({
 
   return (
     <div className="flex min-w-0 items-center gap-2" aria-label="Compte" role="group">
+      <DesktopUpdateButton />
       {content}
       <span role="status" aria-live="polite" className="sr-only">
         {announcement}
