@@ -101,7 +101,7 @@ export function collaborationFor(
     return { documentId, me, role: 'owner' }
   }
   if (target.kind === 'review' && target.live !== null) {
-    return { documentId: target.live.documentId, me, role: 'observer' }
+    return { documentId: target.live.documentId, me, role: 'observer', ownerId: target.live.studentId }
   }
   if (target.kind === 'coedit') {
     return { documentId: target.documentId, me, role: 'guest', ownerId: target.studentId }

@@ -1,4 +1,4 @@
-import { useCallback, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { McdAction, McdEditorState } from '../model/mcdReducer'
 import { createModelDoc } from '../model/modelDoc'
 import type { ModelDocOptions, ModelSync } from '../model/modelDoc'
@@ -27,12 +27,24 @@ export interface ModelDocHandle {
   adopt: (state: McdEditorState) => void
   /** Branchement du réseau, pour la co-édition. */
   sync: ModelSync
+  resetForSync: () => void
 }
 
 export function useModelDoc(initial: McdEditorState, options?: ModelDocOptions): ModelDocHandle {
   // Les réglages sont lus au montage : l'éditeur est remonté par sa clé
   // quand le document change, donc ils ne changent jamais en cours de vie.
-  const [modelDoc] = useState(() => createModelDoc(initial, options))
+  const [modelDoc, setModelDoc] = useState(() => createModelDoc(initial, options))
+  const initialRef = useRef(initial)
+  const activeDoc = useRef(modelDoc)
+  const resetForSync = useCallback(() => {
+    const next = createModelDoc(initialRef.current, { seed: false })
+    activeDoc.current = next
+    setModelDoc(next)
+  }, [])
+  useEffect(() => {
+    // Après les nettoyages du transport. Le rejeu de StrictMode garde le document actif.
+    return () => { queueMicrotask(() => { if (activeDoc.current !== modelDoc) modelDoc.destroy() }) }
+  }, [modelDoc])
   const state = useSyncExternalStore(modelDoc.subscribe, modelDoc.snapshot)
 
   const dispatch = useCallback((action: McdAction) => modelDoc.apply(action), [modelDoc])
@@ -51,5 +63,6 @@ export function useModelDoc(initial: McdEditorState, options?: ModelDocOptions):
     redo,
     adopt,
     sync: modelDoc.sync,
+    resetForSync,
   }
 }

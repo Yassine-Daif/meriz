@@ -1,3 +1,4 @@
+import type { McdEditorState } from '../model/mcdReducer'
 import { useViewEntrance } from './useViewEntrance'
 import { registerUpdateGuard } from '../lib/updateSafety'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -76,7 +77,7 @@ interface EditorProps {
    * qu'il observe un travail suivi.
    */
   onStartCollaboration?: () => void
-  onStopCollaboration?: () => void
+  onStopCollaboration?: (state: McdEditorState) => void
 }
 
 /** Consultation seule : aucune action n'atteint le modèle. */
@@ -117,7 +118,7 @@ export function Editor({
   // Le modèle vit dans un document Yjs : c'est la source de vérité, et
   // le socle de l'édition à plusieurs. L'éditeur n'en voit qu'un état
   // JS ordinaire, exactement comme avant.
-  const { state: syncedState, dispatch: editAction, canUndo, canRedo, undo, redo, adopt, sync } = useModelDoc(
+  const { state: syncedState, dispatch: editAction, canUndo, canRedo, undo, redo, adopt, sync, resetForSync } = useModelDoc(
     openedDocument.state,
     { seed: !guest && !member && !observer },
   )
@@ -135,12 +136,16 @@ export function Editor({
   useViewEntrance(viewRef, activeView)
   const collab = useCollaboration({
     sync,
+    onSourceChanged: resetForSync,
     info: collaboration ?? null,
     selection: sharedSelection,
     view: activeView === 'apprendre' || activeView === 'apropos' ? null : activeView,
   })
 
-  const state = observer && !collab.synced ? openedDocument.state : syncedState
+  const lastSyncedState = useRef(openedDocument.state)
+  if (collab.synced) lastSyncedState.current = syncedState
+  const state = observer && (!collab.synced || collab.others.length === 0)
+    ? openedDocument.state : guest && !collab.synced ? lastSyncedState.current : syncedState
   // Modèle vide : c'est ce qui dit qu'un document de groupe attend
   // encore son contenu, et ce qui décide de la confirmation de fermeture.
   const modelIsEmpty =
@@ -389,7 +394,7 @@ export function Editor({
                   <CollaborationBanner
                     state={collab.state}
                     synced={collab.synced}
-                    onStop={onStopCollaboration}
+                    onStop={onStopCollaboration ? () => onStopCollaboration(state) : undefined}
                     // Sans contexte collaboratif, on ne fait que lire : c'est
                     // l'observation silencieuse d'un travail suivi.
                     mode={observer || !collaboration ? 'observe' : 'edit'}

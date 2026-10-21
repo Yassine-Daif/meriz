@@ -857,3 +857,32 @@ it('borne la présence du crayon sous la taille maximale d’un message Reverb',
     expect(JSON.stringify(messages.at(-1)).length).toBeLessThan(9500)
   } finally { provider.stop(); doc.destroy() }
 })
+
+it('synchronise un observateur déjà ouvert lorsque l’élève arrive ensuite', () => {
+  const channel = bus()
+  const owner = channel.owner(stateOf(clientCommande))
+  const observer = channel.observer()
+  try {
+    observer.provider.start()
+    expect(observer.provider.isSynced()).toBe(false)
+    owner.provider.start()
+    expect(observer.provider.isSynced()).toBe(true)
+    expect(observer.doc.snapshot()).toEqual(owner.doc.snapshot())
+    expect(owner.provider.others()).toEqual([])
+  } finally { owner.provider.stop(); observer.provider.stop(); owner.doc.destroy(); observer.doc.destroy() }
+})
+
+it('ne crée pas de boucle de dialogue entre deux observateurs silencieux', () => {
+  const channel = bus()
+  const owner = channel.owner(stateOf(clientCommande))
+  const first = channel.observer(), second = channel.observer()
+  try {
+    first.provider.start(); second.provider.start()
+    expect(channel.messages()).toBeLessThan(8)
+    owner.provider.start()
+    expect(first.provider.isSynced()).toBe(true)
+    expect(second.provider.isSynced()).toBe(true)
+    expect(channel.messages()).toBeLessThan(30)
+    expect(owner.provider.others()).toEqual([])
+  } finally { for (const pair of [owner, first, second]) { pair.provider.stop(); pair.doc.destroy() } }
+})

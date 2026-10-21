@@ -292,7 +292,13 @@ export function createCollabProvider({ sync, transport, me, readOnly = false }: 
           notify()
         }
         const vector = readText(payload, 'vector')
-        if (vector === null || readOnly) {
+        if (vector === null) return
+        if (readOnly) {
+          // L’auteur peut arriver après l’observateur. Lui demander son état
+          // ne publie ni présence ni modification du modèle.
+          if (readText(payload, 'kind') === 'hello') transport.send('yjs-update', {
+            kind: 'observe', vector: toBase64(sync.stateVector()),
+          })
           return
         }
         /*

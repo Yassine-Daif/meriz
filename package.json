@@ -2,7 +2,7 @@
   "name": "meriz",
   "private": true,
   "license": "AGPL-3.0-only",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "type": "module",
   "scripts": {
     "dev": "vite",

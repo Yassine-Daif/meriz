@@ -310,11 +310,11 @@ export function useDocumentOpening({
     [spaceKey, cloud, editorOrigin, clearAnnouncement],
   )
 
-  const observeCollaboration = useCallback(() => {
+  const observeCollaboration = useCallback((state: McdEditorState) => {
     setOpened((previous) => {
       if (previous?.target.kind !== 'coedit') return previous
       const target = previous.target
-      return { ...previous, target: {
+      return { ...previous, document: { ...previous.document, state }, target: {
         kind: 'review', classroomId: target.classroomId, assignmentId: target.assignmentId,
         submissionId: null, label: target.label, origin: target.origin,
         live: { studentId: target.studentId, documentId: target.documentId },

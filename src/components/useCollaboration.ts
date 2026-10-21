@@ -77,6 +77,7 @@ export interface CollaborationHandle {
 }
 
 export interface UseCollaborationOptions {
+  onSourceChanged?: () => void
   sync: ModelSync
   /** null : édition en solo, rien ne s'ouvre. */
   info: CollaborationInfo | null
@@ -91,6 +92,7 @@ export interface UseCollaborationOptions {
 
 export function useCollaboration({
   sync,
+  onSourceChanged,
   info,
   selection,
   view = null,
@@ -118,6 +120,8 @@ export function useCollaboration({
   const selectionBoxRef = useRef<CollabSelectionBox | null>(null)
   const publishRef = useRef<CollabProvider['publish'] | null>(null)
 
+  const sourceOwnerId = info?.ownerId ?? null
+  const sourceIdentity = useRef<{ documentId: string | null; clientId: number | null; known: Set<number> }>({ documentId: null, clientId: null, known: new Set() })
   const observer = info?.role === 'observer'
   const member = info?.role === 'member'
   const documentId = info?.documentId ?? null
@@ -128,6 +132,7 @@ export function useCollaboration({
     if (documentId === null || meKey === '') {
       return
     }
+    if (sourceIdentity.current.documentId !== documentId) sourceIdentity.current = { documentId, clientId: null, known: new Set() }
     const me = JSON.parse(meKey) as CollabUser
     let channel: PresenceHandle | null = null
     let stopped = false
@@ -142,7 +147,28 @@ export function useCollaboration({
     notifyRef.current = () => channel?.send('comments-changed', {})
 
     const refreshOthers = () => {
-      setOthers(provider.others())
+      const next = provider.others()
+      const candidates = next.filter((other) => other.user.id === sourceOwnerId)
+      const owner = candidates.find((other) => !sourceIdentity.current.known.has(other.clientId))
+        ?? candidates.find((other) => other.clientId === sourceIdentity.current.clientId) ?? candidates[0]
+      if (owner) {
+        sourceIdentity.current.known.add(owner.clientId)
+        if (sourceIdentity.current.known.size > 128) {
+          const oldest = sourceIdentity.current.known.values().next().value
+          if (oldest !== undefined) sourceIdentity.current.known.delete(oldest)
+        }
+      }
+      if (owner && sourceIdentity.current.clientId !== null && sourceIdentity.current.clientId !== owner.clientId && onSourceChanged) {
+        sourceIdentity.current.clientId = owner.clientId
+        // Un rechargement de l’élève crée un nouveau document Yjs : l’ancien
+        // ne doit jamais être renvoyé par le prof comme s’il était encore la source.
+        provider.stop()
+        setSynced(false)
+        onSourceChanged()
+        return
+      }
+      if (owner) sourceIdentity.current.clientId = owner.clientId
+      setOthers(next)
       setSynced(provider.isSynced())
     }
     const stopPresence = provider.onPresence(refreshOthers)
@@ -265,7 +291,7 @@ export function useCollaboration({
       notifyRef.current = null
       setState('off')
     }
-  }, [sync, documentId, meKey, observer, openPresence, isHidden, subscribeVisibility])
+  }, [sync, documentId, meKey, observer, sourceOwnerId, onSourceChanged, openPresence, isHidden, subscribeVisibility])
 
   // La sélection suit le rendu, sans redémarrer la connexion.
   useEffect(() => {
