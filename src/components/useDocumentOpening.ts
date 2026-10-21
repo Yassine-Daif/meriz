@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AccountSpace } from '../lib/accountController'
 import type { ApiError } from '../lib/apiClient'
 import { createAssignmentSaver } from '../lib/assignmentSaver'
+import { getAssignment } from '../lib/assignmentsApi'
+import { createPoller } from '../lib/poller'
 import type { AssignmentField } from '../lib/assignmentsApi'
 import { createInertSaver } from '../lib/documentRepository'
 import type { DocumentRepository } from '../lib/documentRepository'
@@ -62,6 +64,36 @@ export function useDocumentOpening({
   // Changement de compte : le document ouvert appartient à l'espace
   // précédent, il est refermé d'office.
   const current = opened && opened.spaceKey === spaceKey ? opened : null
+  const trackedAssignmentId = current?.target.kind === 'work' || current?.target.kind === 'coedit'
+    || (current?.target.kind === 'review' && current.target.live !== null) ? current.target.assignmentId : null
+  useEffect(() => {
+    if (account.kind !== 'cloud' || trackedAssignmentId === null) return
+    let stopped = false
+    const poller = createPoller({ delayMs: 10_000, run: async () => {
+      const result = await getAssignment(account.client, trackedAssignmentId)
+      if (stopped) return
+      if (!result.ok && result.error.status !== 403 && result.error.status !== 404) return
+      const live = result.ok && result.value.liveTracking
+      setOpened((previous) => {
+        if (previous?.spaceKey !== spaceKey) return previous
+        const target = previous.target
+        if (target.kind === 'work' && target.assignmentId === trackedAssignmentId) {
+          return target.live === live ? previous : { ...previous, target: { ...target, live } }
+        }
+        if (!live && target.kind === 'coedit' && target.assignmentId === trackedAssignmentId) {
+          return { ...previous, target: { kind: 'review', classroomId: target.classroomId,
+            assignmentId: target.assignmentId, submissionId: null, label: 'Suivi arrêté', origin: target.origin,
+            discussionDocumentId: target.documentId, live: null } }
+        }
+        if (!live && target.kind === 'review' && target.assignmentId === trackedAssignmentId && target.live) {
+          return { ...previous, target: { ...target, discussionDocumentId: target.live.documentId, live: null } }
+        }
+        return previous
+      })
+    } })
+    poller.start()
+    return () => { stopped = true; poller.stop() }
+  }, [account, trackedAssignmentId, spaceKey])
   useEffect(() => {
     // Nouveau compte : on repart de l'accueil, jamais d'un écran de l'ancien.
     onSpaceChange()
@@ -258,7 +290,9 @@ export function useDocumentOpening({
         previous?.saver.dispose()
         return {
           spaceKey,
-          document,
+          // Le passage observation/correction garde le document Yjs et le cadrage.
+          document: previous?.target.kind === 'review' && previous.target.live?.documentId === model.documentId
+            ? previous.document : document,
           saver: createInertSaver(),
           cloud,
           target: {
@@ -275,6 +309,18 @@ export function useDocumentOpening({
     },
     [spaceKey, cloud, editorOrigin, clearAnnouncement],
   )
+
+  const observeCollaboration = useCallback(() => {
+    setOpened((previous) => {
+      if (previous?.target.kind !== 'coedit') return previous
+      const target = previous.target
+      return { ...previous, target: {
+        kind: 'review', classroomId: target.classroomId, assignmentId: target.assignmentId,
+        submissionId: null, label: target.label, origin: target.origin,
+        live: { studentId: target.studentId, documentId: target.documentId },
+      } }
+    })
+  }, [])
 
   // Dernier contenu adopté, pour ne remplacer l'état que s'il a changé.
   const lastLiveContent = useRef<string | null>(null)
@@ -341,6 +387,7 @@ export function useDocumentOpening({
     openAssignmentModel,
     openReadOnlyModel,
     openCollaboration,
+    observeCollaboration,
     rename,
     closeDocument,
     adoptLiveContent,

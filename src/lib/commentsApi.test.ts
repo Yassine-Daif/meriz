@@ -325,3 +325,25 @@ describe('commentsApi, affichage', () => {
     expect(canDeleteComment(mien, 9, true)).toBe(true)
   })
 })
+
+describe('discussions et annotations partagées', () => {
+  it('lit les réponses et les droits fournis par le serveur, même pour un prof', () => {
+    const comment = parseComment(serverComment({ parent_id: 'racine', can_delete: false }))!
+    expect(comment.parentId).toBe('racine')
+    expect(canDeleteComment(comment, 1, true)).toBe(false)
+  })
+  it('envoie une réponse dans le fil visé, sans déplacer son repère', async () => {
+    const { client, sent } = scriptedClient([ok(serverComment({ parent_id: 'racine' }))])
+    expect((await createComment(client, 'doc', { body: 'Fait', position: null, parentId: 'racine' })).ok).toBe(true)
+    expect(sent[0]?.body).toEqual({ body: 'Fait', parent_id: 'racine' })
+  })
+  it('enregistre les points comme annotation séparée et refuse les points malformés', async () => {
+    const drawing = [{ x: -20, y: 2 }, { x: 30, y: 50 }]
+    const { client, sent } = scriptedClient([ok(serverComment({ drawing }))])
+    const result = await createComment(client, 'doc', { body: 'Annotation', position: null, drawing })
+    expect(result.ok && result.value.drawing).toEqual(drawing)
+    expect(sent[0]?.body).toEqual({ body: 'Annotation', drawing })
+    expect(parseComment(serverComment({ drawing: '<svg />' }))).toBeNull()
+    expect(parseComment(serverComment({ drawing: [{ x: 0, y: 0 }, { x: 1e20, y: 2 }] }))).toBeNull()
+  })
+})

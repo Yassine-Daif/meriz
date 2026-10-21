@@ -7,7 +7,7 @@ import type { PublicProfile } from './classroomsApi'
  * Commentaires d'un travail : le fil de la correction, dans les deux sens.
  *
  * Un commentaire se rattache au document de travail, jamais au devoir ni
- * au rendu. Le fil est plat, sans réponses imbriquées, et le corps d'un
+ * au rendu. Les discussions ont un niveau de réponses, et le corps d'un
  * commentaire ne se modifie pas : seul son état résolu change.
  */
 
@@ -21,6 +21,9 @@ export interface Comment {
   id: string
   documentId: string
   body: string
+  parentId?: string | null
+  drawing?: CommentPosition[] | null
+  canDelete?: boolean
   /** Bulle posée sur le schéma, ou null pour un commentaire général. */
   position: CommentPosition | null
   resolved: boolean
@@ -37,6 +40,8 @@ export interface Comment {
 
 /** Ce qu'on envoie pour écrire. Position nulle : commentaire général. */
 export interface CommentDraft {
+  parentId?: string | null
+  drawing?: CommentPosition[] | null
   body: string
   position: CommentPosition | null
 }
@@ -92,10 +97,15 @@ export function parseComment(raw: unknown): Comment | null {
   if (resolver === null && raw.resolver !== undefined && raw.resolver !== null) {
     return null
   }
+  if (raw.drawing !== undefined && raw.drawing !== null && readDrawing(raw.drawing) === null) return null
+  if (raw.parent_id !== undefined && raw.parent_id !== null && typeof raw.parent_id !== 'string') return null
   return {
     id: raw.id,
     documentId: raw.document_id,
     body: raw.body,
+    ...(raw.parent_id !== undefined ? { parentId: typeof raw.parent_id === 'string' ? raw.parent_id : null } : {}),
+    ...(raw.drawing !== undefined ? { drawing: readDrawing(raw.drawing) } : {}),
+    ...(typeof raw.can_delete === 'boolean' ? { canDelete: raw.can_delete } : {}),
     position,
     resolved: raw.resolved === true,
     resolvedAt,
@@ -165,10 +175,12 @@ export async function createComment(
   documentId: string,
   draft: CommentDraft,
 ): Promise<Outcome<Comment>> {
-  const payload =
+  const payload: Record<string, unknown> =
     draft.position === null
       ? { body: draft.body }
       : { body: draft.body, position_x: draft.position.x, position_y: draft.position.y }
+  if (draft.parentId) payload.parent_id = draft.parentId
+  if (draft.drawing) payload.drawing = draft.drawing
   const result = await client.request('POST', documentPath(documentId), payload)
   if (!result.ok) {
     // Le quota arrive en erreur de champ sur « body », le refus en 403
@@ -240,5 +252,18 @@ export function pinLabel(comment: Comment, index: number): string {
  * recevrait un refus.
  */
 export function canDeleteComment(comment: Comment, meId: number, canModerate: boolean): boolean {
-  return comment.author.id === meId || canModerate
+  return comment.canDelete ?? (comment.author.id === meId || canModerate)
+}
+
+/** Une annotation reçue ne peut ni injecter un SVG, ni dépasser les bornes du canevas. */
+export function readDrawing(raw: unknown): CommentPosition[] | null {
+  if (!Array.isArray(raw) || raw.length < 2 || raw.length > 64) return null
+  const points: CommentPosition[] = []
+  for (const point of raw) {
+    if (!isRecord(point) || typeof point.x !== 'number' || typeof point.y !== 'number'
+      || !Number.isFinite(point.x) || !Number.isFinite(point.y)
+      || Math.abs(point.x) > 1_000_000 || Math.abs(point.y) > 1_000_000) return null
+    points.push({ x: point.x, y: point.y })
+  }
+  return points
 }

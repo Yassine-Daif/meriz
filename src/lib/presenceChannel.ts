@@ -119,6 +119,7 @@ export const openPresenceChannel: OpenPresence = ({
         .error(() => onState('lost'))
 
       channel.listenForWhisper('yjs-update', (payload: unknown) => onMessage('yjs-update', payload))
+      channel.listenForWhisper('comments-changed', (payload: unknown) => onMessage('comments-changed', payload))
       channel.listenForWhisper('awareness', (payload: unknown) => onMessage('awareness', payload))
 
       // Les charges envoyées sont toujours des objets : le fournisseur

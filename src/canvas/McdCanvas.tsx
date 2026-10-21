@@ -42,6 +42,8 @@ import { RemoteInk } from './RemoteInk'
 import type { RemotePresence, CollabSelectionBox } from '../model/collabProvider'
 import { useTheme } from '../lib/useTheme'
 import { appendInkPoint } from '../model/inkTrace'
+import type { Comment } from '../lib/commentsApi'
+import type { CollabInk } from '../model/collabProvider'
 import type { InkPoint } from '../model/inkTrace'
 
 // Déclarés hors composant pour garder des références stables.
@@ -79,7 +81,9 @@ interface McdCanvasProps {
    * Crayon rouge : le trait part dans la présence et n'entre jamais dans
    * le modèle. Absent : aucun geste de dessin n'est possible.
    */
-  ink?: { active: boolean; onStroke: (points: InkPoint[] | null) => void }
+  savedInk?: Comment[]
+  hideInk?: boolean
+  ink?: { preview?: CollabInk | null; active: boolean; onStroke: (points: InkPoint[] | null) => void }
   /**
    * Consultation seule : on parcourt, on zoome, on sélectionne pour lire,
    * mais rien ne se déplace, ne se relie ni ne se supprime.
@@ -112,6 +116,8 @@ export function McdCanvas({
   placing = false,
   onPlacePin,
   ink,
+  savedInk,
+  hideInk,
   readOnly = false,
 }: McdCanvasProps) {
   const canvasOthers = useMemo(() => (others ?? []).filter((other) => !other.view || other.view === 'mcd'), [others])
@@ -183,9 +189,13 @@ export function McdCanvas({
     if (pane === null) {
       return
     }
-    const flowAt = (event: PointerEvent) => screenToFlowPosition({ x: event.clientX, y: event.clientY })
+    const flowAt = (event: PointerEvent) => {
+      const point = screenToFlowPosition({ x: event.clientX, y: event.clientY })
+      return { x: Math.max(-1_000_000, Math.min(1_000_000, point.x)), y: Math.max(-1_000_000, Math.min(1_000_000, point.y)) }
+    }
 
     const onDown = (event: PointerEvent) => {
+      if ((event.target as HTMLElement).closest?.('button,input,select,textarea,a')) return
       const { placing: placingNow, onPlacePin: place, ink: inkNow } = gestureRef.current
       if (placingNow && place) {
         event.stopPropagation()
@@ -196,6 +206,7 @@ export function McdCanvas({
       if (inkNow?.active === true && event.button === 0 && event.isPrimary) {
         event.stopPropagation()
         event.preventDefault()
+        pane.setPointerCapture(event.pointerId)
         strokeRef.current = appendInkPoint([], flowAt(event))
         inkNow.onStroke(strokeRef.current)
       }
@@ -232,6 +243,7 @@ export function McdCanvas({
     pane.addEventListener('pointerdown', onDown, true)
     pane.addEventListener('pointermove', onMove, true)
     pane.addEventListener('pointerleave', onLeave, true)
+    window.addEventListener('pointerup', endStroke, true)
     pane.addEventListener('pointerup', endStroke, true)
     pane.addEventListener('pointercancel', endStroke, true)
     pane.addEventListener('click', onClickCapture, true)
@@ -239,6 +251,7 @@ export function McdCanvas({
       pane.removeEventListener('pointerdown', onDown, true)
       pane.removeEventListener('pointermove', onMove, true)
       pane.removeEventListener('pointerleave', onLeave, true)
+      window.removeEventListener('pointerup', endStroke, true)
       pane.removeEventListener('pointerup', endStroke, true)
       pane.removeEventListener('pointercancel', endStroke, true)
       pane.removeEventListener('click', onClickCapture, true)
@@ -543,7 +556,7 @@ export function McdCanvas({
       >
         <Background gap={16} />
         <RemoteSelections others={canvasOthers} nodes={nodes} />
-        {others && others.length > 0 && <RemoteInk others={canvasOthers} />}
+        <RemoteInk others={canvasOthers} localInk={ink?.preview} saved={savedInk} hidden={hideInk} />
         {others && others.length > 0 && <RemoteDraftLinks others={canvasOthers} />}
         {others && others.length > 0 && <RemoteCursors others={canvasOthers} teacherTag={teacherTag} />}
         {pins && pins.length > 0 && onOpenPin && (

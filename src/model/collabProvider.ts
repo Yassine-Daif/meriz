@@ -48,6 +48,7 @@ export interface CollabDraftLink {
  */
 export interface CollabInk {
   points: CollabCursor[]
+  strokes?: { id: string; points: CollabCursor[]; expiresAt: number }[]
 }
 
 /** Rectangle de sélection en coordonnées du modèle, uniquement dans la présence. */
@@ -80,7 +81,7 @@ export interface RemotePresence extends CollabPresence {
   clientId: number
 }
 
-export type CollabEvent = 'yjs-update' | 'awareness'
+export type CollabEvent = 'yjs-update' | 'awareness' | 'comments-changed'
 
 export interface CollabTransport {
   send: (event: CollabEvent, payload: unknown) => void
@@ -192,7 +193,14 @@ function readInk(raw: unknown): CollabInk | null {
     }
     points.push(point)
   }
-  return points.length < 2 ? null : { points }
+  const strokes = (Array.isArray(raw.strokes) ? raw.strokes.slice(0, 3) : []).flatMap((stroke) => {
+    if (!isRecord(stroke) || typeof stroke.id !== 'string' || stroke.id.length > 100
+      || typeof stroke.expiresAt !== 'number' || !Number.isFinite(stroke.expiresAt)
+      || stroke.expiresAt <= Date.now() || stroke.expiresAt > Date.now() + 60_000) return []
+    const parsed = readInk({ points: stroke.points })
+    return parsed ? [{ id: stroke.id, points: parsed.points, expiresAt: stroke.expiresAt }] : []
+  })
+  return points.length < 2 && strokes.length === 0 ? null : { points, ...(strokes.length ? { strokes } : {}) }
 }
 
 function readSelection(raw: unknown): string[] {

@@ -29,6 +29,7 @@ import { MpdView } from './MpdView'
 import { SqlView } from './SqlView'
 import { LearnView } from './LearnView'
 import { AboutView } from './AboutView'
+import { ConfirmDialog } from './ConfirmDialog'
 import { SkipLink } from './ui/SkipLink'
 
 interface EditorProps {
@@ -75,6 +76,7 @@ interface EditorProps {
    * qu'il observe un travail suivi.
    */
   onStartCollaboration?: () => void
+  onStopCollaboration?: () => void
 }
 
 /** Consultation seule : aucune action n'atteint le modèle. */
@@ -98,6 +100,7 @@ export function Editor({
   comments,
   collaboration,
   onStartCollaboration,
+  onStopCollaboration,
 }: EditorProps) {
   /*
    * Qui ensemence le document Yjs. L'invité d'une co-édition et le
@@ -125,6 +128,8 @@ export function Editor({
     () => [...selection.nodeIds, ...selection.edgeIds],
     [selection],
   )
+  const [pendingAnnotations, setPendingAnnotations] = useState(false)
+  const [confirmLeaveAnnotations, setConfirmLeaveAnnotations] = useState(false)
   const [activeView, setActiveView] = useState<ViewId>('mcd')
   const viewRef = useRef<HTMLElement>(null)
   useViewEntrance(viewRef, activeView)
@@ -135,7 +140,7 @@ export function Editor({
     view: activeView === 'apprendre' || activeView === 'apropos' ? null : activeView,
   })
 
-  const state = observer && (!collab.synced || collab.others.length === 0) ? openedDocument.state : syncedState
+  const state = observer && !collab.synced ? openedDocument.state : syncedState
   // Modèle vide : c'est ce qui dit qu'un document de groupe attend
   // encore son contenu, et ce qui décide de la confirmation de fermeture.
   const modelIsEmpty =
@@ -148,13 +153,15 @@ export function Editor({
    * modifications n'arriveraient nulle part et personne ne les
    * enregistrerait. Le propriétaire, lui, édite toujours.
    */
-  const linkLost = guest && collab.state !== 'live'
+  const ownerPresent = collab.participants.some((person) => collaboration?.ownerId === undefined
+    ? person.role !== 'teacher' : person.id === collaboration.ownerId)
+  const linkLost = guest && (collab.state !== 'live' || !collab.synced || !ownerPresent)
   const locked = readOnly || linkLost
   /*
-   * Le crayon rouge n'existe qu'en correction à deux, et seulement pour
-   * le prof. En observation, le fournisseur ne publie ni présence ni écriture. Lien perdu, le crayon se coupe comme l'écriture.
+   * Le crayon est partagé entre éditeurs autorisés. L’observation ne publie
+   * aucun geste. Le prof attend la synchronisation et la présence de l’élève.
    */
-  const canInk = collaboration?.role === 'guest' && collaboration.me.role === 'teacher' && !locked
+  const canInk = collaboration !== undefined && !observer && !locked && collab.state === 'live' && (!guest || collab.synced)
   // Une seule barrière pour tout l'éditeur : l'inspecteur, le dictionnaire,
   // la barre d'outils et les étiquettes de pattes passent tous par là.
   const dispatch = locked ? IGNORE_ACTION : editAction
@@ -320,6 +327,9 @@ export function Editor({
   return (
     <div className="flex h-dvh flex-col bg-shell font-sans text-ink">
       <SkipLink />
+      <ConfirmDialog open={confirmLeaveAnnotations} title="Des commentaires ou traits ne sont pas enregistrés"
+        message="Envoyez votre commentaire ou réessayez l’enregistrement des traits avant de quitter. Les éléments encore en attente risquent d’être perdus."
+        confirmLabel="Quitter malgré tout" onConfirm={onBackToDocuments} onCancel={() => setConfirmLeaveAnnotations(false)} />
 
       <ReactFlowProvider>
         <TopBar
@@ -327,7 +337,7 @@ export function Editor({
           mpdSettings={mpdSettings}
           documentName={openedDocument.meta.name}
           onRename={onRename}
-          onBackToDocuments={onBackToDocuments}
+          onBackToDocuments={() => { if (pendingAnnotations) setConfirmLeaveAnnotations(true); else onBackToDocuments() }}
           contentLabel={contentLabel}
           backLabel={backLabel}
           onNewDocument={onNewDocument}
@@ -335,6 +345,7 @@ export function Editor({
           syncStatus={syncStatus}
           onRetrySync={saver.retry}
           cloud={cloud}
+          saveDelegated={guest}
           readOnly={locked}
           participants={collaboration ? collab.participants : undefined}
           others={collab.others}
@@ -367,6 +378,9 @@ export function Editor({
               onSelectionBox={collaboration ? collab.reportSelectionBox : undefined}
               onDraftLink={collaboration ? collab.reportDraftLink : undefined}
               comments={comments}
+              onPendingAnnotationsChange={setPendingAnnotations}
+              commentsVersion={collab.commentsVersion}
+              onCommentsChanged={collab.notifyCommentsChanged}
               onInkStroke={canInk ? collab.reportInk : undefined}
               // Entre pairs d'un groupe, personne n'est prof de personne.
               teacherTag={role !== 'member'}
@@ -374,6 +388,8 @@ export function Editor({
                 collaboration || onStartCollaboration ? (
                   <CollaborationBanner
                     state={collab.state}
+                    synced={collab.synced}
+                    onStop={onStopCollaboration}
                     // Sans contexte collaboratif, on ne fait que lire : c'est
                     // l'observation silencieuse d'un travail suivi.
                     mode={observer || !collaboration ? 'observe' : 'edit'}

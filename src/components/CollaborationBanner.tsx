@@ -14,6 +14,8 @@ import { Button } from './ui/Button'
  */
 interface CollaborationBannerProps {
   state: ChannelState | 'off'
+  synced?: boolean
+  onStop?: () => void
   /** « observe » : réception en direct, sans publier sa présence. */
   mode: 'observe' | 'edit'
   /** Les autres présents, sans moi. */
@@ -26,7 +28,7 @@ interface CollaborationBannerProps {
   onStart?: () => void
 }
 
-export function CollaborationBanner({
+export function CollaborationBanner({ synced = true, onStop,
   state,
   mode,
   participants,
@@ -41,6 +43,7 @@ export function CollaborationBanner({
   const editing = new Set(others.map((other) => other.user.id))
 
   /* -------- Le prof lit : on lui propose de corriger à deux -------- */
+  const back = guest && onStop ? <Button size="sm" onClick={onStop}>Revenir en observation</Button> : null
   if (mode === 'observe') {
     // Rien d'annoncé : la bande est là dès l'ouverture de la vue, elle
     // informe le prof de sa propre position, elle ne prévient de rien.
@@ -51,8 +54,10 @@ export function CollaborationBanner({
           votre dernière lecture.
         </span>
         <ParticipantList participants={participants} others={others} />
+        {!live && <span>Connexion au direct en cours.</span>}
+        {live && participants.length === 0 && <span>L’élève doit ouvrir son travail pour corriger à deux.</span>}
         {onStart && (
-          <Button size="sm" variant="primary" onClick={onStart} aria-label="Corriger en direct ce travail">
+          <Button size="sm" variant="primary" onClick={onStart} disabled={!live || !synced || participants.length === 0} aria-label="Corriger en direct ce travail">
             Corriger en direct
           </Button>
         )}
@@ -99,11 +104,16 @@ export function CollaborationBanner({
 
   // L'invité a besoin de savoir si son lien tient : sans lui, ses
   // modifications n'iraient nulle part.
+  if (guest && (state === 'connecting' || (live && !synced))) {
+    return <p role="status" className="border-b border-line bg-surface-soft px-4 py-2 text-sm text-ink-soft">
+      Synchronisation de la correction en direct… Le modèle reste protégé jusqu’à la connexion. {back}
+    </p>
+  }
   if (guest && !live) {
     return (
       <p role="status" className="border-b border-line bg-warning-soft px-4 py-2 text-sm text-ink">
         Lien de co-édition interrompu. Vous suivez le travail sans pouvoir le modifier, le temps que la
-        connexion revienne.
+        connexion revienne. {back}
       </p>
     )
   }
@@ -112,7 +122,7 @@ export function CollaborationBanner({
     return (
       <p role="status" className="border-b border-line bg-surface-soft px-4 py-2 text-sm text-ink-soft">
         En attente de l’élève. Il faut qu’il soit sur son travail pour corriger à deux, puisque c’est lui qui
-        l’enregistre.
+        l’enregistre. {back}
       </p>
     )
   }
@@ -160,6 +170,7 @@ export function CollaborationBanner({
           <strong className="font-semibold">{names}</strong> travaille avec vous sur ce modèle.
         </span>
       )}
+      {guest && onStop && <Button size="sm" onClick={onStop}>Revenir en observation</Button>}
       {teacher && !guest && <Badge tone="accent">Prof présent</Badge>}
     </div>
   )

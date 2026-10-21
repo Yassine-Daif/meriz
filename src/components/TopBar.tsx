@@ -32,6 +32,7 @@ interface TopBarProps {
   onRetrySync: () => void
   /** Espace cloud : l'état d'envoi est affiché. */
   cloud: boolean
+  saveDelegated?: boolean
   /** Consultation seule : ni historique, ni état d'envoi. */
   readOnly?: boolean
   /** Co-édition : qui d'autre est là, en pastilles. */
@@ -76,6 +77,7 @@ export function TopBar({
   syncStatus,
   onRetrySync,
   cloud,
+  saveDelegated = false,
   readOnly = false,
   participants,
   others = [],
@@ -150,7 +152,7 @@ export function TopBar({
         onNewDocument={onNewDocument}
         onImportFile={onImportFile}
       />
-      {!readOnly && <SyncStatus status={syncStatus} onRetry={onRetrySync} cloud={cloud} />}
+      {!readOnly && !saveDelegated && <SyncStatus status={syncStatus} onRetry={onRetrySync} cloud={cloud} />}
       {participants && participants.length > 0 && (
         <ParticipantList participants={participants} others={others} />
       )}

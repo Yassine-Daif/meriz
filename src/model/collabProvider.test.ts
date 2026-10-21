@@ -797,3 +797,63 @@ describe('rectangle de sélection partagé', () => {
     expect(readSelectionBox({ x: -10, y: -20, width: 40, height: 50 })).toEqual({ x: -10, y: -20, width: 40, height: 50 })
   })
 })
+
+describe('continuité de la correction et du crayon', () => {
+  it('passe de l’observation à la correction sur le même document, puis redevient silencieux', () => {
+    const channel = bus()
+    const owner = channel.owner(stateOf(clientCommande))
+    const prof = channel.observer()
+    owner.provider.start()
+    prof.provider.start()
+    const count = owner.doc.snapshot().mcd.entities.length
+    prof.provider.stop()
+    const make = (readOnly: boolean) => createCollabProvider({ sync: prof.doc.sync, me: PROF, readOnly,
+      transport: { send: (event, payload) => owner.provider.receive(event, payload) } })
+    prof.provider = make(false)
+    prof.provider.start()
+    expect(prof.provider.isSynced()).toBe(true)
+    expect(owner.provider.others().some((other) => other.user.id === PROF.id)).toBe(true)
+    const entity = prof.doc.snapshot().mcd.entities[0]!
+    prof.doc.apply({ type: 'RENAME_ENTITY', id: entity.id, name: 'Correction partagée' })
+    expect(owner.doc.snapshot().mcd.entities[0]?.name).toBe('Correction partagée')
+    expect(owner.doc.snapshot().mcd.entities).toHaveLength(count)
+    prof.provider.stop()
+    prof.provider = make(true)
+    prof.provider.start()
+    expect(owner.provider.others().some((other) => other.user.id === PROF.id)).toBe(false)
+    owner.provider.stop(); prof.provider.stop(); owner.doc.destroy(); prof.doc.destroy()
+  })
+  it('partage des traits après le relâchement sans modifier le modèle et ignore les durées abusives', () => {
+    const channel = bus()
+    const owner = channel.owner(stateOf(clientCommande))
+    const prof = channel.guest()
+    owner.provider.start(); prof.provider.start()
+    const before = owner.doc.snapshot()
+    const points = [{ x: 4, y: 8 }, { x: 40, y: 80 }]
+    prof.provider.publish({ cursor: null, selection: [], ink: { points: [], strokes: [
+      { id: 'court', points, expiresAt: Date.now()+3000 },
+      { id: 'expire', points, expiresAt: Date.now()-1000 },
+      { id: 'sans-fin', points, expiresAt: Date.now()+1e10 },
+    ] } })
+    expect(owner.provider.others()[0]?.ink?.strokes?.map((stroke) => stroke.id)).toEqual(['court'])
+    expect(owner.doc.snapshot()).toBe(before)
+    prof.provider.publish({ cursor: null, selection: [], ink: null })
+    expect(owner.provider.others()[0]?.ink).toBeNull()
+    owner.provider.stop(); prof.provider.stop(); owner.doc.destroy(); prof.doc.destroy()
+  })
+})
+
+it('borne la présence du crayon sous la taille maximale d’un message Reverb', () => {
+  const doc = createModelDoc(EMPTY, { seed: false })
+  const messages: unknown[] = []
+  const provider = createCollabProvider({ sync: doc.sync, me: { ...PROF, name: 'a'.repeat(100), firstName: 'b'.repeat(100) },
+    transport: { send: (event, payload) => { if (event === 'awareness') messages.push(payload) } } })
+  try {
+    provider.start()
+    const points = Array.from({ length: 64 }, (_, index) => ({ x: index % 2 ? -1000000 : 1000000, y: -1000000 }))
+    provider.publish({ cursor: points[0]!, selection: [], ink: { points, strokes: [0, 1, 2].map((index) => ({
+      id: String(index).repeat(36), points: points.slice(0, 33), expiresAt: Date.now()+15000,
+    })) } })
+    expect(JSON.stringify(messages.at(-1)).length).toBeLessThan(9500)
+  } finally { provider.stop(); doc.destroy() }
+})

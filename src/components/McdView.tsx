@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Dispatch, KeyboardEvent, PointerEvent, ReactNode, SetStateAction } from 'react'
 import type { McdAction, McdEditorState } from '../model/mcdReducer'
 import type { RemotePresence, CollabSelectionBox } from '../model/collabProvider'
@@ -16,6 +16,11 @@ import type { CommentPosition } from '../lib/commentsApi'
 import { displayName } from '../lib/authApi'
 import { isEditableTarget } from '../lib/keyboard'
 import { LiveAnnouncement } from './ui/LiveAnnouncement'
+import { useAnnotationInk } from './useAnnotationInk'
+import { AnnotationControls } from './AnnotationControls'
+import { Button } from './ui/Button'
+import { Notice } from './ui/Notice'
+import type { CollabInk } from '../model/collabProvider'
 import type { InkPoint } from '../model/inkTrace'
 
 const PANEL_MIN = 240
@@ -57,8 +62,11 @@ interface McdViewProps {
    * dépend surtout pas de readOnly : commenter, c'est corriger.
    */
   comments?: CommentsAccess
+  onPendingAnnotationsChange?: (pending: boolean) => void
+  commentsVersion?: number
+  onCommentsChanged?: () => void
   /** Crayon rouge : offert au prof en correction à deux, sinon absent. */
-  onInkStroke?: (points: InkPoint[] | null) => void
+  onInkStroke?: (ink: CollabInk | null) => void
 }
 
 /**
@@ -82,23 +90,36 @@ export function McdView({
   banner,
   readOnly = false,
   comments,
+  commentsVersion,
+  onPendingAnnotationsChange,
+  onCommentsChanged,
   onInkStroke,
 }: McdViewProps) {
   const [panelWidth, setPanelWidth] = useState(300)
+  const [commentDraft, setCommentDraft] = useState(false)
   const [threadOpen, setThreadOpen] = useState(false)
   const [placing, setPlacing] = useState(false)
   const [pendingPosition, setPendingPosition] = useState<CommentPosition | null>(null)
   const [revealed, setRevealed] = useState<{ id: string; nonce: number } | null>(null)
+  const [showInk, setShowInk] = useState(true)
   const [pencil, setPencil] = useState(false)
   const [annotating, setAnnotating] = useState<string | null>(null)
 
   // La relecture ne tourne que fil ouvert et vue affichée : sinon elle
   // continuerait depuis la vue SQL, pour personne.
-  const thread = useComments({ access: comments ?? null, watching: threadOpen && isActive })
+  const thread = useComments({ access: comments ?? null, watching: isActive, version: commentsVersion, onChanged: onCommentsChanged })
+  const addComment = thread.add
+  const saveInk = useCallback(async (points: InkPoint[]) => {
+    if (!comments) return 'Ce document ne permet pas de conserver des annotations.'
+    const result = await addComment({ body: 'Annotation au crayon', position: null, drawing: points })
+    return result?.message ?? null
+  }, [comments, addComment])
+  const annotation = useAnnotationInk({ enabled: !!onInkStroke && isActive, onPublish: onInkStroke, onSave: saveInk })
+  useEffect(() => { onPendingAnnotationsChange?.(annotation.pendingCount > 0 || commentDraft) }, [annotation.pendingCount, commentDraft, onPendingAnnotationsChange])
   const pins = useMemo(
     () =>
-      (thread.comments ?? []).flatMap((comment, index) =>
-        comment.position === null
+      (thread.comments ?? []).filter((comment) => !comment.parentId).flatMap((comment, index) =>
+        comment.position === null || !!comment.parentId
           ? []
           : [
               {
@@ -113,6 +134,20 @@ export function McdView({
     [thread.comments],
   )
 
+  useEffect(() => {
+    if (!comments || !isActive) return
+    const commentShortcut = (event: globalThis.KeyboardEvent) => {
+      if (event.key.toLowerCase() === 'c' && !event.ctrlKey && !event.metaKey && !event.altKey && !isEditableTarget(event.target)) {
+        event.preventDefault()
+        setPencil(false)
+        setPlacing(true)
+        setThreadOpen(true)
+      }
+    }
+    window.addEventListener('keydown', commentShortcut)
+    return () => window.removeEventListener('keydown', commentShortcut)
+  }, [comments, isActive])
+
   /* Échap sort du mode bulle, sans voler l'Échap d'un champ de saisie. */
   useEffect(() => {
     if (!placing) {
@@ -126,6 +161,8 @@ export function McdView({
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [placing])
+
+  useEffect(() => { if (!onInkStroke) setPencil(false) }, [onInkStroke])
 
   /* Quitter la vue éteint le crayon et efface le trait en cours. */
   useEffect(() => {
@@ -193,7 +230,7 @@ export function McdView({
                 active: pencil,
                 onToggle: () => {
                   setPencil((active) => {
-                    if (active) onInkStroke(null)
+                    if (active) annotation.onStroke(null)
                     else setPlacing(false)
                     return !active
                   })
@@ -202,6 +239,14 @@ export function McdView({
             : undefined
         }
       />
+      {comments && <AnnotationControls
+        canDraw={!!onInkStroke}
+        duration={annotation.duration} onDuration={annotation.setDuration}
+        visible={showInk} onToggleVisible={() => setShowInk((value) => !value)} onClear={annotation.clear}
+        saved={thread.drawings} onDelete={thread.remove}
+        onComment={() => { setPencil(false); setPlacing((value) => !value); setThreadOpen(true) }}
+      />}
+      {annotation.error && <Notice tone="error" action={<Button size="sm" onClick={() => void annotation.retry()}>Réessayer ({annotation.pendingCount})</Button>}>{annotation.error}</Notice>}
       <LiveAnnouncement message={annotating} />
       {banner}
       <div className="flex min-h-0 flex-1">
@@ -229,7 +274,9 @@ export function McdView({
             setPlacing(false)
             setThreadOpen(true)
           }}
-          ink={onInkStroke ? { active: pencil, onStroke: onInkStroke } : undefined}
+          savedInk={thread.drawings}
+          hideInk={!showInk}
+          ink={onInkStroke ? { active: pencil, onStroke: annotation.onStroke, preview: annotation.preview } : undefined}
         />
         <div
           role="separator"
@@ -252,6 +299,8 @@ export function McdView({
           {comments && (
             <CommentsPanel
               thread={thread}
+              onDraftChange={setCommentDraft}
+              revealedId={revealed?.id}
               me={comments.me}
               open={threadOpen}
               onToggleOpen={() => setThreadOpen((value) => !value)}

@@ -23,8 +23,8 @@ import { browserHidden, browserVisibility } from '../lib/poller'
  *
  * Le cycle de vie tient en une phrase : la connexion s'ouvre en entrant
  * dans le contexte collaboratif, se ferme en le quittant, et se ferme
- * aussi quand l'onglet passe en arrière-plan. Elle ne reste jamais
- * ouverte pour rien.
+ * en arrière-plan en observation seule. Les éditeurs gardent leur présence,
+ * sans diffuser leurs mouvements tant que l’onglet est masqué.
  *
  * Sans contexte collaboratif, le crochet ne fait rien du tout : l'édition
  * en solo ne se connecte à aucun canal.
@@ -48,6 +48,7 @@ export interface CollaborationInfo {
   documentId: string
   me: CollabUser
   role: CollabRole
+  ownerId?: number
 }
 
 export interface CollaborationHandle {
@@ -69,7 +70,9 @@ export interface CollaborationHandle {
    * Le trait de crayon que je suis en train de tracer. Null : plus rien.
    * Éphémère de bout en bout, il ne touche jamais le modèle.
    */
-  reportInk: (points: CollabCursor[] | null) => void
+  reportInk: (ink: CollabInk | null) => void
+  commentsVersion: number
+  notifyCommentsChanged: () => void
   reportSelectionBox: (box: CollabSelectionBox | null) => void
 }
 
@@ -95,6 +98,10 @@ export function useCollaboration({
   isHidden = browserHidden,
   subscribeVisibility = browserVisibility,
 }: UseCollaborationOptions): CollaborationHandle {
+  const [commentsVersion, setCommentsVersion] = useState(0)
+  const notifyRef = useRef<(() => void) | null>(null)
+  const lastNotice = useRef(0)
+  const notifyCommentsChanged = useCallback(() => notifyRef.current?.(), [])
   const [synced, setSynced] = useState(false)
   const [state, setState] = useState<ChannelState | 'off'>('off')
   const [participants, setParticipants] = useState<CollabUser[]>([])
@@ -132,6 +139,7 @@ export function useCollaboration({
       readOnly: observer,
     })
     publishRef.current = provider.publish
+    notifyRef.current = () => channel?.send('comments-changed', {})
 
     const refreshOthers = () => {
       setOthers(provider.others())
@@ -158,12 +166,18 @@ export function useCollaboration({
           provider.forget(member.id)
           refreshOthers()
         },
-        onMessage: (event, payload) => provider.receive(event, payload),
+        onMessage: (event, payload) => {
+          if (stopped) return
+          if (event === 'comments-changed') {
+            if (Date.now() - lastNotice.current > 500) {
+              lastNotice.current = Date.now()
+              setCommentsVersion((version) => version + 1)
+            }
+          } else provider.receive(event, payload)
+        },
         onState: (next) => {
+          if (stopped) return
           setState(next)
-          if (stopped) {
-            return
-          }
           /*
            * La poignée de main attend que le canal soit vivant : un
            * message envoyé avant l'abonnement serait perdu, et personne
@@ -204,16 +218,22 @@ export function useCollaboration({
     }
 
     /**
-     * Onglet en arrière-plan : on ferme, comme le fait l'observation.
-     * Au retour, on rouvre, et la poignée de main resynchronise.
+     * En arrière-plan, seul l’observateur ferme son abonnement.
+     * Un éditeur conserve sa présence et suspend les gestes éphémères.
      */
     const onVisibilityChange = () => {
       if (stopped) {
         return
       }
       if (isHidden()) {
-        setState('connecting')
-        close()
+        if (observer) { setState('connecting'); close() }
+        else {
+          cursorRef.current = null
+          draftRef.current = null
+          inkRef.current = null
+          selectionBoxRef.current = null
+          provider.publish({ cursor: null, selection: [], view: viewRef.current })
+        }
         return
       }
       open()
@@ -224,6 +244,7 @@ export function useCollaboration({
 
     // La position du pointeur et la sélection partent à cadence tenue.
     const ticker = window.setInterval(() => {
+      if (isHidden()) return
       provider.publish({
         cursor: cursorRef.current,
         selection: selectionRef.current,
@@ -241,6 +262,7 @@ export function useCollaboration({
       stopPresence()
       close()
       publishRef.current = null
+      notifyRef.current = null
       setState('off')
     }
   }, [sync, documentId, meKey, observer, openPresence, isHidden, subscribeVisibility])
@@ -263,9 +285,8 @@ export function useCollaboration({
     draftRef.current = from === null ? null : { from }
   }, [])
 
-  const reportInk = useCallback((points: CollabCursor[] | null) => {
-    // Un point seul ne dessine rien : autant ne rien publier.
-    inkRef.current = points === null || points.length < 2 ? null : { points }
+  const reportInk = useCallback((ink: CollabInk | null) => {
+    inkRef.current = ink
   }, [])
 
   const reportSelectionBox = useCallback((box: CollabSelectionBox | null) => {
@@ -274,6 +295,8 @@ export function useCollaboration({
 
   return {
     synced,
+    commentsVersion,
+    notifyCommentsChanged,
     state: documentId === null ? 'off' : state,
     participants: meId === null ? [] : visibleCollaborators(participants, others, member),
     others,

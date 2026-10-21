@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Dispatch } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import type { McdAction } from '../model/mcdReducer'
@@ -42,6 +42,7 @@ const iconProps = {
 export function McdToolbar({ dispatch, problems, onGenerate, readOnly = false, pencil }: McdToolbarProps) {
   const { screenToFlowPosition } = useReactFlow()
   const [status, setStatus] = useState<StatusMessage | null>(null)
+  useEffect(() => { if (readOnly) setStatus(null) }, [readOnly])
   // Décalage en cascade pour que des ajouts répétés ne s'empilent pas.
   const addCountRef = useRef(0)
 
@@ -120,7 +121,7 @@ export function McdToolbar({ dispatch, problems, onGenerate, readOnly = false, p
                   kind: 'info',
                   text: pencil.active
                     ? 'Crayon rouge désactivé.'
-                    : 'Crayon rouge activé. Dessinez sur le schéma. Le trait n’est pas enregistré.',
+                    : 'Crayon rouge activé. Choisissez sa durée, puis dessinez sur le schéma.',
                 })
               }}
               /*

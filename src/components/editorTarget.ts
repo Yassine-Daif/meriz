@@ -47,6 +47,7 @@ export type EditorTarget =
       assignmentId: string
       /** Rendu consulté, ou null pour un corrigé libéré. */
       submissionId: string | null
+      discussionDocumentId?: string
       label: string
       origin: EditorOrigin
       /** Travail suivi en direct : l'élève observé et son document. */
@@ -103,7 +104,7 @@ export function collaborationFor(
     return { documentId: target.live.documentId, me, role: 'observer' }
   }
   if (target.kind === 'coedit') {
-    return { documentId: target.documentId, me, role: 'guest' }
+    return { documentId: target.documentId, me, role: 'guest', ownerId: target.studentId }
   }
   if (target.kind === 'group') {
     return { documentId: target.documentId, me, role: 'member' }
@@ -125,12 +126,14 @@ export function commentsDocumentId(target: EditorTarget, document: OpenedDocumen
   switch (target.kind) {
     case 'work':
       return document.meta.id
+    case 'group':
+      return target.documentId
     case 'coedit':
       return target.documentId
     case 'review':
       // Un travail suivi a bien un document. Un rendu déposé, lui, n'est
       // qu'un instantané : rien à commenter.
-      return target.live?.documentId ?? null
+      return target.live?.documentId ?? target.discussionDocumentId ?? null
     default:
       return null
   }

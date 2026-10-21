@@ -4,11 +4,10 @@
  * Il part dans la présence, qui réencode son état entier quinze fois par
  * seconde : une polyligne sans limite y pèserait vite. Trois bornes donc,
  * toutes ici, toutes testables sans navigateur : on décime les points
- * trop proches, on arrondit à l'entier, et on garde une fenêtre glissante.
- * Au-delà, le trait s'efface par la queue, comme une craie qu'on essuie.
+ * trop proches, on arrondit à l'entier, et on simplifie les gestes longs en conservant leurs extrémités.
  *
- * Ce module ne connaît ni React, ni le modèle : un trait n'est jamais
- * enregistré nulle part.
+ * Ce module ne connaît ni React ni le modèle. La durée et la conservation
+ * des traits sont décidées par l’outil d’annotation.
  */
 
 export interface InkPoint {
@@ -16,7 +15,7 @@ export interface InkPoint {
   y: number
 }
 
-/** Au-delà, le trait s'efface par la queue : la charge reste bornée. */
+/** Au-delà, les points sont simplifiés : la charge reste bornée. */
 export const INK_MAX_POINTS = 64
 
 /** Deux points plus proches que ça ne disent rien de plus. */
@@ -45,5 +44,5 @@ export function appendInkPoint(points: InkPoint[], point: InkPoint): InkPoint[] 
     }
   }
   const next = [...points, rounded]
-  return next.length > INK_MAX_POINTS ? next.slice(next.length - INK_MAX_POINTS) : next
+  return next.length > INK_MAX_POINTS ? next.filter((_, index) => index % 2 === 0 || index === next.length - 1) : next
 }

@@ -128,6 +128,7 @@ export function App() {
     openAssignmentModel,
     openReadOnlyModel,
     openCollaboration,
+    observeCollaboration,
     rename,
     closeDocument,
     adoptLiveContent,
@@ -434,6 +435,7 @@ export function App() {
         onImportFile={chrome.documentActions ? importFile : undefined}
         collaboration={collaboration}
         onStartCollaboration={startCollaboration}
+        onStopCollaboration={current.target.kind === 'coedit' ? observeCollaboration : undefined}
       />
       {importDialog}
     </Suspense>

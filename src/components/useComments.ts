@@ -13,7 +13,7 @@ import type { Comment, CommentDraft } from '../lib/commentsApi'
 import { createPoller } from '../lib/poller'
 import type { CollabUser } from '../model/collabProvider'
 
-/** Délai entre deux relectures du fil, panneau ouvert. */
+/** Délai entre deux relectures du fil, vue MCD visible. */
 export const COMMENTS_REFRESH_MS = 10_000
 
 /**
@@ -30,6 +30,7 @@ export interface CommentsAccess {
 export interface CommentsThread {
   /** Null tant que la première lecture n'est pas arrivée. */
   comments: Comment[] | null
+  drawings: Comment[]
   error: string | null
   total: number
   unresolved: number
@@ -43,18 +44,22 @@ export interface CommentsThread {
 /**
  * Le fil d'un travail.
  *
- * Le serveur ne diffuse rien quand un commentaire arrive : on relit. Une
+ * Une notification du canal existant provoque une relecture. Une
  * fois au montage, pour que les bulles existent même panneau fermé, puis
- * à cadence tenue tant que le panneau est ouvert, et après chaque
+ * à cadence tenue tant que le MCD est visible, et après chaque
  * écriture pour voir aussi ce que l'autre a écrit entre-temps.
  */
 export function useComments({
   access,
   watching,
+  version = 0,
+  onChanged,
 }: {
   access: CommentsAccess | null
-  /** Panneau ouvert et vue MCD affichée : la relecture ne tourne que là. */
+  /** Vue MCD affichée : la relecture ne tourne que là. */
   watching: boolean
+  version?: number
+  onChanged?: () => void
 }): CommentsThread {
   const [comments, setComments] = useState<Comment[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -98,6 +103,8 @@ export function useComments({
     void read()
   }, [read])
 
+  useEffect(() => { if (version > 0) void read() }, [version, read])
+
   useEffect(() => {
     if (!watching || client === null || documentId === null) {
       return
@@ -112,9 +119,10 @@ export function useComments({
     async (action: () => Promise<{ ok: true } | { ok: false; error: ApiError }>): Promise<ApiError | null> => {
       const result = await action()
       await read()
+      if (result.ok) onChanged?.()
       return result.ok ? null : result.error
     },
-    [read],
+    [read, onChanged],
   )
 
   const add = useCallback(
@@ -146,10 +154,11 @@ export function useComments({
   )
 
   return {
-    comments,
+    comments: comments === null ? null : comments.filter((comment) => !comment.drawing),
+    drawings: comments?.filter((comment) => !!comment.drawing) ?? [],
     error,
-    total: comments?.length ?? 0,
-    unresolved: comments === null ? 0 : unresolvedCount(comments),
+    total: comments?.filter((comment) => !comment.drawing && !comment.parentId).length ?? 0,
+    unresolved: comments === null ? 0 : unresolvedCount(comments.filter((comment) => !comment.drawing && !comment.parentId)),
     refresh,
     add,
     resolve,

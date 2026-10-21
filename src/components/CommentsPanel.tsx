@@ -1,4 +1,5 @@
-import { useId, useRef, useState } from 'react'
+import { registerUpdateGuard } from '../lib/updateSafety'
+import { useEffect, useId, useRef, useState } from 'react'
 import {
   canDeleteComment,
   commentCountLabel,
@@ -18,6 +19,8 @@ import { Notice } from './ui/Notice'
 import type { CommentsThread } from './useComments'
 
 interface CommentsPanelProps {
+  onDraftChange?: (dirty: boolean) => void
+  revealedId?: string
   thread: CommentsThread
   me: CollabUser
   open: boolean
@@ -44,6 +47,8 @@ const actionClass = buttonClass({ variant: 'ghost', size: 'sm' })
  */
 export function CommentsPanel({
   thread,
+  revealedId,
+  onDraftChange,
   me,
   open,
   onToggleOpen,
@@ -56,7 +61,27 @@ export function CommentsPanel({
   const titleId = useId()
   const listId = useId()
   const fieldId = useId()
+  const [replyTo, setReplyTo] = useState<Comment | null>(null)
+  const [hideResolved, setHideResolved] = useState(false)
+  const articles = useRef(new Map<string, HTMLElement>())
+  useEffect(() => {
+    if (open && revealedId) {
+      setHideResolved(false)
+      const article = articles.current.get(revealedId)
+      article?.scrollIntoView({ block: 'nearest' })
+      article?.focus({ preventScroll: true })
+    }
+  }, [revealedId, open])
   const [body, setBody] = useState('')
+  const dirty = body.trim() !== ''
+  useEffect(() => { onDraftChange?.(dirty) }, [dirty, onDraftChange])
+  useEffect(() => registerUpdateGuard(async () => !dirty), [dirty])
+  useEffect(() => {
+    if (!dirty) return
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault()
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [dirty])
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState('')
   const [formError, setFormError] = useState('')
@@ -66,6 +91,9 @@ export function CommentsPanel({
   const bodyRef = useRef<HTMLTextAreaElement>(null)
 
   const { comments, error, total, unresolved } = thread
+  const roots = (comments ?? []).filter((comment) => !comment.parentId)
+  const ordered = roots.filter((comment) => !hideResolved || !comment.resolved).flatMap((root) =>
+    [root, ...(comments ?? []).filter((comment) => comment.parentId === root.id)])
   const canModerate = me.role === 'teacher'
 
   const run = async (action: () => Promise<string | null>, success: string) => {
@@ -92,9 +120,10 @@ export function CommentsPanel({
     }
     setFormError('')
     await run(async () => {
-      const failure = await thread.add({ body: trimmed, position: pendingPosition })
+      const failure = await thread.add({ body: trimmed, position: replyTo ? null : pendingPosition, parentId: replyTo?.id })
       if (failure === null) {
         setBody('')
+        setReplyTo(null)
         onClearPosition()
       }
       return failure?.message ?? null
@@ -135,6 +164,9 @@ export function CommentsPanel({
       </p>
 
       <div id={listId} hidden={!open}>
+        <Button variant="ghost" size="sm" aria-pressed={hideResolved} onClick={() => setHideResolved((value) => !value)}>
+          {hideResolved ? 'Afficher les discussions résolues' : 'Masquer les discussions résolues'}
+        </Button>
         {error !== null && (
           <Notice
             tone="error"
@@ -157,12 +189,14 @@ export function CommentsPanel({
           </p>
         ) : (
           <ul className="mt-2 flex max-h-[22rem] flex-col gap-2 overflow-y-auto">
-            {comments.map((comment, index) => {
+            {ordered.map((comment) => {
               const author = displayName(comment.author) || 'Participant'
               const mine = comment.author.id === me.id
               return (
-                <li key={comment.id}>
+                <li key={comment.id} className={comment.parentId ? 'ml-4 border-l-2 border-mark pl-2' : undefined}>
                   <article
+                    data-comment-id={comment.id}
+                    ref={(element) => { if (element) articles.current.set(comment.id, element); else articles.current.delete(comment.id) }}
                     tabIndex={-1}
                     className={`rounded-card border p-2 ${
                       comment.resolved ? 'border-line bg-shell/60 text-ink-soft' : 'border-line-strong bg-surface'
@@ -174,7 +208,7 @@ export function CommentsPanel({
                         {author}
                         {mine && ' (vous)'}
                       </span>
-                      {comment.position !== null && <Badge tone="sky">Bulle {index + 1}</Badge>}
+                      {comment.position !== null && <Badge tone="sky">Bulle {roots.findIndex((root) => root.id === comment.id) + 1}</Badge>}
                       {comment.resolved && <Badge tone="sage">Résolu</Badge>}
                     </div>
                     <p className="mt-1 text-xs text-ink-soft">
@@ -187,10 +221,16 @@ export function CommentsPanel({
                       </p>
                     )}
                     <div className="mt-2 flex flex-wrap gap-1.5">
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        setReplyTo(comment.parentId ? roots.find((root) => root.id === comment.parentId) ?? comment : comment)
+                        onClearPosition()
+                        bodyRef.current?.focus()
+                      }}>Répondre</Button>
                       <button
                         type="button"
                         className={actionClass}
                         disabled={busy}
+                        hidden={!!comment.parentId}
                         aria-label={`${comment.resolved ? 'Rouvrir' : 'Marquer résolu'} le commentaire de ${author}`}
                         onClick={() =>
                           void run(
@@ -236,8 +276,9 @@ export function CommentsPanel({
         <form onSubmit={(event) => void submit(event)} className="mt-3 flex flex-col gap-2">
           <FormAlert message={formError} attempt={attempt} />
           <label htmlFor={fieldId} className="text-xs font-medium text-ink">
-            Votre commentaire
+            {replyTo ? 'Répondre à '+displayName(replyTo.author) : 'Votre commentaire'}
           </label>
+          {replyTo && <Button variant="ghost" size="sm" onClick={() => setReplyTo(null)}>Annuler la réponse</Button>}
           <textarea
             id={fieldId}
             ref={bodyRef}
@@ -266,7 +307,7 @@ export function CommentsPanel({
               type="button"
               className={actionClass}
               aria-pressed={placing}
-              onClick={onTogglePlacing}
+              onClick={() => { setReplyTo(null); onTogglePlacing() }}
               disabled={pendingPosition !== null}
             >
               {placing ? 'Annuler la bulle' : 'Poser une bulle'}
@@ -284,7 +325,7 @@ export function CommentsPanel({
       <ConfirmDialog
         open={pendingDelete !== null}
         title="Supprimer le commentaire"
-        message="Ce commentaire sera supprimé pour tout le monde. Cette action est définitive."
+        message="Ce commentaire et ses réponses seront supprimés pour tout le monde. Cette action est définitive."
         confirmLabel="Oui, supprimer"
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}

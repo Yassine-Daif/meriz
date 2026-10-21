@@ -47,13 +47,13 @@ describe('le trait du crayon, borné', () => {
   })
 
   it('ne dépasse jamais soixante-quatre points', () => {
-    expect(trace(200)).toHaveLength(INK_MAX_POINTS)
+    expect(trace(200).length).toBeLessThanOrEqual(INK_MAX_POINTS)
   })
 
-  it('efface par la queue : le dernier point reste, le premier part', () => {
+  it('simplifie les longs gestes en conservant les deux extrémités', () => {
     const points = trace(INK_MAX_POINTS + 5)
 
     expect(points[points.length - 1]).toEqual({ x: (INK_MAX_POINTS + 4) * 10, y: 0 })
-    expect(points[0]).toEqual({ x: 50, y: 0 })
+    expect(points[0]).toEqual({ x: 0, y: 0 })
   })
 })
