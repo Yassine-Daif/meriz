@@ -6,8 +6,9 @@ Vous dessinez le modèle conceptuel (MCD). Meriz le vérifie, puis en tire le mo
 
 ## Essayer
 
-- Version web : https://meriz.mmi25b06.mmi-troyes.fr/app/
-- Logiciel à installer : https://meriz.mmi25b06.mmi-troyes.fr/telecharger.html
+- Site Internet : https://meriz.fr/
+- Version web : https://app.meriz.fr/
+- Logiciel à installer : https://meriz.fr/telecharger.html
 
 ## Ce que fait Meriz
 
