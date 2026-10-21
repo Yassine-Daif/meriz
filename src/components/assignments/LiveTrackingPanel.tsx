@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import type { Assignment } from '../../lib/assignmentsApi'
@@ -59,6 +61,7 @@ export function LiveTrackingPanel({
   autoOpen,
   onTrackingClosed,
 }: LiveTrackingPanelProps) {
+  useLanguage()
   const [workers, setWorkers] = useState<LiveWorker[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
@@ -105,7 +108,7 @@ export function LiveTrackingPanel({
       setStatus(result.error.message)
       return
     }
-    setStatus('Suivi ouvert. Vos élèves en sont informés dans leur devoir.')
+    setStatus(t("Suivi ouvert. Vos élèves en sont informés dans leur devoir."))
     onTrackingChanged(result.value)
   }, [client, assignment.id, onTrackingChanged])
 
@@ -118,7 +121,7 @@ export function LiveTrackingPanel({
       setStatus(result.error.message)
       return
     }
-    setStatus('Suivi fermé. Vous ne voyez plus les travaux en cours.')
+    setStatus(t("Suivi fermé. Vous ne voyez plus les travaux en cours."))
     onTrackingClosed()
     onTrackingChanged(result.value)
   }
@@ -164,7 +167,7 @@ export function LiveTrackingPanel({
     }
     setStatus(
       result.error.kind === 'not_found'
-        ? `${displayName(worker.student)} n’a pas encore commencé ce devoir.`
+        ? t("{0} n’a pas encore commencé ce devoir.", [displayName(worker.student)])
         : result.error.message,
     )
     return null
@@ -182,7 +185,8 @@ export function LiveTrackingPanel({
       submissionId: null,
       key: `${assignment.id}:live:${worker.student.id}`,
       name: `${assignment.title} : ${name}`,
-      label: `Travail de ${name}, en direct`,
+      label: t("Travail de {0}, en direct", [name]),
+      labelMessage: { source: "Travail de {0}, en direct", values: [name] },
       content: snapshot.content,
       live: { studentId: worker.student.id, documentId: snapshot.documentId },
     })
@@ -205,7 +209,8 @@ export function LiveTrackingPanel({
       studentId: worker.student.id,
       documentId: snapshot.documentId,
       name: `${assignment.title} : ${name}`,
-      label: `Travail de ${name}, correction à deux`,
+      label: t("Travail de {0}, correction à deux", [name]),
+      labelMessage: { source: "Travail de {0}, correction à deux", values: [name] },
     })
   }
 
@@ -213,11 +218,9 @@ export function LiveTrackingPanel({
     return (
       <section aria-labelledby="suivi-titre" className="mt-4">
         <h4 id="suivi-titre" className="text-base font-semibold text-ink">
-          Suivi en direct
-        </h4>
+          {t("Suivi en direct")}</h4>
         <p role="status" className="mt-1 text-sm text-ink-soft">
-          Ouverture du suivi…
-        </p>
+          {t("Ouverture du suivi…")}</p>
       </section>
     )
   }
@@ -227,17 +230,11 @@ export function LiveTrackingPanel({
       <section aria-labelledby="suivi-titre" className="mt-4">
         <Card>
           <h4 id="suivi-titre" className="text-base font-semibold text-ink">
-            Suivi en direct
-          </h4>
+            {t("Suivi en direct")}</h4>
           <p className="mt-1 text-sm text-ink-soft">
-            Le suivi vous montre qui travaille et vous laisse ouvrir le modèle d’un élève en lecture seule, pendant
-            qu’il le construit. Vous ne pouvez rien y modifier, et vous ne voyez ni ses autres documents, ni son
-            travail sur d’autres devoirs.
-          </p>
+            {t("Le suivi vous montre qui travaille et vous laisse ouvrir le modèle d’un élève en lecture seule, pendant qu’il le construit. Vous ne pouvez rien y modifier, et vous ne voyez ni ses autres documents, ni son travail sur d’autres devoirs.")}</p>
           <p className="mt-2 text-sm text-ink-soft">
-            Vos élèves le voient écrit dans leur devoir, et chaque lecture leur est datée. Tant que le suivi est
-            fermé, rien n’est consultable.
-          </p>
+            {t("Vos élèves le voient écrit dans leur devoir, et chaque lecture leur est datée. Tant que le suivi est fermé, rien n’est consultable.")}</p>
           <p role="status" aria-live="polite" className="mt-2 min-h-5 text-sm text-ink-soft">
             {status}
           </p>
@@ -246,10 +243,9 @@ export function LiveTrackingPanel({
               variant="primary"
               onClick={() => void openTracking()}
               loading={pending}
-              loadingLabel="Ouverture…"
+              loadingLabel={t("Ouverture…")}
             >
-              Ouvrir le suivi en direct
-            </Button>
+              {t("Ouvrir le suivi en direct")}</Button>
           </div>
         </Card>
       </section>
@@ -259,16 +255,13 @@ export function LiveTrackingPanel({
   return (
     <section aria-labelledby="suivi-titre" className="mt-4">
       <h4 id="suivi-titre" className="text-base font-semibold text-ink">
-        Suivi en direct
-        {workers && workers.length > 0 && <span className="font-normal text-ink-soft"> ({workers.length})</span>}
+        {t("Suivi en direct")}{workers && workers.length > 0 && <span className="font-normal text-ink-soft"> ({workers.length})</span>}
       </h4>
       <div className="mt-1 flex flex-wrap items-center gap-3">
         <p className="text-sm text-ink-soft">
-          Actualisé toutes les trois secondes, tant que cette page reste ouverte devant vous.
-        </p>
-        <Button size="sm" onClick={() => void closeTracking()} loading={pending} loadingLabel="Fermeture…">
-          Fermer le suivi
-        </Button>
+          {t("Actualisé toutes les trois secondes, tant que cette page reste ouverte devant vous.")}</p>
+        <Button size="sm" onClick={() => void closeTracking()} loading={pending} loadingLabel={t("Fermeture…")}>
+          {t("Fermer le suivi")}</Button>
       </div>
 
       <p role="status" aria-live="polite" className="mt-2 min-h-5 text-sm text-ink-soft">
@@ -281,20 +274,17 @@ export function LiveTrackingPanel({
           announce={false}
           action={
             <Button size="sm" onClick={() => void refresh(() => true)}>
-              Réessayer
-            </Button>
+              {t("Réessayer")}</Button>
           }
         >
           {loadError}
         </Notice>
       ) : workers === null ? (
         <p role="status" className="text-sm text-ink-soft">
-          Chargement du suivi…
-        </p>
+          {t("Chargement du suivi…")}</p>
       ) : workers.length === 0 ? (
         <p className="rounded-card border border-dashed border-line-strong bg-surface-soft p-6 text-center text-sm text-ink-soft">
-          Aucun élève dans cette classe pour l’instant.
-        </p>
+          {t("Aucun élève dans cette classe pour l’instant.")}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {workers.map((worker) => {
@@ -318,23 +308,21 @@ export function LiveTrackingPanel({
                   size="sm"
                   disabled={!worker.hasStarted}
                   loading={opening?.studentId === worker.student.id && opening.mode === 'observe'}
-                  loadingLabel="Ouverture…"
+                  loadingLabel={t("Ouverture…")}
                   onClick={() => void observe(worker)}
-                  aria-label={`Observer le travail de ${name} en lecture seule`}
+                  aria-label={t("Observer le travail de {0} en lecture seule", [name])}
                 >
-                  Observer en lecture seule
-                </Button>
+                  {t("Observer en lecture seule")}</Button>
                 <Button
                   size="sm"
                   variant="primary"
                   disabled={!worker.hasStarted}
                   loading={opening?.studentId === worker.student.id && opening.mode === 'coedit'}
-                  loadingLabel="Ouverture…"
+                  loadingLabel={t("Ouverture…")}
                   onClick={() => void correct(worker)}
-                  aria-label={`Corriger en direct le travail de ${name}`}
+                  aria-label={t("Corriger en direct le travail de {0}", [name])}
                 >
-                  Corriger en direct
-                </Button>
+                  {t("Corriger en direct")}</Button>
               </li>
             )
           })}

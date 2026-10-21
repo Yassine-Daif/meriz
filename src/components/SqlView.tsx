@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useId, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { MpdTable, SqlDialect } from '../model/mpd'
@@ -34,6 +36,7 @@ function highlightSql(sql: string): ReactNode[] {
  * en lecture seule. On modifie le modèle, jamais le texte.
  */
 export function SqlView({ tables, dialect, hasErrors }: SqlViewProps) {
+  useLanguage()
   const [includeDrops, setIncludeDrops] = useState(true)
   const [copyStatus, setCopyStatus] = useState('')
   const dropsId = useId()
@@ -51,35 +54,33 @@ export function SqlView({ tables, dialect, hasErrors }: SqlViewProps) {
 
   const handleCopy = async () => {
     const copied = await copyText(sql)
-    setCopyStatus(copied ? 'Script copié dans le presse-papiers.' : 'Erreur : copie impossible dans ce navigateur.')
+    setCopyStatus(copied ? t("Script copié dans le presse-papiers.") : t("Erreur : copie impossible dans ce navigateur."))
   }
 
   const handleExport = async () => {
-    const result = await saveFileAs('schema.sql', new Blob([sql], { type: 'application/sql' }), 'Script SQL', {
+    const result = await saveFileAs('schema.sql', new Blob([sql], { type: 'application/sql' }), t("Script SQL"), {
       'application/sql': ['.sql'],
     })
     if (result === 'cancelled') {
-      setCopyStatus('Export annulé.')
+      setCopyStatus(t("Export annulé."))
     } else {
-      setCopyStatus('Fichier .sql exporté.')
+      setCopyStatus(t("Fichier .sql exporté."))
     }
   }
 
   return (
-    <section aria-label="Vue SQL" className="flex min-h-0 flex-1 flex-col">
+    <section aria-label={t("Vue SQL")} className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2">
         <Button
           size="sm"
           onClick={() => void handleCopy()}
         >
-          Copier
-        </Button>
+          {t("Copier")}</Button>
         <Button
           size="sm"
           onClick={() => void handleExport()}
         >
-          Exporter en .sql
-        </Button>
+          {t("Exporter en .sql")}</Button>
         <label htmlFor={dropsId} className="flex items-center gap-1.5 text-xs text-ink-soft">
           <input
             id={dropsId}
@@ -87,11 +88,9 @@ export function SqlView({ tables, dialect, hasErrors }: SqlViewProps) {
             checked={includeDrops}
             onChange={(event) => setIncludeDrops(event.target.checked)}
           />
-          DROP TABLE IF EXISTS
-        </label>
+          {t("DROP TABLE IF EXISTS")}</label>
         <p className="text-xs text-ink-soft">
-          Dialecte : <span className="font-mono">{dialectLabel}</span> (choisi dans la vue MPD)
-        </p>
+          {t("Dialecte : ")}<span className="font-mono">{dialectLabel}</span> {t(" (choisi dans la vue MPD)")}</p>
         <p role="status" aria-live="polite" className="text-xs text-ink-soft">
           {copyStatus}
         </p>
@@ -101,7 +100,7 @@ export function SqlView({ tables, dialect, hasErrors }: SqlViewProps) {
         <pre
           tabIndex={0}
           role="region"
-          aria-label="Script SQL"
+          aria-label={t("Script SQL")}
           className="w-full overflow-x-auto rounded-card border border-line bg-surface p-4 font-mono text-micro leading-6 shadow-soft"
         >
           <code>{highlightSql(sql)}</code>

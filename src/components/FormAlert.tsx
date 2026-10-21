@@ -1,3 +1,4 @@
+import { useLanguage } from "../lib/useLanguage"
 import { useEffect, useRef } from 'react'
 
 interface FormAlertProps {
@@ -11,6 +12,7 @@ interface FormAlertProps {
  * focalisée après chaque échec, pour qu'on ne la manque pas au clavier.
  */
 export function FormAlert({ message, attempt }: FormAlertProps) {
+  useLanguage()
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {

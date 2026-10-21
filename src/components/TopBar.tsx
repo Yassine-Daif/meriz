@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import type { McdEditorState } from '../model/mcdReducer'
 import type { MpdSettings } from '../model/mpd'
 import type { SaveStatus } from '../lib/documentRepository'
@@ -5,14 +7,14 @@ import { AccountStatus } from './AccountStatus'
 import { FileActions } from './FileActions'
 import { DocumentNameField } from './DocumentNameField'
 import { SyncStatus } from './SyncStatus'
-import { UiScaleControl } from './UiScaleControl'
+
 import { ParticipantList } from './ParticipantList'
 import type { CollabUser, RemotePresence } from '../model/collabProvider'
 import { BackButton } from './ui/BackButton'
 import { Badge } from './ui/Badge'
 import { Lockup } from './ui/Lockup'
-import { EffectsControl } from './ui/EffectsControl'
-import { ThemeToggle } from './ui/ThemeToggle'
+import { PreferencesControl } from './ui/PreferencesControl'
+
 
 interface TopBarProps {
   state: McdEditorState
@@ -71,7 +73,7 @@ export function TopBar({
   onRename,
   onBackToDocuments,
   contentLabel,
-  backLabel = 'Retour',
+  backLabel = t("Retour"),
   onNewDocument,
   onImportFile,
   syncStatus,
@@ -87,18 +89,20 @@ export function TopBar({
   onUndo,
   onRedo,
 }: TopBarProps) {
+  useLanguage()
   return (
-    <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line bg-surface px-4 py-2 text-ink">
-      <h1 className="flex items-center">
-        <Lockup size={26} label="Meriz" />
+    <header data-local={!cloud} className="editor-header border-b border-line bg-surface text-ink">
+      <div className="editor-document-row">
+      <h1 className="hidden shrink-0 items-center sm:flex">
+        <Lockup size={26} label={t("Meriz")} />
       </h1>
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="editor-document-identity">
         <BackButton
           framed
           label={backLabel}
           onClick={onBackToDocuments}
-          aria-label={`${backLabel} : fermer le modèle et revenir à la page précédente`}
-          title="Fermer le modèle et revenir à la page précédente"
+          aria-label={t("{0} : fermer le modèle et revenir à la page précédente", [backLabel])}
+          title={t("Fermer le modèle et revenir à la page précédente")}
         />
         {onRename ? (
           <DocumentNameField name={documentName} onRename={onRename} />
@@ -110,16 +114,18 @@ export function TopBar({
             <span className="truncate text-sm font-semibold text-ink">{documentName}</span>
           </p>
         )}
-        {readOnly && <Badge tone="sky">Lecture seule</Badge>}
+        {readOnly && <Badge tone="sky">{t("Lecture seule")}</Badge>}
       </div>
+      </div>
+      <div className="editor-actions-row">
       {!readOnly && (
-      <div role="group" aria-label="Historique" className="flex gap-1">
+      <div role="group" aria-label={t("Historique")} className="flex gap-1">
         <button
           type="button"
           onClick={onUndo}
           disabled={!canUndo}
-          aria-label="Annuler (Ctrl+Z)"
-          title="Annuler (Ctrl+Z)"
+          aria-label={t("Annuler (Ctrl+Z)")}
+          title={t("Annuler (Ctrl+Z)")}
           aria-keyshortcuts="Control+Z"
           className={undoButtonClass}
         >
@@ -132,8 +138,8 @@ export function TopBar({
           type="button"
           onClick={onRedo}
           disabled={!canRedo}
-          aria-label="Rétablir (Ctrl+Y)"
-          title="Rétablir (Ctrl+Y)"
+          aria-label={t("Rétablir (Ctrl+Y)")}
+          title={t("Rétablir (Ctrl+Y)")}
           aria-keyshortcuts="Control+Y"
           className={undoButtonClass}
         >
@@ -153,14 +159,11 @@ export function TopBar({
         onImportFile={onImportFile}
       />
       {!readOnly && !saveDelegated && <SyncStatus status={syncStatus} onRetry={onRetrySync} cloud={cloud} />}
-      {participants && participants.length > 0 && (
-        <ParticipantList participants={participants} others={others} />
-      )}
-      <div className="ml-auto flex flex-wrap items-center gap-3">
-        <AccountStatus compact />
-        <ThemeToggle />
-          <EffectsControl />
-        <UiScaleControl />
+
+      </div>
+      <div className="editor-personal-row">
+        {participants && participants.length > 0 && <div className="editor-participants"><ParticipantList participants={participants} others={others} /></div>}
+        <div className="editor-personal-actions"><AccountStatus compact /><PreferencesControl /></div>
       </div>
     </header>
   )

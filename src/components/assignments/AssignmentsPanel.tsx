@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useCallback, useEffect, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import { assignmentTypeLabel, formatDueDate, getAssignment, listClassroomAssignments } from '../../lib/assignmentsApi'
@@ -33,16 +35,17 @@ type View =
 
 /** État du devoir, écrit en toutes lettres et non porté par la seule couleur. */
 function StateBadges({ assignment }: { assignment: AssignmentSummary }) {
+  useLanguage()
   return (
     <span className="flex flex-wrap items-center gap-1.5">
       <Badge tone={assignment.status === 'published' ? 'sage' : 'neutral'}>
-        {assignment.status === 'published' ? 'Publié' : 'Brouillon'}
+        {assignment.status === 'published' ? t("Publié") : t("Brouillon")}
       </Badge>
       <Badge tone="sky">{assignmentTypeLabel(assignment.type)}</Badge>
-      {assignment.hasBase && <Badge tone="accent">Base prête</Badge>}
+      {assignment.hasBase && <Badge tone="accent">{t("Base prête")}</Badge>}
       {assignment.hasSolution && (
         <Badge tone={assignment.solutionReleased ? 'apricot' : 'neutral'}>
-          {assignment.solutionReleased ? 'Corrigé libéré' : 'Corrigé retenu'}
+          {assignment.solutionReleased ? t("Corrigé libéré") : t("Corrigé retenu")}
         </Badge>
       )}
     </span>
@@ -64,6 +67,7 @@ export function AssignmentsPanel({
   onOpenReadOnlyModel,
   onStartLiveCoedition,
 }: AssignmentsPanelProps) {
+  useLanguage()
   const [assignments, setAssignments] = useState<AssignmentSummary[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [view, setView] = useState<View>({ kind: 'list' })
@@ -104,7 +108,7 @@ export function AssignmentsPanel({
   // la section d'où l'on venait, ses rendus ou son suivi.
   useEffect(() => {
     if (openAssignmentId) {
-      void open(openAssignmentId, openAssignmentTab ?? (openSubmissionId !== null ? 'rendus' : 'enonce'))
+      void open(openAssignmentId, openAssignmentTab ?? (openSubmissionId !== null ? "rendus" : 'enonce'))
     }
   }, [openAssignmentId, openSubmissionId, openAssignmentTab, open])
 
@@ -147,15 +151,13 @@ export function AssignmentsPanel({
     <section aria-labelledby="devoirs-titre">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 id="devoirs-titre" className="text-base font-semibold text-ink">
-          Devoirs de la classe
-          {assignments && assignments.length > 0 && (
+          {t("Devoirs de la classe")}{assignments && assignments.length > 0 && (
             <span className="font-normal text-ink-soft"> ({assignments.length})</span>
           )}
         </h3>
         <Button variant="primary" onClick={() => setView({ kind: 'create' })}>
           <span aria-hidden="true">+</span>
-          Créer un devoir
-        </Button>
+          {t("Créer un devoir")}</Button>
       </div>
 
       <p role="status" aria-live="polite" className="mt-2 min-h-5 text-sm text-ink-soft">
@@ -168,20 +170,17 @@ export function AssignmentsPanel({
           announce={false}
           action={
             <Button size="sm" onClick={() => void load()}>
-              Réessayer
-            </Button>
+              {t("Réessayer")}</Button>
           }
         >
           {loadError}
         </Notice>
       ) : assignments === null ? (
         <p role="status" className="text-sm text-ink-soft">
-          Chargement des devoirs…
-        </p>
+          {t("Chargement des devoirs…")}</p>
       ) : assignments.length === 0 ? (
         <p className="rounded-card border border-dashed border-line-strong bg-surface-soft p-6 text-center text-sm text-ink-soft">
-          Aucun devoir pour l’instant : créez le premier, il restera en brouillon tant que vous ne l’aurez pas publié.
-        </p>
+          {t("Aucun devoir pour l’instant : créez le premier, il restera en brouillon tant que vous ne l’aurez pas publié.")}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {assignments.map((assignment) => (
@@ -190,7 +189,7 @@ export function AssignmentsPanel({
                 type="button"
                 onClick={() => void open(assignment.id)}
                 disabled={opening !== null}
-                aria-label={`Ouvrir le devoir ${assignment.title}`}
+                aria-label={t("Ouvrir le devoir {0}", [assignment.title])}
                 className="flex w-full flex-col items-start gap-1.5 rounded-card border border-line bg-surface p-4 text-left shadow-soft transition duration-150 hover:shadow-lift disabled:cursor-wait motion-safe:hover:-translate-y-0.5"
               >
                 <span className="flex w-full flex-wrap items-center justify-between gap-2">

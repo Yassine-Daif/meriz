@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useId, useRef } from 'react'
 import { motionStore } from '../../lib/motion'
 import { useMotion } from '../../lib/useMotion'
@@ -7,6 +9,7 @@ import { dialogClass } from './dialogClass'
 
 /** Réglage disponible avec ou sans compte, dans le navigateur comme sur le bureau. */
 export function EffectsControl() {
+  useLanguage()
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const { preference, reduced } = useMotion()
@@ -17,23 +20,20 @@ export function EffectsControl() {
           <path d="m10 3 2 6 6 2-6 2-2 6-2-6-6-2 6-2Z" />
           <path d="m19 2 1 3 3 1-3 1-1 3-1-3-3-1 3-1Z" />
         </svg>
-        Effets
-      </Button>
+        {t("Effets")}</Button>
       <dialog ref={dialog} aria-labelledby={titleId} className={dialogClass('sm')}>
         <div className="p-6">
-          <h2 id={titleId} className="text-lg font-semibold tracking-tight">Un peu de douceur</h2>
+          <h2 id={titleId} className="text-lg font-semibold tracking-tight">{t("Un peu de douceur")}</h2>
           <p className="mt-2 text-sm leading-6 text-ink-soft">
-            Des transitions courtes à l’ouverture des pages et des fenêtres, et des réactions discrètes au survol.
-          </p>
+            {t("Des transitions courtes à l’ouverture des pages et des fenêtres, et des réactions discrètes au survol.")}</p>
           <div className="mt-5">
-            <ToggleSwitch label="Animer l’interface" checked={preference} onChange={motionStore.setPreference}
-              description="Votre choix est mémorisé sur cet appareil, sans compte." />
+            <ToggleSwitch label={t("Animer l’interface")} checked={preference} onChange={motionStore.setPreference}
+              description={t("Votre choix est mémorisé sur cet appareil, sans compte.")} />
           </div>
           {reduced && <p role="status" className="mt-4 rounded-control bg-accent-soft p-3 text-sm text-ink">
-            Votre système demande de réduire les mouvements : les animations restent désactivées.
-          </p>}
+            {t("Votre système demande de réduire les mouvements : les animations restent désactivées.")}</p>}
           <div className="mt-6 flex justify-end">
-            <Button onClick={() => dialog.current?.close()}>Fermer</Button>
+            <Button onClick={() => dialog.current?.close()}>{t("Fermer")}</Button>
           </div>
         </div>
       </dialog>

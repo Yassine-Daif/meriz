@@ -1,12 +1,14 @@
-const dateFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
+import { t } from '../i18n/runtime'
+import { localeTag } from "../i18n/runtime"
+const dateFormat = () => new Intl.DateTimeFormat(localeTag(), { dateStyle: 'long', timeStyle: 'short' })
 
 /** « 15 septembre 2026 à 11:29 », ou un repli si la date est illisible. */
 export function formatDate(iso: string): string {
   const date = new Date(iso)
-  return Number.isNaN(date.getTime()) ? 'date inconnue' : dateFormat.format(date)
+  return Number.isNaN(date.getTime()) ? t("date inconnue") : dateFormat().format(date)
 }
 
-const longDayFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' })
+const longDayFormat = () => new Intl.DateTimeFormat(localeTag(), { dateStyle: 'long' })
 
 /**
  * « 15 septembre 2026 », sans heure. Une date d'arrivée dans une classe
@@ -16,7 +18,7 @@ const longDayFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' })
 export function formatDay(iso: string | null): string | null {
   if (iso === null) return null
   const date = new Date(iso)
-  return Number.isNaN(date.getTime()) ? null : longDayFormat.format(date)
+  return Number.isNaN(date.getTime()) ? null : longDayFormat().format(date)
 }
 
 /* ------------------------------------------------------------------ */
@@ -24,9 +26,9 @@ export function formatDay(iso: string | null): string | null {
 
 // La formulation vient d'Intl : « hier », « il y a 3 jours ». On ne
 // recompose jamais ces phrases à la main.
-const relativeFormat = new Intl.RelativeTimeFormat('fr-FR', { numeric: 'auto' })
-const dayFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long' })
-const dayWithYearFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+const relativeFormat = () => new Intl.RelativeTimeFormat(localeTag(), { numeric: 'auto' })
+const dayFormat = () => new Intl.DateTimeFormat(localeTag(), { day: 'numeric', month: 'long' })
+const dayWithYearFormat = () => new Intl.DateTimeFormat(localeTag(), { day: 'numeric', month: 'long', year: 'numeric' })
 
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
@@ -50,16 +52,16 @@ export function formatRelativeDate(iso: string, now: number = Date.now()): strin
 
   if (elapsed >= RELATIVE_LIMIT_MS) {
     const sameYear = date.getFullYear() === new Date(now).getFullYear()
-    return `le ${(sameYear ? dayFormat : dayWithYearFormat).format(date)}`
+    return t("le {0}", [(sameYear ? dayFormat : dayWithYearFormat)().format(date)])
   }
   if (elapsed < MINUTE) {
-    return relativeFormat.format(0, 'second')
+    return relativeFormat().format(0, 'second')
   }
   if (elapsed < HOUR) {
-    return relativeFormat.format(-Math.floor(elapsed / MINUTE), 'minute')
+    return relativeFormat().format(-Math.floor(elapsed / MINUTE), 'minute')
   }
   if (elapsed < DAY) {
-    return relativeFormat.format(-Math.floor(elapsed / HOUR), 'hour')
+    return relativeFormat().format(-Math.floor(elapsed / HOUR), 'hour')
   }
-  return relativeFormat.format(-Math.floor(elapsed / DAY), 'day')
+  return relativeFormat().format(-Math.floor(elapsed / DAY), 'day')
 }

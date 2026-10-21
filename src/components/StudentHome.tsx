@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useState } from 'react'
 import type { ApiClient, ApiError } from '../lib/apiClient'
 import type { ApiUser } from '../lib/authApi'
@@ -26,13 +28,13 @@ import { Stat } from './ui/Stat'
 const STUDENT_SHORTCUTS: readonly ClassShortcut[] = [
   {
     tab: 'exercices',
-    label: 'Exercices',
-    description: 'Les exercices et les examens donnés par votre prof, avec leur échéance et votre avancement.',
+    get label() { return t("Exercices") },
+    get description() { return t("Les exercices et les examens donnés par votre prof, avec leur échéance et votre avancement.") },
   },
   {
     tab: 'cours',
-    label: 'Cours',
-    description: 'Les supports publiés par votre prof, à lire à côté de l’outil de modélisation.',
+    get label() { return t("Cours") },
+    get description() { return t("Les supports publiés par votre prof, à lire à côté de l’outil de modélisation.") },
   },
 ]
 
@@ -71,6 +73,7 @@ export function StudentHome({
   onOpenGroup,
   announcement,
 }: StudentHomeProps) {
+  useLanguage()
   const classrooms = useClassrooms(client)
   const groups = useGroups(client)
   // Un seul appel sert deux usages : nommer la provenance d'un document
@@ -89,15 +92,14 @@ export function StudentHome({
 
   return (
     <PageShell
-      eyebrow="Espace élève"
-      title={`Bonjour ${user.firstName ?? user.name}`}
+      eyebrow={t("Espace élève")}
+      title={t("Bonjour {0}", [user.firstName ?? user.name])}
       leading={<Avatar person={user} size="lg" />}
-      description="Ce qui reste à rendre, votre travail en cours, et vos classes."
+      description={t("Ce qui reste à rendre, votre travail en cours, et vos classes.")}
       actions={
         <Button variant="primary" onClick={() => void createDocument()}>
           <span aria-hidden="true">+</span>
-          Nouveau document
-        </Button>
+          {t("Nouveau document")}</Button>
       }
     >
       <LiveAnnouncement message={announcement} />
@@ -107,7 +109,7 @@ export function StudentHome({
         </Notice>
       )}
 
-      <section aria-label="Vos chiffres" className="grid gap-3 sm:grid-cols-3">
+      <section aria-label={t("Vos chiffres")} className="grid gap-3 sm:grid-cols-3">
         <Stat
           value={list === null ? '…' : String(list.length)}
           label={plural(list?.length ?? 0, 'classe', 'classes')}
@@ -118,7 +120,7 @@ export function StudentHome({
         />
         <Stat
           value={pending === null ? '…' : String(pending.length)}
-          label={plural(pending?.length ?? 0, 'devoir à rendre', 'devoirs à rendre')}
+          label={plural(pending?.length ?? 0, t("devoir à rendre"), t("devoirs à rendre"))}
         />
       </section>
 
@@ -144,18 +146,17 @@ export function StudentHome({
           />
 
           <ClassShortcuts
-            title="Dans vos classes"
+            title={t("Dans vos classes")}
             classrooms={list ?? []}
             shortcuts={STUDENT_SHORTCUTS}
             onOpen={onOpenClassroom}
           />
         </div>
 
-        <aside aria-label="Actions et accès rapide" className="flex flex-col gap-4">
+        <aside aria-label={t("Actions et accès rapide")} className="flex flex-col gap-4">
           <Card as="section" aria-labelledby="rejoindre-titre">
             <h2 id="rejoindre-titre" className="text-base font-semibold text-ink">
-              Rejoindre une classe
-            </h2>
+              {t("Rejoindre une classe")}</h2>
             <div className="mt-3">
               <JoinClassForm
                 client={client}
@@ -163,7 +164,7 @@ export function StudentHome({
                   onOpenClassroom({
                     id: classroom.id,
                     initial: classroom,
-                    message: `Vous avez rejoint la classe « ${classroom.name} ».`,
+                    message: t("Vous avez rejoint la classe « {0} ».", [classroom.name]),
                   })
                 }
               />
@@ -177,7 +178,7 @@ export function StudentHome({
             onOpenGroup={onOpenGroup}
             onShowClasses={onShowClasses}
             onShowGroups={onShowGroups}
-            emptyClassesText="Aucune classe pour l’instant. Saisissez le code donné par votre prof."
+            emptyClassesText={t("Aucune classe pour l’instant. Saisissez le code donné par votre prof.")}
           />
         </aside>
       </div>

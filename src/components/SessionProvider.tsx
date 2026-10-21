@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { createAccountController, LOADING_SPACE, LOCAL_SPACE } from '../lib/accountController'
@@ -28,6 +30,7 @@ import type { SessionContextValue } from './sessionContext'
  * autre. Le travail non envoyé est mis de côté pour son propriétaire.
  */
 export function SessionProvider({ children }: { children: ReactNode }) {
+  useLanguage()
   const [baseUrl] = useState(getApiBaseUrl)
   const [session, setSession] = useState<SessionState>(() => {
     if (baseUrl === null) {
@@ -53,8 +56,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     count === 0
       ? null
       : count === 1
-        ? "1 document a des modifications non envoyées : elles partiront à votre prochaine connexion sur ce compte."
-        : `${count} documents ont des modifications non envoyées : elles partiront à votre prochaine connexion sur ce compte.`
+        ? t("1 document a des modifications non envoyées : elles partiront à votre prochaine connexion sur ce compte.")
+        : t("{0} documents ont des modifications non envoyées : elles partiront à votre prochaine connexion sur ce compte.", [count])
 
   // Le cache, les liens de devoir et les traces de compte partagent le
   // même stockage.
@@ -78,7 +81,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         const stashed = controller.expired()
         setAccount(LOCAL_SPACE)
         setSession({ status: 'signed-out' })
-        setNotice(`Votre session a expiré, reconnectez-vous. ${stashedNotice(stashed) ?? ''}`.trim())
+        setNotice(t("Votre session a expiré, reconnectez-vous. {0}", [stashedNotice(stashed) ?? '']).trim())
       },
     })
   })

@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useId } from 'react'
 import { AVATAR_PALETTE } from '../lib/avatarPalette'
 import { contrastRatio, formatContrast, normalizeHex, READABLE_CONTRAST } from '../lib/color'
@@ -18,6 +20,7 @@ interface AvatarPickerProps {
  * suivent le choix en direct.
  */
 export function AvatarPicker({ person, onChange, error }: AvatarPickerProps) {
+  useLanguage()
   const name = useId()
   const bgId = useId()
   const fgId = useId()
@@ -38,12 +41,12 @@ export function AvatarPicker({ person, onChange, error }: AvatarPickerProps) {
     <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
       <div className="flex flex-col items-center gap-2">
         <Avatar person={person} size="lg" />
-        <p className="text-xs text-ink-soft">Aperçu</p>
+        <p className="text-xs text-ink-soft">{t("Aperçu")}</p>
       </div>
 
       <div className="min-w-0 flex-1">
         <fieldset aria-describedby={error ? errorId : undefined}>
-          <legend className="text-sm font-medium text-ink">Paires prêtes</legend>
+          <legend className="text-sm font-medium text-ink">{t("Paires prêtes")}</legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {AVATAR_PALETTE.map((pair) => {
               const checked = pair.background === person.avatarBg && pair.text === person.avatarFg
@@ -68,7 +71,7 @@ export function AvatarPicker({ person, onChange, error }: AvatarPickerProps) {
                     style={{ backgroundColor: pair.background, color: pair.text }}
                     className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold"
                   >
-                    {checked ? '✓' : 'Aa'}
+                    {checked ? '✓' : t("Aa")}
                   </span>
                 </label>
               )
@@ -79,8 +82,7 @@ export function AvatarPicker({ person, onChange, error }: AvatarPickerProps) {
         <div className="mt-4 flex flex-wrap gap-4">
           <div>
             <label htmlFor={bgId} className="block text-sm font-medium text-ink">
-              Couleur de fond
-            </label>
+              {t("Couleur de fond")}</label>
             <div className="mt-1.5 flex items-center gap-2">
               <input
                 id={bgId}
@@ -94,8 +96,7 @@ export function AvatarPicker({ person, onChange, error }: AvatarPickerProps) {
           </div>
           <div>
             <label htmlFor={fgId} className="block text-sm font-medium text-ink">
-              Couleur du texte
-            </label>
+              {t("Couleur du texte")}</label>
             <div className="mt-1.5 flex items-center gap-2">
               <input
                 id={fgId}
@@ -113,7 +114,7 @@ export function AvatarPicker({ person, onChange, error }: AvatarPickerProps) {
           <span aria-hidden="true" className={readable ? 'text-sage' : 'text-warning'}>
             {readable ? '✓ ' : '⚠ '}
           </span>
-          Contraste {formatContrast(ratio)} :{' '}
+          {t("Contraste ")}{formatContrast(ratio)} :{' '}
           {readable ? 'lisible' : 'trop faible, il faut au moins 4,5 sur 1 pour enregistrer'}
         </p>
 

@@ -1,3 +1,4 @@
+import { useLanguage } from "../lib/useLanguage"
 import { useEffect, useRef } from 'react'
 import { useStore, ViewportPortal } from '@xyflow/react'
 import type { CommentPosition } from '../lib/commentsApi'
@@ -30,6 +31,7 @@ interface CommentPinsProps {
  * nœud. Pendant un geste d'outil, il devient transparent en entier.
  */
 export function CommentPins({ pins, onOpen, revealed, muted }: CommentPinsProps) {
+  useLanguage()
   const zoom = useStore((state) => state.transform[2])
   const buttons = useRef(new Map<string, HTMLButtonElement>())
 

@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { OpenedDocument } from '../model/document'
 import type { DocumentSaver } from '../lib/documentRepository'
 import type { AssignmentField } from '../lib/assignmentsApi'
@@ -49,6 +50,7 @@ export type EditorTarget =
       submissionId: string | null
       discussionDocumentId?: string
       label: string
+  labelMessage?: { source: string; values: readonly (string | number)[] }
       origin: EditorOrigin
       /** Travail suivi en direct : l'élève observé et son document. */
       live: { studentId: number; documentId: string } | null
@@ -68,6 +70,7 @@ export type EditorTarget =
       studentId: number
       documentId: string
       label: string
+  labelMessage?: { source: string; values: readonly (string | number)[] }
       origin: EditorOrigin
     }
 
@@ -159,8 +162,8 @@ export interface OpenedSession {
 }
 
 const FIELD_LABEL: Record<AssignmentField, string> = {
-  base: 'Base du devoir',
-  solution: 'Corrigé du devoir',
+  get base() { return t("Base du devoir") },
+  get solution() { return t("Corrigé du devoir") },
 }
 
 /** Ce que la barre de l'éditeur propose, selon ce qui est ouvert. */
@@ -181,7 +184,7 @@ export function editorChrome(target: EditorTarget): EditorChrome {
     case 'assignment':
       return {
         contentLabel: FIELD_LABEL[target.field],
-        backLabel: 'Retour au devoir',
+        backLabel: t("Retour au devoir"),
         canRename: false,
         documentActions: false,
         readOnly: false,
@@ -191,16 +194,16 @@ export function editorChrome(target: EditorTarget): EditorChrome {
       // on ne le renomme pas. Le serveur le réécrit de toute façon chaque
       // fois que l'élève reprend le devoir.
       return {
-        contentLabel: 'Devoir',
-        backLabel: 'Retour au devoir',
+        contentLabel: t("Devoir"),
+        backLabel: t("Retour au devoir"),
         canRename: false,
         documentActions: false,
         readOnly: false,
       }
     case 'review':
       return {
-        contentLabel: target.label,
-        backLabel: target.submissionId === null ? 'Retour au devoir' : 'Retour au rendu',
+        contentLabel: target.labelMessage ? t(target.labelMessage.source, target.labelMessage.values) : target.label,
+        backLabel: target.submissionId === null ? t("Retour au devoir") : t("Retour au rendu"),
         canRename: false,
         documentActions: false,
         readOnly: true,
@@ -213,8 +216,8 @@ export function editorChrome(target: EditorTarget): EditorChrome {
        * rien à faire ici.
        */
       return {
-        contentLabel: `Groupe « ${target.groupName} »`,
-        backLabel: 'Retour au groupe',
+        contentLabel: t("Groupe « {0} »", [target.groupName]),
+        backLabel: t("Retour au groupe"),
         canRename: false,
         documentActions: false,
         readOnly: false,
@@ -223,8 +226,8 @@ export function editorChrome(target: EditorTarget): EditorChrome {
       // Correction à deux : le prof écrit dans le modèle partagé, mais
       // c'est l'élève qui l'enregistre, et le titre reste le sien.
       return {
-        contentLabel: target.label,
-        backLabel: 'Retour au suivi',
+        contentLabel: target.labelMessage ? t(target.labelMessage.source, target.labelMessage.values) : target.label,
+        backLabel: t("Retour au suivi"),
         canRename: false,
         documentActions: false,
         readOnly: false,
@@ -241,7 +244,7 @@ export function editorChrome(target: EditorTarget): EditorChrome {
  * revient par la porte d'entrée, celle de la page d'origine.
  */
 export function returnTarget(target: EditorTarget): { page: ConnectedPage; opening: Opening } | null {
-  if (target.kind === 'document') {
+  if (target.kind === "document") {
     return null
   }
   if (target.kind === 'group') {
@@ -249,7 +252,7 @@ export function returnTarget(target: EditorTarget): { page: ConnectedPage; openi
       page: 'groups',
       opening: {
         page: 'groups',
-        group: { id: target.groupId, initial: null, message: null, tab: 'documents' },
+        group: { id: target.groupId, initial: null, message: null, tab: "documents" },
       },
     }
   }

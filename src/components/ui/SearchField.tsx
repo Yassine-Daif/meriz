@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useId, useRef } from 'react'
 
 interface SearchFieldProps {
@@ -20,6 +22,7 @@ interface SearchFieldProps {
  * début de la page.
  */
 export function SearchField({ label, value, onChange, placeholder, count }: SearchFieldProps) {
+  useLanguage()
   const inputId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -58,8 +61,7 @@ export function SearchField({ label, value, onChange, placeholder, count }: Sear
             }}
             className="shrink-0 rounded-control border border-line-strong bg-surface px-3 py-2 text-sm font-medium text-ink transition-colors duration-150 hover:bg-surface-soft hover:text-ink"
           >
-            Effacer
-          </button>
+            {t("Effacer")}</button>
         )}
       </div>
       <p role="status" aria-live="polite" className="mt-1 min-h-5 text-xs text-ink-soft">

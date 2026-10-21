@@ -1,3 +1,4 @@
+import { useLanguage } from "../../lib/useLanguage"
 import type { ReactNode } from 'react'
 
 /**
@@ -8,6 +9,7 @@ import type { ReactNode } from 'react'
  * navigateur, sans attribut à poser à la main.
  */
 export function MoreInfo({ summary, children }: { summary: string; children: ReactNode }) {
+  useLanguage()
   return (
     <details className="mt-2 rounded-lg border border-line bg-shell/60 px-3 py-2 text-sm">
       <summary className="cursor-pointer text-xs font-medium text-ink-soft">{summary}</summary>

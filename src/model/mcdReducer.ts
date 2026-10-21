@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type {
   Association,
   PropertyRef,
@@ -145,7 +146,7 @@ export function mcdReducer(state: McdEditorState, action: McdAction): McdEditorS
       const entity: Entity = {
         id: newId(),
         name: nextName(
-          'Entite',
+          t("Entite"),
           state.mcd.entities.map((e) => e.name),
         ),
         attributes: [{ propertyId: property.id, isIdentifier: true }],
@@ -164,7 +165,7 @@ export function mcdReducer(state: McdEditorState, action: McdAction): McdEditorS
       const association: Association = {
         id: newId(),
         name: nextName(
-          'Association',
+          t("Association"),
           state.mcd.associations.map((a) => a.name),
         ),
         attributes: [],

@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ApiClient, ApiError } from '../../lib/apiClient'
@@ -59,6 +61,7 @@ export function GroupView({
   onGone,
   onOpenGroupDocument,
 }: GroupViewProps) {
+  useLanguage()
   const [group, setGroup] = useState<GroupDetail | null>(initial)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [status, setStatus] = useState<{ kind: 'info' | 'error'; text: string } | null>(null)
@@ -67,7 +70,7 @@ export function GroupView({
   const [renaming, setRenaming] = useState(false)
   const [newName, setNewName] = useState('')
   const [renameError, setRenameError] = useState<string | undefined>()
-  const [tab, setTab] = useState<GroupTab>(openTab ?? 'membres')
+  const [tab, setTab] = useState<GroupTab>(openTab ?? "membres")
   const idBase = useId()
 
   // Posé après le montage : une zone live n'annonce que ce qui change.
@@ -88,7 +91,7 @@ export function GroupView({
     if (result.ok) {
       setGroup(result.value)
     } else if (result.error.kind === 'not_found') {
-      onGoneRef.current("Ce groupe n'est plus accessible.")
+      onGoneRef.current(t("Ce groupe n'est plus accessible."))
     } else {
       setLoadError(result.error.message)
     }
@@ -106,8 +109,8 @@ export function GroupView({
     const copied = await copyText(formatJoinCode(code))
     setStatus(
       copied
-        ? { kind: 'info', text: `Code ${formatJoinCode(code)} copié dans le presse-papiers.` }
-        : { kind: 'error', text: 'Copie impossible dans ce navigateur : recopiez le code affiché.' },
+        ? { kind: 'info', text: t("Code {0} copié dans le presse-papiers.", [formatJoinCode(code)]) }
+        : { kind: 'error', text: t("Copie impossible dans ce navigateur : recopiez le code affiché.") },
     )
   }
 
@@ -119,12 +122,12 @@ export function GroupView({
     if (action.kind === 'leave') {
       const result = await leaveGroup(client, group.id)
       setBusy(false)
-      if (result.ok) onGone(`Vous avez quitté le groupe « ${group.name} ».`)
+      if (result.ok) onGone(t("Vous avez quitté le groupe « {0} ».", [group.name]))
       else report(result.error, '')
     } else if (action.kind === 'delete') {
       const result = await deleteGroup(client, group.id)
       setBusy(false)
-      if (result.ok) onGone(`Groupe « ${group.name} » supprimé.`)
+      if (result.ok) onGone(t("Groupe « {0} » supprimé.", [group.name]))
       else report(result.error, '')
     } else if (action.kind === 'regenerate') {
       const result = await regenerateGroupCode(client, group.id)
@@ -132,7 +135,7 @@ export function GroupView({
       if (result.ok) setGroup(result.value)
       report(
         result.ok ? null : result.error,
-        `Nouveau code : ${formatJoinCode(result.ok ? (result.value.joinCode ?? '') : '')}. L'ancien ne fonctionne plus.`,
+        t("Nouveau code : {0}. L'ancien ne fonctionne plus.", [formatJoinCode(result.ok ? (result.value.joinCode ?? '') : '')]),
       )
     } else {
       const result = await removeGroupMember(client, group.id, action.member.id)
@@ -144,7 +147,7 @@ export function GroupView({
           membersCount: group.membersCount === null ? null : group.membersCount - 1,
         })
       }
-      report(result.ok ? null : result.error, `${displayName(action.member)} a été retiré du groupe.`)
+      report(result.ok ? null : result.error, t("{0} a été retiré du groupe.", [displayName(action.member)]))
     }
   }
 
@@ -187,7 +190,7 @@ export function GroupView({
       setGroup(result.value)
       focusRenameButton.current = true
       setRenaming(false)
-      setStatus({ kind: 'info', text: `Groupe renommé en « ${result.value.name} ».` })
+      setStatus({ kind: 'info', text: t("Groupe renommé en « {0} ».", [result.value.name]) })
     } else {
       setRenameError(result.error.fieldErrors.name?.[0] ?? result.error.message)
     }
@@ -203,13 +206,11 @@ export function GroupView({
             </span>
             {loadError}
             <Button size="sm" onClick={() => void load()}>
-              Réessayer
-            </Button>
+              {t("Réessayer")}</Button>
           </p>
         ) : (
           <p role="status" className="text-ink-soft">
-            Chargement du groupe…
-          </p>
+            {t("Chargement du groupe…")}</p>
         )}
       </div>
     )
@@ -218,28 +219,28 @@ export function GroupView({
   const admin = group.myRole === 'admin'
   const dialogText: Record<PendingAction['kind'], { title: string; message: string; confirm: string }> = {
     leave: {
-      title: 'Quitter le groupe',
-      message: `Quitter « ${group.name} » ? Vous perdrez l'accès à ses documents partagés. Pour revenir, il vous faudra de nouveau son code.`,
-      confirm: 'Quitter le groupe',
+      title: t("Quitter le groupe"),
+      message: t("Quitter « {0} » ? Vous perdrez l'accès à ses documents partagés. Pour revenir, il vous faudra de nouveau son code.", [group.name]),
+      confirm: t("Quitter le groupe"),
     },
     delete: {
-      title: 'Supprimer le groupe',
-      message: `Supprimer « ${group.name} » ? Ses documents partagés seront effacés pour tous. Cette action est définitive.`,
-      confirm: 'Supprimer le groupe',
+      title: t("Supprimer le groupe"),
+      message: t("Supprimer « {0} » ? Ses documents partagés seront effacés pour tous. Cette action est définitive.", [group.name]),
+      confirm: t("Supprimer le groupe"),
     },
     regenerate: {
-      title: 'Nouveau code',
+      title: t("Nouveau code"),
       message:
-        "Créer un nouveau code ? L'ancien code ne fonctionnera plus. Les membres actuels restent dans le groupe.",
-      confirm: 'Créer un nouveau code',
+        t("Créer un nouveau code ? L'ancien code ne fonctionnera plus. Les membres actuels restent dans le groupe."),
+      confirm: t("Créer un nouveau code"),
     },
     remove: {
-      title: 'Retirer un membre',
+      title: t("Retirer un membre"),
       message:
         pendingAction?.kind === 'remove'
-          ? `Retirer ${displayName(pendingAction.member)} du groupe ? La personne pourra revenir avec le code.`
+          ? t("Retirer {0} du groupe ? La personne pourra revenir avec le code.", [displayName(pendingAction.member)])
           : '',
-      confirm: 'Retirer du groupe',
+      confirm: t("Retirer du groupe"),
     },
   }
 
@@ -247,7 +248,7 @@ export function GroupView({
    * Un onglet de réglages reçu par un simple membre retombe sur les
    * membres : l'onglet n'existe pas pour lui.
    */
-  const shown: GroupTab = tab === 'reglages' && !admin ? 'membres' : tab
+  const shown: GroupTab = tab === 'reglages' && !admin ? "membres" : tab
 
   return (
     <div className="flex flex-col gap-5">
@@ -260,7 +261,7 @@ export function GroupView({
             >
               <div className="min-w-60 flex-1">
                 <FormField
-                  label="Nouveau nom du groupe"
+                  label={t("Nouveau nom du groupe")}
                   type="text"
                   value={newName}
                   onChange={setNewName}
@@ -270,19 +271,17 @@ export function GroupView({
                   inputRef={renameField}
                 />
               </div>
-              <Button type="submit" variant="primary" size="sm" loading={busy} loadingLabel="Enregistrement…">
-                Enregistrer
-              </Button>
+              <Button type="submit" variant="primary" size="sm" loading={busy} loadingLabel={t("Enregistrement…")}>
+                {t("Enregistrer")}</Button>
               <Button type="button" size="sm" onClick={stopRenaming}>
-                Annuler
-              </Button>
+                {t("Annuler")}</Button>
             </form>
           ) : (
             <>
               <h2 className="text-xl font-semibold tracking-tight text-ink">{group.name}</h2>
               <p className="mt-1 text-sm text-ink-soft">
-                {admin ? 'Vous avez créé ce groupe.' : 'Vous êtes membre de ce groupe.'}
-                {group.creator && !admin && ` Créé par ${displayName(group.creator)}.`}
+                {admin ? t("Vous avez créé ce groupe.") : t("Vous êtes membre de ce groupe.")}
+                {group.creator && !admin && t(" Créé par {0}.", [displayName(group.creator)])}
               </p>
             </>
           )}
@@ -290,8 +289,7 @@ export function GroupView({
         {admin && !renaming && (
           <span ref={renameButton}>
             <Button size="sm" onClick={startRenaming} disabled={busy}>
-              Renommer
-            </Button>
+              {t("Renommer")}</Button>
           </span>
         )}
       </div>
@@ -313,32 +311,32 @@ export function GroupView({
 
       {!admin && group.creator && (
         <div className="rounded-card border border-line bg-surface p-4 shadow-soft">
-          <PersonCard person={group.creator} extra="Créateur du groupe" />
+          <PersonCard person={group.creator} extra={t("Créateur du groupe")} />
         </div>
       )}
 
       <div>
         <Tabs
-          label="Sections du groupe"
+          label={t("Sections du groupe")}
           /*
            * Pas de compteur sur l'onglet : le titre du panneau porte
            * déjà « Membres (2) », et un compteur dans l'onglet entrerait
            * dans son nom lu, « Membres 2 ».
            */
           items={[
-            { value: 'membres' as const, label: 'Membres' },
-            { value: 'documents' as const, label: 'Documents' },
+            { value: 'membres' as const, label: t("Membres") },
+            { value: 'documents' as const, label: t("Documents") },
             // La gestion n'a de sens que pour le créateur : l'onglet
             // n'existe pas pour les autres, plutôt que de mener à un
             // panneau vide.
-            ...(admin ? [{ value: 'reglages' as const, label: 'Réglages' }] : []),
+            ...(admin ? [{ value: 'reglages' as const, label: t("Réglages") }] : []),
           ]}
           value={shown}
           onChange={setTab}
           idBase={idBase}
         />
 
-        {shown === 'membres' && (
+        {shown === "membres" && (
           <TabPanel idBase={idBase} value="membres">
             <GroupMembersPanel
               group={group}
@@ -349,7 +347,7 @@ export function GroupView({
           </TabPanel>
         )}
 
-        {shown === 'documents' && (
+        {shown === "documents" && (
           <TabPanel idBase={idBase} value="documents">
             <GroupDocumentsPanel
               client={client}

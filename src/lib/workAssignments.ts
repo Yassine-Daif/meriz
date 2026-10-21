@@ -1,3 +1,4 @@
+import { localeTag } from "../i18n/runtime"
 import type { StudentAssignmentRow } from './overviewApi'
 
 /**
@@ -29,11 +30,11 @@ export function pendingAssignments(rows: readonly StudentAssignmentRow[]): Stude
   return rows
     .filter((row) => row.state === 'todo' || row.state === 'started')
     .sort((a, b) => {
-      if (a.dueAt === null && b.dueAt === null) return a.title.localeCompare(b.title, 'fr')
+      if (a.dueAt === null && b.dueAt === null) return a.title.localeCompare(b.title, localeTag())
       if (a.dueAt === null) return 1
       if (b.dueAt === null) return -1
       const ecart = a.dueAt.localeCompare(b.dueAt)
-      return ecart === 0 ? a.title.localeCompare(b.title, 'fr') : ecart
+      return ecart === 0 ? a.title.localeCompare(b.title, localeTag()) : ecart
     })
 }
 

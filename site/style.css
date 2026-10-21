@@ -321,3 +321,10 @@ html.js .mz-menu[hidden]{display:none}
 /* Sans script, le menu des petits écrans reste ouvert : c'est alors
    une simple liste de liens, et la navigation ne disparaît pas. */
 html:not(.js) .mz-menu[hidden]{display:block !important}
+
+/* Choix de langue toujours visible ; le thème reste dans le menu mobile. */
+.mz-language { display: inline-flex; flex-shrink: 0; gap: 2px; border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.mz-language a { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; min-height: 34px; border-radius: 999px; color: var(--muted); font-size: 12px; font-weight: 600; text-decoration: none; }
+.mz-language a[aria-current] { color: #fff; background: var(--accent); }
+@media (max-width: 1100px) { .mz-navlinks { display: none !important; } .mz-hide-sm { display: none !important; } .mz-burger { display: inline-flex !important; } }
+@media (max-width: 820px) { .mz-nav > .mz-wrap > .mz-tg { display: none; } .mz-nav > .mz-wrap { gap: 10px !important; } }

@@ -10,6 +10,8 @@ Vous dessinez le modèle conceptuel (MCD). Meriz le vérifie, puis en tire le mo
 - Version web : https://app.meriz.fr/
 - Logiciel à installer : https://meriz.fr/telecharger.html
 
+L’application et le site sont disponibles en français et en anglais ([site anglais](https://meriz.fr/en/)). La langue se choisit dans « Préférences » et reste mémorisée sur l’appareil, sans modifier les documents. Voir [la documentation des langues](docs/langues.md).
+
 ## Modéliser, vérifier et générer
 
 - **Dictionnaire des propriétés.** Chaque donnée est définie une seule fois, avec son type conceptuel, puis placée dans une entité ou une association. Les types SQL restent au niveau physique.
@@ -33,7 +35,7 @@ Pour démarrer, le bouton « Découvrir avec l'exemple » ouvre le modèle Clien
 - **Accès au compte.** Vérification de l'adresse email, renvoi du lien de vérification et réinitialisation d'un mot de passe oublié par email.
 - **Profil.** Prénom, nom, pastille personnalisée, présentation et contact. La présentation et le contact se partagent au choix avec les classes. L'email de connexion reste privé.
 - **Mes données.** Export des données du compte en JSON et suppression définitive du compte après confirmation du mot de passe. Les médias envoyés figurent dans l'export par leur adresse de téléchargement, pas par une copie des fichiers.
-- **Thème et confort.** Thème clair, sombre ou celui du système, taille de l'interface réglable, navigation au clavier et focus visible. Le bouton « Effets » active ou désactive les animations. Le choix est mémorisé sur l'appareil et respecte la réduction des mouvements du système.
+- **Thème et confort.** Thème clair, sombre ou celui du système, taille de l'interface réglable, navigation au clavier et focus visible. Les préférences regroupent la langue, le thème, la taille et l’activation des animations. Le choix est mémorisé sur l'appareil et respecte la réduction des mouvements du système.
 
 ## Enseigner et apprendre en classe
 

@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { ViewportPortal } from '@xyflow/react'
 import { displayName } from '../lib/authApi'
 import type { RemotePresence } from '../model/collabProvider'
@@ -25,6 +27,7 @@ export function RemoteCursors({
   /** Faux entre pairs d'un groupe. */
   teacherTag?: boolean
 }) {
+  useLanguage()
   const visible = others.filter((other) => other.cursor !== null)
   if (visible.length === 0) {
     return null
@@ -33,7 +36,7 @@ export function RemoteCursors({
   return (
     <ViewportPortal>
       {visible.map((other) => {
-        const name = displayName(other.user) || 'Participant'
+        const name = displayName(other.user) || t("Participant")
         const teacher = teacherTag && other.user.role === 'teacher'
         return (
           <div
@@ -67,7 +70,7 @@ export function RemoteCursors({
               className="-mt-0.5 ml-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap shadow-lift"
             >
               {name}
-              {teacher && <span className="text-nano font-bold tracking-wide uppercase opacity-80">prof</span>}
+              {teacher && <span className="text-nano font-bold tracking-wide uppercase opacity-80">{t("prof")}</span>}
             </span>
           </div>
         )

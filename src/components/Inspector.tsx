@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import type { Dispatch, ReactNode } from 'react'
 import type { Mcd } from '../model/mcd'
 import type { McdAction } from '../model/mcdReducer'
@@ -20,20 +22,21 @@ interface InspectorProps {
  * quand la sélection compte exactement un élément.
  */
 export function Inspector({ mcd, selection, dispatch, readOnly = false }: InspectorProps) {
+  useLanguage()
   const selectedCount = selection.nodeIds.size + selection.edgeIds.size
 
   let content: ReactNode = (
     <p className="text-sm text-ink-soft">
-      Sélectionnez une entité, une association ou une patte pour {readOnly ? 'voir son détail' : "l'éditer"}.
+      {t("Sélectionnez une entité, une association ou une patte pour ")}{readOnly ? t("voir son détail") : t("l'éditer")}.
     </p>
   )
   if (selectedCount > 1) {
     content = (
       <p className="text-sm text-ink-soft">
-        {selectedCount} éléments sélectionnés.{' '}
+        {selectedCount} {t(" éléments sélectionnés.")}{' '}
         {readOnly
-          ? "Sélectionnez un seul élément pour voir son détail."
-          : "Déplacez-les ensemble, ou Suppr pour tout supprimer. Sélectionnez un seul élément pour l'éditer."}
+          ? t("Sélectionnez un seul élément pour voir son détail.")
+          : t("Déplacez-les ensemble, ou Suppr pour tout supprimer. Sélectionnez un seul élément pour l'éditer.")}
       </p>
     )
   }
@@ -62,7 +65,7 @@ export function Inspector({ mcd, selection, dispatch, readOnly = false }: Inspec
   // En consultation, un fieldset désactivé neutralise d'un seul attribut
   // tous les champs et boutons du formulaire affiché.
   return (
-    <section aria-label="Inspecteur" className="border-b border-line p-3">
+    <section aria-label={t("Inspecteur")} className="border-b border-line p-3">
       {readOnly ? (
         <fieldset disabled className="min-w-0 border-0 p-0">
           {content}

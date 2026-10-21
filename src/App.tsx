@@ -1,3 +1,5 @@
+import { t } from "./i18n/runtime"
+import { useLanguage } from "./lib/useLanguage"
 import { lazy, Suspense, useCallback, useState } from 'react'
 import { browserStorage } from './lib/browserStorage'
 import { createLocalRepository } from './lib/documentRepository'
@@ -50,6 +52,7 @@ import { useLiveObservation } from './components/useLiveObservation'
  * les documents du compte connecté, ou ceux de cet appareil.
  */
 export function App() {
+  useLanguage()
   const { session, account, notice, clearNotice } = useSession()
 
   // Espace local, inchangé sans compte : l'ancien plan de travail
@@ -341,7 +344,7 @@ export function App() {
               onShowClasses={() => navigate('classes')}
               onAccountDeleted={() =>
                 setHomeAnnouncement(
-                  'Votre compte a été supprimé. Vos documents de cet appareil sont toujours là.',
+                  t("Votre compte a été supprimé. Vos documents de cet appareil sont toujours là."),
                 )
               }
             />
@@ -413,6 +416,7 @@ export function App() {
             documentId: target.live!.documentId,
             name: current.document.meta.name,
             label: target.label,
+            labelMessage: target.labelMessage ? { ...target.labelMessage, source: "Travail de {0}, correction à deux" } : undefined,
           })
         }
       : undefined

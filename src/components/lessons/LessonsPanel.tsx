@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useCallback, useEffect, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import { createLesson, getLesson, lessonStateLabel, listClassroomLessons, mediaCountLabel } from '../../lib/lessonsApi'
@@ -26,6 +28,7 @@ type View = { kind: 'list' } | { kind: 'create' } | { kind: 'edit'; lesson: Less
  * ont besoin d'un cours existant pour être envoyés.
  */
 export function LessonsPanel({ client, classroomId, classroomName }: LessonsPanelProps) {
+  useLanguage()
   const [lessons, setLessons] = useState<LessonSummary[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [view, setView] = useState<View>({ kind: 'list' })
@@ -80,7 +83,7 @@ export function LessonsPanel({ client, classroomId, classroomName }: LessonsPane
     }
     const message = result.error.fieldErrors.title?.[0]
     setTitleError(message)
-    setFormError(message ? 'Vérifiez le titre.' : result.error.message)
+    setFormError(message ? t("Vérifiez le titre.") : result.error.message)
     setAttempt((count) => count + 1)
   }
 
@@ -105,31 +108,28 @@ export function LessonsPanel({ client, classroomId, classroomName }: LessonsPane
     return (
       <div>
         <BackButton
-          label="Retour aux cours"
+          label={t("Retour aux cours")}
           onClick={() => setView({ kind: 'list' })}
           className="-ml-3 mb-3"
         />
-        <h3 className="text-xl font-semibold tracking-tight text-ink">Créer un cours</h3>
+        <h3 className="text-xl font-semibold tracking-tight text-ink">{t("Créer un cours")}</h3>
         <p className="mt-1 text-sm text-ink-soft">
-          Classe {classroomName}. Donnez un titre, puis composez la page : le cours reste en brouillon tant que vous ne
-          l’avez pas publié.
-        </p>
+          {t("Classe ")}{classroomName}{t(". Donnez un titre, puis composez la page : le cours reste en brouillon tant que vous ne l’avez pas publié.")}</p>
         <div className="mt-5 flex max-w-md flex-col gap-4">
           <FormAlert message={formError} attempt={attempt} />
           <FormField
-            label="Titre du cours"
+            label={t("Titre du cours")}
             type="text"
             value={title}
             onChange={setTitle}
             autoComplete="off"
             maxLength={200}
-            hint="Ce que vos élèves verront dans la liste."
+            hint={t("Ce que vos élèves verront dans la liste.")}
             error={titleError}
           />
           <div>
-            <Button variant="primary" onClick={() => void create()} loading={pending} loadingLabel="Création…">
-              Créer le cours
-            </Button>
+            <Button variant="primary" onClick={() => void create()} loading={pending} loadingLabel={t("Création…")}>
+              {t("Créer le cours")}</Button>
           </div>
         </div>
       </div>
@@ -140,13 +140,11 @@ export function LessonsPanel({ client, classroomId, classroomName }: LessonsPane
     <section aria-labelledby="cours-titre">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 id="cours-titre" className="text-base font-semibold text-ink">
-          Cours de la classe
-          {lessons && lessons.length > 0 && <span className="font-normal text-ink-soft"> ({lessons.length})</span>}
+          {t("Cours de la classe")}{lessons && lessons.length > 0 && <span className="font-normal text-ink-soft"> ({lessons.length})</span>}
         </h3>
         <Button variant="primary" onClick={() => setView({ kind: 'create' })}>
           <span aria-hidden="true">+</span>
-          Créer un cours
-        </Button>
+          {t("Créer un cours")}</Button>
       </div>
 
       <p role="status" aria-live="polite" className="mt-2 min-h-5 text-sm text-ink-soft">
@@ -159,20 +157,17 @@ export function LessonsPanel({ client, classroomId, classroomName }: LessonsPane
           announce={false}
           action={
             <Button size="sm" onClick={() => void load()}>
-              Réessayer
-            </Button>
+              {t("Réessayer")}</Button>
           }
         >
           {loadError}
         </Notice>
       ) : lessons === null ? (
         <p role="status" className="text-sm text-ink-soft">
-          Chargement des cours…
-        </p>
+          {t("Chargement des cours…")}</p>
       ) : lessons.length === 0 ? (
         <p className="rounded-card border border-dashed border-line-strong bg-surface-soft p-6 text-center text-sm text-ink-soft">
-          Aucun cours pour l’instant : créez le premier, il restera en brouillon tant que vous ne l’aurez pas publié.
-        </p>
+          {t("Aucun cours pour l’instant : créez le premier, il restera en brouillon tant que vous ne l’aurez pas publié.")}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {lessons.map((lesson) => (
@@ -181,7 +176,7 @@ export function LessonsPanel({ client, classroomId, classroomName }: LessonsPane
                 type="button"
                 onClick={() => void open(lesson.id)}
                 disabled={opening !== null}
-                aria-label={`Ouvrir le cours ${lesson.title}`}
+                aria-label={t("Ouvrir le cours {0}", [lesson.title])}
                 className="flex w-full flex-col items-start gap-1.5 rounded-card border border-line bg-surface p-4 text-left shadow-soft transition duration-150 hover:shadow-lift disabled:cursor-wait motion-safe:hover:-translate-y-0.5"
               >
                 <span className="flex w-full flex-wrap items-center justify-between gap-2">

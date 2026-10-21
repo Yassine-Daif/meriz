@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useState } from 'react'
 import type { ApiClient, ApiError } from '../lib/apiClient'
 import type { DocumentRepository } from '../lib/documentRepository'
@@ -11,8 +13,8 @@ import { Segmented } from './ui/Segmented'
 type WorkTab = 'personal' | 'class'
 
 const TABS = [
-  { value: 'personal', label: 'Personnel' },
-  { value: 'class', label: 'Travail de classe' },
+  { value: 'personal', get label() { return t("Personnel") } },
+  { value: 'class', get label() { return t("Travail de classe") } },
 ] as const
 
 interface WorkPageProps {
@@ -46,23 +48,24 @@ export function WorkPage({
   onOpenWorkDocument,
   onOpenReadOnlyModel,
 }: WorkPageProps) {
+  useLanguage()
   // Revenir de l'outil sur un devoir ramène à l'onglet qui l'a ouvert.
   const [tab, setTab] = useState<WorkTab>(openAssignmentId === null ? 'personal' : 'class')
   const { assignments } = useMyAssignments(client, student)
 
   return (
     <PageShell
-      title="Mon travail"
-      description="Vos documents sont enregistrés dans votre compte et vous suivent partout."
+      title={t("Mon travail")}
+      description={t("Vos documents sont enregistrés dans votre compte et vous suivent partout.")}
     >
-      <Segmented<WorkTab> legend="Afficher" hideLegend options={TABS} value={tab} onChange={setTab} />
+      <Segmented<WorkTab> legend={t("Afficher")} hideLegend options={TABS} value={tab} onChange={setTab} />
 
       <div className="mt-6">
         {tab === 'personal' ? (
           <DocumentList
             repository={repository}
             cloud
-            heading="Documents personnels"
+            heading={t("Documents personnels")}
             assignments={assignments}
             onOpenDocument={onOpenDocument}
             onNewDocument={onNewDocument}

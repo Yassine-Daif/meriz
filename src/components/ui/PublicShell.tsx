@@ -1,12 +1,12 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
-import { UiScaleControl } from '../UiScaleControl'
+import { PreferencesControl } from './PreferencesControl'
 import { BackButton } from './BackButton'
 import { Card } from './Card'
 import { Lockup } from './Lockup'
 import { SkipLink } from './SkipLink'
-import { EffectsControl } from './EffectsControl'
-import { ThemeToggle } from './ThemeToggle'
 
 interface PublicShellProps {
   title: string
@@ -29,10 +29,11 @@ export function PublicShell({
   title,
   lede,
   onBack,
-  backLabel = "Retour à l'accueil",
+  backLabel = t("Retour à l'accueil"),
   focusKey,
   children,
 }: PublicShellProps) {
+  useLanguage()
   const headingRef = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
@@ -44,12 +45,10 @@ export function PublicShell({
       <SkipLink />
 
       <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line bg-surface px-4 py-2.5 sm:px-6">
-        <Lockup size={30} label="Meriz" />
+        <Lockup size={30} label={t("Meriz")} />
         {onBack && <BackButton label={backLabel} onClick={onBack} />}
         <div className="ml-auto flex flex-wrap items-center gap-3">
-          <ThemeToggle />
-          <EffectsControl />
-          <UiScaleControl />
+          <PreferencesControl />
         </div>
       </header>
 

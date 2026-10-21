@@ -1,3 +1,6 @@
+import { counted } from "../lib/plural"
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useMemo, useState } from 'react'
 import type { Dispatch } from 'react'
 import { ConfirmDialog } from './ConfirmDialog'
@@ -19,25 +22,25 @@ type SortKey = 'name' | 'type' | 'size' | 'used' | 'placement'
 type SortDirection = 'asc' | 'desc'
 
 const COLUMNS: readonly { key: SortKey; label: string }[] = [
-  { key: 'name', label: 'Propriété' },
-  { key: 'type', label: 'Type' },
-  { key: 'size', label: 'Taille' },
-  { key: 'used', label: 'Utilisée' },
-  { key: 'placement', label: 'Placement' },
+  { key: 'name', get label() { return t("Propriété") } },
+  { key: 'type', get label() { return t("Type") } },
+  { key: 'size', get label() { return t("Taille") } },
+  { key: 'used', get label() { return t("Utilisée") } },
+  { key: 'placement', get label() { return t("Placement") } },
 ]
 
-function compareRows(a: DictionaryRow, b: DictionaryRow, key: SortKey): number {
+function compareRows(a: DictionaryRow, b: DictionaryRow, key: SortKey, locale: string): number {
   switch (key) {
     case 'name':
-      return a.property.name.localeCompare(b.property.name, 'fr')
+      return a.property.name.localeCompare(b.property.name, locale)
     case 'type':
-      return a.property.type.localeCompare(b.property.type, 'fr')
+      return a.property.type.localeCompare(b.property.type, locale)
     case 'size':
       return (a.property.size ?? 0) - (b.property.size ?? 0)
     case 'used':
       return Number(b.used) - Number(a.used)
     case 'placement':
-      return a.placementLabel.localeCompare(b.placementLabel, 'fr')
+      return a.placementLabel.localeCompare(b.placementLabel, locale)
   }
 }
 
@@ -54,6 +57,7 @@ interface DictionaryViewProps {
  * associations la référencent. Une propriété peut rester non placée.
  */
 export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryViewProps) {
+  const locale = useLanguage()
   const [sortKey, setSortKey] = useState<SortKey>('name')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
 
@@ -61,9 +65,9 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
     const all: DictionaryRow[] = mcd.properties.map((property) => {
       const placement = findPlacement(mcd, property.id)
       if (!placement) {
-        return { property, used: false, placementLabel: 'non placée', isIdentifier: false }
+        return { property, used: false, placementLabel: t("non placée"), isIdentifier: false }
       }
-      const kindLabel = placement.kind === 'entity' ? 'Entité' : 'Association'
+      const kindLabel = placement.kind === 'entity' ? t("Entité") : t("Association")
       const isIdentifier = placement.owner.attributes.some(
         (ref) => ref.propertyId === property.id && ref.isIdentifier,
       )
@@ -75,8 +79,8 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
       }
     })
     const direction = sortDirection === 'asc' ? 1 : -1
-    return all.sort((a, b) => direction * compareRows(a, b, sortKey))
-  }, [mcd, sortKey, sortDirection])
+    return all.sort((a, b) => direction * compareRows(a, b, sortKey, locale))
+  }, [mcd, sortKey, sortDirection, locale])
 
   const toggleSort = (key: SortKey) => {
     if (key === sortKey) {
@@ -117,30 +121,26 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
   }
 
   return (
-    <section aria-label="Dictionnaire des données" className="flex min-h-0 flex-1 flex-col">
+    <section aria-label={t("Dictionnaire des données")} className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center gap-3 border-b border-line bg-surface px-4 py-2">
         {!readOnly && (
           <Button size="sm" onClick={() => dispatch({ type: 'ADD_PROPERTY' })}>
-            Ajouter une propriété
-          </Button>
+            {t("Ajouter une propriété")}</Button>
         )}
         <p className="text-xs text-ink-soft">
-          {rows.length} propriété{rows.length > 1 ? 's' : ''} au dictionnaire
-        </p>
+          {counted(rows.length, 'propriété au dictionnaire', 'propriétés au dictionnaire')}</p>
       </div>
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {rows.length === 0 ? (
           <p className="text-sm text-ink-soft">
             {readOnly
-              ? 'Aucune propriété au dictionnaire de ce modèle.'
-              : 'Aucune propriété. Ajoutez-en une ici ou construisez le MCD, chaque attribut créé entre au dictionnaire.'}
+              ? t("Aucune propriété au dictionnaire de ce modèle.")
+              : t("Aucune propriété. Ajoutez-en une ici ou construisez le MCD, chaque attribut créé entre au dictionnaire.")}
           </p>
         ) : (
           <table className="w-full border-separate border-spacing-0 rounded-card border border-line bg-surface text-sm shadow-soft">
             <caption className="sr-only">
-              La liste maîtresse des propriétés : nom, type conceptuel, taille, utilisation
-              dans le MCD et placement
-            </caption>
+              {t("La liste maîtresse des propriétés : nom, type conceptuel, taille, utilisation dans le MCD et placement")}</caption>
             <thead>
               <tr>
                 {COLUMNS.map((column) => (
@@ -169,7 +169,7 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
                   </th>
                 ))}
                 <th scope="col" className="rounded-tr-lg border-b border-line bg-shell px-3 py-2">
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">{t("Actions")}</span>
                 </th>
               </tr>
             </thead>
@@ -179,7 +179,7 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
                   <td className="border-b border-line px-3 py-1.5">
                     <input
                       type="text"
-                      aria-label={`Nom de la propriété ${row.property.name}`}
+                      aria-label={t("Nom de la propriété {0}", [row.property.name])}
                       value={row.property.name}
                       disabled={readOnly}
                       onChange={(event) =>
@@ -194,7 +194,7 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
                   </td>
                   <td className="border-b border-line px-3 py-1.5">
                     <select
-                      aria-label={`Type de la propriété ${row.property.name}`}
+                      aria-label={t("Type de la propriété {0}", [row.property.name])}
                       value={row.property.type}
                       disabled={readOnly}
                       onChange={(event) =>
@@ -208,7 +208,7 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
                     >
                       {ATTRIBUTE_TYPES.map((type) => (
                         <option key={type} value={type}>
-                          {type}
+                          {t(type)}
                         </option>
                       ))}
                     </select>
@@ -217,8 +217,8 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
                     <input
                       type="number"
                       min={1}
-                      placeholder="défaut"
-                      aria-label={`Taille de la propriété ${row.property.name} (nombre de caractères, vide = défaut)`}
+                      placeholder={t("défaut")}
+                      aria-label={t("Taille de la propriété {0} (nombre de caractères, vide = défaut)", [row.property.name])}
                       value={row.property.size ?? ''}
                       disabled={readOnly}
                       onChange={(event) => updateSize(row.property.id, event.target.value)}
@@ -228,10 +228,9 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
                   <td className="border-b border-line px-3 py-1.5">
                     {row.used ? (
                       <span className="text-sage">
-                        <span aria-hidden="true">✓ </span>oui
-                      </span>
+                        <span aria-hidden="true">✓ </span>{t("oui")}</span>
                     ) : (
-                      <span className="text-ink-soft">non</span>
+                      <span className="text-ink-soft">{t("non")}</span>
                     )}
                   </td>
                   <td className="border-b border-line px-3 py-1.5">
@@ -240,23 +239,22 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
                         {row.placementLabel}
                         {row.isIdentifier && (
                           <span className="ml-1.5 rounded-sm border border-line bg-accent-soft px-1 font-mono text-micro font-medium text-accent-ink">
-                            clé
-                          </span>
+                            {t("clé")}</span>
                         )}
                       </>
                     ) : (
-                      <span className="text-ink-soft">non placée</span>
+                      <span className="text-ink-soft">{t("non placée")}</span>
                     )}
                   </td>
                   <td className="border-b border-line px-3 py-1.5 text-right">
                     {!readOnly && (
                     <button
                       type="button"
-                      aria-label={`Supprimer la propriété ${row.property.name} du dictionnaire`}
+                      aria-label={t("Supprimer la propriété {0} du dictionnaire", [row.property.name])}
                       title={
                         row.used
-                          ? 'Placée dans le MCD : demandera confirmation pour la retirer puis la supprimer'
-                          : 'Supprimer du dictionnaire'
+                          ? t("Placée dans le MCD : demandera confirmation pour la retirer puis la supprimer")
+                          : t("Supprimer du dictionnaire")
                       }
                       onClick={() => deleteProperty(row)}
                       className="rounded-control border border-line-strong px-1.5 py-0.5 text-sm hover:bg-surface-soft"
@@ -273,9 +271,9 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
       </div>
       <ConfirmDialog
         open={pendingDelete !== null}
-        title="Propriété utilisée dans le MCD"
-        message={`« ${pendingDelete?.property.name ?? ''} » est placée dans ${pendingDelete?.placementLabel ?? ''}. La retirer puis la supprimer du dictionnaire ? Vous pourrez annuler avec Ctrl+Z.`}
-        confirmLabel="Oui, supprimer"
+        title={t("Propriété utilisée dans le MCD")}
+        message={t("« {0} » est placée dans {1}. La retirer puis la supprimer du dictionnaire ? Vous pourrez annuler avec Ctrl+Z.", [pendingDelete?.property.name ?? '', pendingDelete?.placementLabel ?? ''])}
+        confirmLabel={t("Oui, supprimer")}
         onConfirm={confirmPendingDelete}
         onCancel={() => setPendingDelete(null)}
       />

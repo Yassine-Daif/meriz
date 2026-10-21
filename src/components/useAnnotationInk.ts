@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CollabInk } from '../model/collabProvider'
 import { registerUpdateGuard } from '../lib/updateSafety'
@@ -12,6 +14,7 @@ export function useAnnotationInk(options: {
   onPublish?: (ink: CollabInk | null) => void
   onSave: (points: InkPoint[]) => Promise<string | null>
 }) {
+  useLanguage()
   const { onPublish } = options
   const [duration, setDuration] = useState<InkDuration>('short')
   const [preview, setPreview] = useState<CollabInk | null>(null)
@@ -47,10 +50,10 @@ export function useAnnotationInk(options: {
     if (!stroke || saving.current.has(id)) return
     saving.current.add(id)
     let failure: string | null
-    try { failure = await current.current.onSave(stroke) } catch { failure = 'Connexion interrompue.' }
+    try { failure = await current.current.onSave(stroke) } catch { failure = t("Connexion interrompue.") }
     saving.current.delete(id)
     if (!alive.current) return
-    if (failure) setError('Trait non enregistré : '+failure+' Vous pouvez réessayer sans le redessiner.')
+    if (failure) setError(t("Trait non enregistré : ")+failure+t(" Vous pouvez réessayer sans le redessiner."))
     else {
       pending.current.delete(id)
       trails.current = trails.current.filter((trail) => trail.id !== id)
@@ -63,7 +66,7 @@ export function useAnnotationInk(options: {
     if (!current.current.enabled) return
     if (next !== null) {
       if (current.current.duration === 'saved' && pending.current.size >= 10) {
-        setError('Dix traits attendent leur sauvegarde. Réessayez avant de continuer à dessiner.')
+        setError(t("Dix traits attendent leur sauvegarde. Réessayez avant de continuer à dessiner."))
         return
       }
       points.current = next

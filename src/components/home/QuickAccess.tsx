@@ -1,3 +1,6 @@
+import { counted } from "../../lib/plural"
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import type { ClassroomSummary } from '../../lib/classroomsApi'
 import type { GroupSummary } from '../../lib/groupsApi'
 import { Card } from '../ui/Card'
@@ -17,6 +20,7 @@ interface QuickAccessProps {
 }
 
 function Entry({ name, detail, onOpen, label }: { name: string; detail: string; onOpen: () => void; label: string }) {
+  useLanguage()
   return (
     <li>
       <button
@@ -34,7 +38,7 @@ function Entry({ name, detail, onOpen, label }: { name: string; detail: string; 
 
 function membersDetail(count: number | null): string {
   if (count === null) return ''
-  return count > 1 ? `${count} membres` : `${count} membre`
+  return counted(count, 'membre', 'membres')
 }
 
 /**
@@ -51,20 +55,19 @@ export function QuickAccess({
   onShowGroups,
   emptyClassesText,
 }: QuickAccessProps) {
+  useLanguage()
   const linkClass = 'rounded-control text-sm font-medium text-accent-ink underline underline-offset-2'
 
   return (
     <Card as="section" aria-labelledby="acces-titre">
       <h2 id="acces-titre" className="text-base font-semibold text-ink">
-        Accès rapide
-      </h2>
+        {t("Accès rapide")}</h2>
 
       <div className="mt-3">
-        <h3 className="text-xs font-semibold tracking-wide text-ink-soft uppercase">Classes</h3>
+        <h3 className="text-xs font-semibold tracking-wide text-ink-soft uppercase">{t("Classes")}</h3>
         {classrooms === null ? (
           <p role="status" className="mt-1.5 text-sm text-ink-soft">
-            Chargement de vos classes…
-          </p>
+            {t("Chargement de vos classes…")}</p>
         ) : classrooms.length === 0 ? (
           <p className="mt-1.5 text-sm text-ink-soft">{emptyClassesText}</p>
         ) : (
@@ -75,26 +78,23 @@ export function QuickAccess({
                 name={classroom.name}
                 detail={membersDetail(classroom.membersCount)}
                 onOpen={() => onOpenClassroom(classroom.id)}
-                label={`Ouvrir la classe ${classroom.name}`}
+                label={t("Ouvrir la classe {0}", [classroom.name])}
               />
             ))}
           </ul>
         )}
         <button type="button" onClick={onShowClasses} className={`mt-2 ${linkClass}`}>
-          Voir toutes mes classes
-        </button>
+          {t("Voir toutes mes classes")}</button>
       </div>
 
       <div className="mt-5">
-        <h3 className="text-xs font-semibold tracking-wide text-ink-soft uppercase">Groupes</h3>
+        <h3 className="text-xs font-semibold tracking-wide text-ink-soft uppercase">{t("Groupes")}</h3>
         {groups === null ? (
           <p role="status" className="mt-1.5 text-sm text-ink-soft">
-            Chargement de vos groupes…
-          </p>
+            {t("Chargement de vos groupes…")}</p>
         ) : groups.length === 0 ? (
           <p className="mt-1.5 text-sm text-ink-soft">
-            Aucun groupe pour l’instant. Créez-en un pour travailler à plusieurs sur les mêmes modèles.
-          </p>
+            {t("Aucun groupe pour l’instant. Créez-en un pour travailler à plusieurs sur les mêmes modèles.")}</p>
         ) : (
           <ul className="mt-1.5 -mx-2 flex flex-col">
             {groups.slice(0, SHOWN).map((group) => (
@@ -103,14 +103,13 @@ export function QuickAccess({
                 name={group.name}
                 detail={membersDetail(group.membersCount)}
                 onOpen={() => onOpenGroup(group.id)}
-                label={`Ouvrir le groupe ${group.name}`}
+                label={t("Ouvrir le groupe {0}", [group.name])}
               />
             ))}
           </ul>
         )}
         <button type="button" onClick={onShowGroups} className={`mt-2 ${linkClass}`}>
-          Voir tous mes groupes
-        </button>
+          {t("Voir tous mes groupes")}</button>
       </div>
     </Card>
   )

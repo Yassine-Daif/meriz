@@ -1,3 +1,4 @@
+import { useLanguage } from "../../lib/useLanguage"
 import type { ReactNode } from 'react'
 
 interface CardProps {
@@ -14,6 +15,7 @@ interface CardProps {
 
 /** Carte arrondie, ombre douce et chaude. */
 export function Card({ as: Tag = 'div', tone = 'default', lift = false, className, children, ...aria }: CardProps) {
+  useLanguage()
   const classes = [
     'rounded-card border border-line p-5 shadow-soft',
     tone === 'soft' ? 'bg-surface-soft' : 'bg-surface',

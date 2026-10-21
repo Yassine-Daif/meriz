@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 /**
  * Adresse du serveur Meriz, lue dans la variable d'environnement
  * VITE_API_URL (origine du serveur, sans /api). Jamais écrite en dur :
@@ -32,7 +33,7 @@ export function getApiBaseUrl(): string | null {
   if (url === null && !warned) {
     warned = true
     console.warn(
-      'Meriz : VITE_API_URL absente ou invalide, les comptes sont désactivés. Voir .env.example.',
+      t("Meriz : VITE_API_URL absente ou invalide, les comptes sont désactivés. Voir .env.example."),
     )
   }
   return url

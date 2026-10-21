@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useId } from 'react'
 import type { Dispatch } from 'react'
 import type { Entity, Mcd } from '../model/mcd'
@@ -13,14 +15,14 @@ interface EntityFormProps {
 
 /** Formulaire d'édition d'une entité : nom et attributs. */
 export function EntityForm({ mcd, entity, dispatch }: EntityFormProps) {
+  useLanguage()
   const nameId = useId()
   return (
     <form onSubmit={(event) => event.preventDefault()} className="flex flex-col gap-3">
-      <h2 className="text-sm font-semibold">Entité</h2>
+      <h2 className="text-sm font-semibold">{t("Entité")}</h2>
       <div>
         <label htmlFor={nameId} className="block text-xs font-medium text-ink-soft">
-          Nom
-        </label>
+          {t("Nom")}</label>
         <input
           id={nameId}
           type="text"

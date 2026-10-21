@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { buttonClass } from './buttonClass'
 
 interface BackButtonProps {
@@ -22,13 +24,14 @@ interface BackButtonProps {
  * masquée aux lecteurs d'écran, et c'est le libellé qui nomme le bouton.
  */
 export function BackButton({
-  label = 'Retour',
+  label = t("Retour"),
   onClick,
   framed = false,
   className,
   title,
   'aria-label': ariaLabel,
 }: BackButtonProps) {
+  useLanguage()
   const base = buttonClass({ variant: framed ? 'secondary' : 'ghost', size: 'sm' })
   return (
     <button

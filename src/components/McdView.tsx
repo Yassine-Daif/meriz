@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Icon } from './ui/Icon'
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
+import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import type { Dispatch, KeyboardEvent, PointerEvent, ReactNode, SetStateAction } from 'react'
 import type { McdAction, McdEditorState } from '../model/mcdReducer'
 import type { RemotePresence, CollabSelectionBox } from '../model/collabProvider'
@@ -95,6 +98,10 @@ export function McdView({
   onCommentsChanged,
   onInkStroke,
 }: McdViewProps) {
+  useLanguage()
+  const panelId = useId()
+  const panelButtonId = useId()
+  const [panelOpen, setPanelOpen] = useState(false)
   const [panelWidth, setPanelWidth] = useState(300)
   const [commentDraft, setCommentDraft] = useState(false)
   const [threadOpen, setThreadOpen] = useState(false)
@@ -110,8 +117,8 @@ export function McdView({
   const thread = useComments({ access: comments ?? null, watching: isActive, version: commentsVersion, onChanged: onCommentsChanged })
   const addComment = thread.add
   const saveInk = useCallback(async (points: InkPoint[]) => {
-    if (!comments) return 'Ce document ne permet pas de conserver des annotations.'
-    const result = await addComment({ body: 'Annotation au crayon', position: null, drawing: points })
+    if (!comments) return t("Ce document ne permet pas de conserver des annotations.")
+    const result = await addComment({ body: t("Annotation au crayon"), position: null, drawing: points })
     return result?.message ?? null
   }, [comments, addComment])
   const annotation = useAnnotationInk({ enabled: !!onInkStroke && isActive, onPublish: onInkStroke, onSave: saveInk })
@@ -150,17 +157,18 @@ export function McdView({
 
   /* Échap sort du mode bulle, sans voler l'Échap d'un champ de saisie. */
   useEffect(() => {
-    if (!placing) {
+    if (!placing && !pencil) {
       return
     }
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key === 'Escape' && !isEditableTarget(event.target)) {
         setPlacing(false)
+        setPencil(false)
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [placing])
+  }, [placing, pencil])
 
   useEffect(() => { if (!onInkStroke) setPencil(false) }, [onInkStroke])
 
@@ -182,8 +190,8 @@ export function McdView({
       if (inker === null) {
         return null
       }
-      const name = displayName(inker.user) || 'Votre prof'
-      return current === null ? `${name} annote le schéma.` : current
+      const name = displayName(inker.user) || t("Votre prof")
+      return current === null ? t("{0} annote le schéma.", [name]) : current
     })
   }, [inker])
 
@@ -216,7 +224,7 @@ export function McdView({
 
   return (
     <section
-      aria-label="Vue MCD"
+      aria-label={t("Vue MCD")}
       className={isActive ? 'flex min-h-0 flex-1 flex-col' : 'hidden'}
     >
       <McdToolbar
@@ -224,10 +232,12 @@ export function McdView({
         problems={problems}
         onGenerate={onGenerate}
         readOnly={readOnly}
+        panel={{ open: panelOpen, onToggle: () => setPanelOpen(open => !open), controls: panelId, buttonId: panelButtonId }}
         pencil={
           onInkStroke
             ? {
                 active: pencil,
+                onSelect: () => { setPencil(false); setPlacing(false); annotation.onStroke(null) },
                 onToggle: () => {
                   setPencil((active) => {
                     if (active) annotation.onStroke(null)
@@ -241,15 +251,16 @@ export function McdView({
       />
       {comments && <AnnotationControls
         canDraw={!!onInkStroke}
+        drawingActive={pencil}
         duration={annotation.duration} onDuration={annotation.setDuration}
         visible={showInk} onToggleVisible={() => setShowInk((value) => !value)} onClear={annotation.clear}
         saved={thread.drawings} onDelete={thread.remove}
         onComment={() => { setPencil(false); setPlacing((value) => !value); setThreadOpen(true) }}
       />}
-      {annotation.error && <Notice tone="error" action={<Button size="sm" onClick={() => void annotation.retry()}>Réessayer ({annotation.pendingCount})</Button>}>{annotation.error}</Notice>}
+      {annotation.error && <Notice tone="error" action={<Button size="sm" onClick={() => void annotation.retry()}>{t("Réessayer (")}{annotation.pendingCount})</Button>}>{annotation.error}</Notice>}
       <LiveAnnouncement message={annotating} />
       {banner}
-      <div className="flex min-h-0 flex-1">
+      <div className="relative flex min-h-0 flex-1">
         <McdCanvas
           state={state}
           dispatch={dispatch}
@@ -264,12 +275,14 @@ export function McdView({
           readOnly={readOnly}
           pins={pins}
           onOpenPin={(commentId) => {
+            setPanelOpen(true)
             setThreadOpen(true)
             setRevealed({ id: commentId, nonce: Date.now() })
           }}
           revealedPin={revealed}
           placing={placing}
           onPlacePin={(position) => {
+            setPanelOpen(true)
             setPendingPosition(position)
             setPlacing(false)
             setThreadOpen(true)
@@ -281,19 +294,21 @@ export function McdView({
         <div
           role="separator"
           aria-orientation="vertical"
-          aria-label="Redimensionner le panneau latéral"
+          aria-label={t("Redimensionner le panneau latéral")}
           aria-valuemin={PANEL_MIN}
           aria-valuemax={PANEL_MAX}
           aria-valuenow={panelWidth}
           tabIndex={0}
           onPointerDown={onSeparatorPointerDown}
           onKeyDown={onSeparatorKeyDown}
-          className="w-1.5 shrink-0 cursor-col-resize bg-line hover:bg-mark"
+          className="editor-panel-resize w-1.5 shrink-0 cursor-col-resize bg-line hover:bg-mark"
         />
         <div
+          id={panelId}
           style={{ width: panelWidth, maxWidth: '60vw' }}
-          className="flex shrink-0 flex-col overflow-y-auto bg-surface"
+          className={'editor-inspector ' + (panelOpen ? '' : 'mobile-panel-closed')}
         >
+          <div className="flex items-center justify-between border-b border-line px-3 py-2 md:hidden"><span className="text-sm font-semibold">{t("Inspecteur")}</span><Button size="sm" variant="ghost" aria-label={t("Fermer l’inspecteur")} onClick={() => { setPanelOpen(false); document.getElementById(panelButtonId)?.focus() }}><Icon name="close" /></Button></div>
           <Inspector mcd={state.mcd} selection={selection} dispatch={dispatch} readOnly={readOnly} />
           <ProblemsPanel problems={problems} mcd={state.mcd} onSelectElement={onSelectElement} />
           {comments && (

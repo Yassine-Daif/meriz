@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 /**
  * Attente pendant que l'éditeur se télécharge.
  *
@@ -10,6 +12,7 @@
  * rien à qui la demande.
  */
 export function EditorLoading() {
+  useLanguage()
   return (
     <div className="flex h-dvh flex-col items-center justify-center gap-3 bg-shell font-sans text-ink">
       <span
@@ -17,8 +20,7 @@ export function EditorLoading() {
         className="h-5 w-5 animate-spin rounded-full border-2 border-ink-soft border-t-transparent"
       />
       <p role="status" className="text-sm text-ink-soft">
-        Ouverture de l'éditeur…
-      </p>
+        {t("Ouverture de l'éditeur…")}</p>
     </div>
   )
 }

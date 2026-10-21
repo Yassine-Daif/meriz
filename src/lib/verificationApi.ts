@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { ApiClient, Outcome } from './apiClient'
 import { unexpectedResponse } from './apiClient'
 
@@ -33,6 +34,6 @@ export async function resendVerification(client: ApiClient): Promise<Outcome<Res
   }
   const state = result.status === 202 ? 'sent' : 'already'
   const raw = isRecord(result.data) ? result.data.message : undefined
-  const message = typeof raw === 'string' && raw.trim() !== '' ? raw : state === 'sent' ? SENT : ALREADY
+  const message = typeof raw === 'string' && raw.trim() !== '' ? raw : state === 'sent' ? t(SENT) : t(ALREADY)
   return { ok: true, value: { state, message } }
 }

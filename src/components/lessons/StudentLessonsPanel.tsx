@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useCallback, useEffect, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import { parseBlocks } from '../../lib/lessonBlocks'
@@ -22,6 +24,7 @@ type View = { kind: 'list' } | { kind: 'read'; lesson: Lesson }
  * lecture. Le serveur ne renvoie jamais un brouillon à un élève.
  */
 export function StudentLessonsPanel({ client, classroomId }: StudentLessonsPanelProps) {
+  useLanguage()
   const [lessons, setLessons] = useState<LessonSummary[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [view, setView] = useState<View>({ kind: 'list' })
@@ -57,14 +60,14 @@ export function StudentLessonsPanel({ client, classroomId }: StudentLessonsPanel
     return (
       <div>
         <BackButton
-          label="Retour aux cours"
+          label={t("Retour aux cours")}
           onClick={() => {
             setView({ kind: 'list' })
             void load()
           }}
           className="-ml-3 mb-3"
         />
-        <p className="text-xs font-semibold tracking-wide text-ink-soft uppercase">Cours</p>
+        <p className="text-xs font-semibold tracking-wide text-ink-soft uppercase">{t("Cours")}</p>
         <h3 className="text-xl font-semibold tracking-tight text-ink">{lesson.title}</h3>
         <UpdatedAt iso={lesson.updatedAt} className="mt-1 block text-sm text-ink-soft" />
         <div className="mt-5">
@@ -77,8 +80,7 @@ export function StudentLessonsPanel({ client, classroomId }: StudentLessonsPanel
   return (
     <section aria-labelledby="cours-eleve-titre">
       <h3 id="cours-eleve-titre" className="text-base font-semibold text-ink">
-        Cours de la classe
-        {lessons && lessons.length > 0 && <span className="font-normal text-ink-soft"> ({lessons.length})</span>}
+        {t("Cours de la classe")}{lessons && lessons.length > 0 && <span className="font-normal text-ink-soft"> ({lessons.length})</span>}
       </h3>
 
       <p role="status" aria-live="polite" className="mt-2 min-h-5 text-sm text-ink-soft">
@@ -91,20 +93,17 @@ export function StudentLessonsPanel({ client, classroomId }: StudentLessonsPanel
           announce={false}
           action={
             <Button size="sm" onClick={() => void load()}>
-              Réessayer
-            </Button>
+              {t("Réessayer")}</Button>
           }
         >
           {loadError}
         </Notice>
       ) : lessons === null ? (
         <p role="status" className="text-sm text-ink-soft">
-          Chargement des cours…
-        </p>
+          {t("Chargement des cours…")}</p>
       ) : lessons.length === 0 ? (
         <p className="rounded-card border border-dashed border-line-strong bg-surface-soft p-6 text-center text-sm text-ink-soft">
-          Aucun cours pour l’instant. Ceux que votre prof publiera apparaîtront ici.
-        </p>
+          {t("Aucun cours pour l’instant. Ceux que votre prof publiera apparaîtront ici.")}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {lessons.map((lesson) => (
@@ -113,7 +112,7 @@ export function StudentLessonsPanel({ client, classroomId }: StudentLessonsPanel
                 type="button"
                 onClick={() => void open(lesson.id)}
                 disabled={opening !== null}
-                aria-label={`Ouvrir le cours ${lesson.title}`}
+                aria-label={t("Ouvrir le cours {0}", [lesson.title])}
                 className="flex w-full flex-col items-start gap-1.5 rounded-card border border-line bg-surface p-4 text-left shadow-soft transition duration-150 hover:shadow-lift disabled:cursor-wait motion-safe:hover:-translate-y-0.5"
               >
                 <span className="flex w-full flex-wrap items-center justify-between gap-2">

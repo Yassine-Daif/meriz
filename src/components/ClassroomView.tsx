@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ApiClient, ApiError } from '../lib/apiClient'
@@ -91,6 +93,7 @@ export function ClassroomView({
   onOpenReadOnlyModel,
   onStartLiveCoedition,
 }: ClassroomViewProps) {
+  useLanguage()
   const [classroom, setClassroom] = useState<ClassroomDetail | null>(initial)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [status, setStatus] = useState<{ kind: 'info' | 'error'; text: string } | null>(null)
@@ -122,7 +125,7 @@ export function ClassroomView({
     if (result.ok) {
       setClassroom(result.value)
     } else if (result.error.kind === 'not_found') {
-      onGoneRef.current("Cette classe n'est plus accessible.")
+      onGoneRef.current(t("Cette classe n'est plus accessible."))
     } else {
       setLoadError(result.error.message)
     }
@@ -140,8 +143,8 @@ export function ClassroomView({
     const copied = await copyText(formatJoinCode(code))
     setStatus(
       copied
-        ? { kind: 'info', text: `Code ${formatJoinCode(code)} copié dans le presse-papiers.` }
-        : { kind: 'error', text: 'Copie impossible dans ce navigateur : recopiez le code affiché.' },
+        ? { kind: 'info', text: t("Code {0} copié dans le presse-papiers.", [formatJoinCode(code)]) }
+        : { kind: 'error', text: t("Copie impossible dans ce navigateur : recopiez le code affiché.") },
     )
   }
 
@@ -153,12 +156,12 @@ export function ClassroomView({
     if (action.kind === 'leave') {
       const result = await leaveClassroom(client, classroom.id)
       setBusy(false)
-      if (result.ok) onGone(`Vous avez quitté la classe « ${classroom.name} ».`)
+      if (result.ok) onGone(t("Vous avez quitté la classe « {0} ».", [classroom.name]))
       else report(result.error, '')
     } else if (action.kind === 'delete') {
       const result = await deleteClassroom(client, classroom.id)
       setBusy(false)
-      if (result.ok) onGone(`Classe « ${classroom.name} » supprimée.`)
+      if (result.ok) onGone(t("Classe « {0} » supprimée.", [classroom.name]))
       else report(result.error, '')
     } else if (action.kind === 'regenerate') {
       const result = await regenerateJoinCode(client, classroom.id)
@@ -166,7 +169,7 @@ export function ClassroomView({
       if (result.ok) setClassroom(result.value)
       report(
         result.ok ? null : result.error,
-        `Nouveau code : ${formatJoinCode(result.ok ? (result.value.joinCode ?? '') : '')}. L'ancien ne fonctionne plus.`,
+        t("Nouveau code : {0}. L'ancien ne fonctionne plus.", [formatJoinCode(result.ok ? (result.value.joinCode ?? '') : '')]),
       )
     } else {
       const result = await removeMember(client, classroom.id, action.member.id)
@@ -178,7 +181,7 @@ export function ClassroomView({
           membersCount: classroom.membersCount === null ? null : classroom.membersCount - 1,
         })
       }
-      report(result.ok ? null : result.error, `${displayName(action.member)} a été retiré de la classe.`)
+      report(result.ok ? null : result.error, t("{0} a été retiré de la classe.", [displayName(action.member)]))
     }
   }
 
@@ -198,7 +201,7 @@ export function ClassroomView({
     if (result.ok) {
       setClassroom(result.value)
       setRenaming(false)
-      setStatus({ kind: 'info', text: `Classe renommée en « ${result.value.name} ».` })
+      setStatus({ kind: 'info', text: t("Classe renommée en « {0} ».", [result.value.name]) })
     } else {
       setRenameError(result.error.fieldErrors.name?.[0] ?? result.error.message)
     }
@@ -212,11 +215,10 @@ export function ClassroomView({
             <span aria-hidden="true" className="text-warning">⚠</span>
             {loadError}
             <Button size="sm" onClick={() => void load()}>
-              Réessayer
-            </Button>
+              {t("Réessayer")}</Button>
           </p>
         ) : (
-          <p role="status" className="text-ink-soft">Chargement de la classe…</p>
+          <p role="status" className="text-ink-soft">{t("Chargement de la classe…")}</p>
         )}
       </div>
     )
@@ -225,27 +227,27 @@ export function ClassroomView({
   const isTeacher = classroom.myRole === 'teacher'
   const dialogText: Record<PendingAction['kind'], { title: string; message: string; confirm: string }> = {
     leave: {
-      title: 'Quitter la classe',
-      message: `Quitter « ${classroom.name} » ? Pour revenir, il vous faudra de nouveau son code.`,
-      confirm: 'Quitter la classe',
+      title: t("Quitter la classe"),
+      message: t("Quitter « {0} » ? Pour revenir, il vous faudra de nouveau son code.", [classroom.name]),
+      confirm: t("Quitter la classe"),
     },
     delete: {
-      title: 'Supprimer la classe',
-      message: `Supprimer « ${classroom.name} » ? Tous les membres en seront retirés. Cette action est définitive.`,
-      confirm: 'Supprimer la classe',
+      title: t("Supprimer la classe"),
+      message: t("Supprimer « {0} » ? Tous les membres en seront retirés. Cette action est définitive.", [classroom.name]),
+      confirm: t("Supprimer la classe"),
     },
     regenerate: {
-      title: 'Nouveau code',
-      message: "Créer un nouveau code ? L'ancien code ne fonctionnera plus. Les membres actuels restent dans la classe.",
-      confirm: 'Créer un nouveau code',
+      title: t("Nouveau code"),
+      message: t("Créer un nouveau code ? L'ancien code ne fonctionnera plus. Les membres actuels restent dans la classe."),
+      confirm: t("Créer un nouveau code"),
     },
     remove: {
-      title: 'Retirer un membre',
+      title: t("Retirer un membre"),
       message:
         pendingAction?.kind === 'remove'
-          ? `Retirer ${displayName(pendingAction.member)} de la classe ? La personne pourra revenir avec le code.`
+          ? t("Retirer {0} de la classe ? La personne pourra revenir avec le code.", [displayName(pendingAction.member)])
           : '',
-      confirm: 'Retirer',
+      confirm: t("Retirer"),
     },
   }
 
@@ -256,12 +258,12 @@ export function ClassroomView({
   const shown: ClassroomTab = tab === 'reglages' && !isTeacher ? 'eleves' : tab
 
   const tabs = [
-    { value: 'eleves' as const, label: isTeacher ? 'Membres' : 'Élèves', count: classroom.members.length },
-    { value: 'exercices' as const, label: 'Exercices' },
-    { value: 'cours' as const, label: 'Cours' },
+    { value: 'eleves' as const, label: isTeacher ? t("Membres") : t("Élèves"), count: classroom.members.length },
+    { value: 'exercices' as const, label: t("Exercices") },
+    { value: 'cours' as const, label: t("Cours") },
     // La gestion n'a de sens que pour le prof : l'onglet n'existe pas
     // pour les autres, plutôt que de mener à un panneau vide.
-    ...(isTeacher ? [{ value: 'reglages' as const, label: 'Réglages' }] : []),
+    ...(isTeacher ? [{ value: 'reglages' as const, label: t("Réglages") }] : []),
   ]
 
   return (
@@ -271,7 +273,7 @@ export function ClassroomView({
           <form onSubmit={(event) => void submitRename(event)} className="flex min-w-0 flex-1 flex-wrap items-end gap-2">
             <div className="min-w-60 flex-1">
               <FormField
-                label="Nom de la classe"
+                label={t("Nom de la classe")}
                 type="text"
                 value={newName}
                 onChange={setNewName}
@@ -280,25 +282,22 @@ export function ClassroomView({
                 error={renameError}
               />
             </div>
-            <Button type="submit" variant="primary" loading={busy} loadingLabel="Enregistrement…">
-              Renommer
-            </Button>
+            <Button type="submit" variant="primary" loading={busy} loadingLabel={t("Enregistrement…")}>
+              {t("Renommer")}</Button>
             <Button type="button" onClick={() => setRenaming(false)}>
-              Annuler
-            </Button>
+              {t("Annuler")}</Button>
           </form>
         ) : (
           <div className="min-w-0">
             <h2 className="text-2xl font-semibold tracking-tight text-ink">{classroom.name}</h2>
             <p className="text-sm text-ink-soft">
-              {isTeacher ? 'Vous êtes le prof de cette classe.' : 'Vous êtes élève dans cette classe.'}
+              {isTeacher ? t("Vous êtes le prof de cette classe.") : t("Vous êtes élève dans cette classe.")}
             </p>
           </div>
         )}
         {isTeacher && !renaming && (
           <Button size="sm" onClick={startRenaming}>
-            Renommer
-          </Button>
+            {t("Renommer")}</Button>
         )}
       </div>
 
@@ -318,32 +317,31 @@ export function ClassroomView({
       </p>
 
       <div>
-        <Tabs label="Sections de la classe" items={tabs} value={shown} onChange={setTab} idBase={idBase} />
+        <Tabs label={t("Sections de la classe")} items={tabs} value={shown} onChange={setTab} idBase={idBase} />
 
         {shown === 'eleves' && (
           <TabPanel idBase={idBase} value="eleves">
             <section aria-labelledby="prof-titre" className="rounded-card border border-line bg-surface p-5 shadow-soft">
               <h3 id="prof-titre" className="text-base font-semibold text-ink">
-                Prof
-              </h3>
+                {t("Prof")}</h3>
               <div className="mt-3">
                 {classroom.teacher ? (
                   <PersonCard person={classroom.teacher} />
                 ) : (
-                  <p className="text-sm text-ink-soft">Inconnu</p>
+                  <p className="text-sm text-ink-soft">{t("Inconnu")}</p>
                 )}
               </div>
             </section>
 
             <section aria-labelledby="membres-titre" className="mt-4">
               <h3 id="membres-titre" className="text-base font-semibold text-ink">
-                {isTeacher ? 'Membres' : 'Camarades'} ({classroom.members.length})
+                {isTeacher ? t("Membres") : t("Camarades")} ({classroom.members.length})
               </h3>
               {classroom.members.length === 0 ? (
                 <p className="mt-3 rounded-card border border-dashed border-line-strong bg-surface-soft p-6 text-center text-sm text-ink-soft">
                   {isTeacher
-                    ? 'Personne pour l’instant : partagez le code ci-dessus à vos élèves.'
-                    : 'Aucun autre membre pour l’instant.'}
+                    ? t("Personne pour l’instant : partagez le code ci-dessus à vos élèves.")
+                    : t("Aucun autre membre pour l’instant.")}
                 </p>
               ) : (
                 <ul className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -358,11 +356,10 @@ export function ClassroomView({
                       size="sm"
                       variant="danger"
                       disabled={busy}
-                      aria-label={`Retirer ${displayName(member)} de la classe`}
+                      aria-label={t("Retirer {0} de la classe", [displayName(member)])}
                       onClick={() => setPendingAction({ kind: 'remove', member })}
                     >
-                      Retirer
-                    </Button>
+                      {t("Retirer")}</Button>
                   ) : undefined
                 }
               />
@@ -379,8 +376,7 @@ export function ClassroomView({
                   disabled={busy}
                   onClick={() => setPendingAction({ kind: 'leave' })}
                 >
-                  Quitter la classe
-                </Button>
+                  {t("Quitter la classe")}</Button>
               </div>
             )}
           </TabPanel>

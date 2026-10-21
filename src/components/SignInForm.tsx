@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ApiUser } from '../lib/authApi'
@@ -24,6 +26,7 @@ export function SignInForm({
   onForgotPassword,
   initialEmail = '',
 }: SignInFormProps) {
+  useLanguage()
   const { signIn } = useSession()
   const [email, setEmail] = useState(initialEmail)
   const [password, setPassword] = useState('')
@@ -44,7 +47,7 @@ export function SignInForm({
       onSuccess(outcome.value)
       return
     }
-    setFormError(outcome.error.kind === 'validation' ? WRONG_CREDENTIALS : outcome.error.message)
+    setFormError(outcome.error.kind === 'validation' ? t(WRONG_CREDENTIALS) : outcome.error.message)
     setAttempt((count) => count + 1)
   }
 
@@ -52,7 +55,7 @@ export function SignInForm({
     <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-4">
       <FormAlert message={formError} attempt={attempt} />
       <FormField
-        label="Email"
+        label={t("Email")}
         type="email"
         value={email}
         onChange={setEmail}
@@ -60,34 +63,31 @@ export function SignInForm({
         maxLength={255}
       />
       <FormField
-        label="Mot de passe"
+        label={t("Mot de passe")}
         type="password"
         value={password}
         onChange={setPassword}
         autoComplete="current-password"
         maxLength={255}
       />
-      <Button type="submit" variant="primary" block loading={pending} loadingLabel="Connexion…">
-        Se connecter
-      </Button>
+      <Button type="submit" variant="primary" block loading={pending} loadingLabel={t("Connexion…")}>
+        {t("Se connecter")}</Button>
       <p className="text-center text-sm">
         <button
           type="button"
           onClick={onForgotPassword}
           className="font-medium text-accent-ink underline underline-offset-2 hover:text-ink"
         >
-          Mot de passe oublié ?
-        </button>
+          {t("Mot de passe oublié ?")}</button>
       </p>
       <p className="text-center text-sm text-ink-soft">
-        Pas encore de compte ?{' '}
+        {t("Pas encore de compte ?")}{' '}
         <button
           type="button"
           onClick={onSwitchToSignUp}
           className="font-medium text-accent-ink underline underline-offset-2 hover:text-ink"
         >
-          Créer un compte
-        </button>
+          {t("Créer un compte")}</button>
       </p>
     </form>
   )

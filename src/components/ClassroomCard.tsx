@@ -1,3 +1,6 @@
+import { counted } from "../lib/plural"
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { displayName } from '../lib/authApi'
 import { formatJoinCode } from '../lib/classroomsApi'
 import type { ClassroomSummary } from '../lib/classroomsApi'
@@ -15,6 +18,7 @@ interface ClassroomCardProps {
  * lettres. Côté prof, le code et un bouton pour le copier.
  */
 export function ClassroomCard({ classroom, onOpen, onCopyCode }: ClassroomCardProps) {
+  useLanguage()
   const teacher = classroom.myRole === 'teacher'
   return (
     <li className="flex flex-col rounded-card border border-line bg-surface shadow-soft transition duration-150 hover:shadow-lift">
@@ -25,28 +29,27 @@ export function ClassroomCard({ classroom, onOpen, onCopyCode }: ClassroomCardPr
       >
         <span className="flex w-full items-start justify-between gap-2">
           <span className="text-base font-semibold text-ink">{classroom.name}</span>
-          <Badge tone={teacher ? 'accent' : 'sky'}>{teacher ? 'Prof' : 'Élève'}</Badge>
+          <Badge tone={teacher ? 'accent' : 'sky'}>{teacher ? t("Prof") : t("Élève")}</Badge>
         </span>
         <span className="text-sm text-ink-soft">
-          {classroom.teacher ? `Prof : ${displayName(classroom.teacher)}` : 'Prof inconnu'}
+          {classroom.teacher ? t("Prof : {0}", [displayName(classroom.teacher)]) : t("Prof inconnu")}
           {classroom.membersCount !== null &&
-            ` · ${classroom.membersCount} membre${classroom.membersCount > 1 ? 's' : ''}`}
+            ' · ' + counted(classroom.membersCount, 'membre', 'membres')}
         </span>
       </button>
       {teacher && classroom.joinCode && onCopyCode && (
         <div className="flex flex-wrap items-center gap-2 border-t border-line px-4 py-2.5">
-          <span className="text-xs text-ink-soft">Code</span>
+          <span className="text-xs text-ink-soft">{t("Code")}</span>
           <span className="font-mono text-sm font-semibold tracking-widest text-ink">
             {formatJoinCode(classroom.joinCode)}
           </span>
           <button
             type="button"
             onClick={() => onCopyCode(classroom.joinCode ?? '')}
-            aria-label={`Copier le code de ${classroom.name}`}
+            aria-label={t("Copier le code de {0}", [classroom.name])}
             className="ml-auto rounded-control px-2.5 py-1 text-xs font-medium text-accent-ink transition-colors duration-150 hover:bg-accent-soft hover:text-accent-ink"
           >
-            Copier
-          </button>
+            {t("Copier")}</button>
         </div>
       )}
     </li>

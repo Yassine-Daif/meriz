@@ -1,3 +1,5 @@
+import { localeTag } from "../i18n/runtime"
+import { t } from "../i18n/runtime"
 import type { ApiClient, Outcome } from './apiClient'
 import { unexpectedResponse } from './apiClient'
 import { optionalText } from './authApi'
@@ -268,16 +270,16 @@ export async function startAssignmentWork(client: ApiClient, id: string): Promis
 /* Affichage                                                          */
 
 export function assignmentTypeLabel(type: AssignmentType): string {
-  return type === 'exam' ? 'Examen' : 'Exercice'
+  return type === 'exam' ? t("Examen") : t("Exercice")
 }
 
-const dueFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
+const dueFormat = () => new Intl.DateTimeFormat(localeTag(), { dateStyle: 'long', timeStyle: 'short' })
 
 /** « 1 octobre 2026 à 18:00 », ou un repli si la date est illisible. */
 export function formatDueDate(iso: string | null): string {
-  if (iso === null) return 'Sans échéance'
+  if (iso === null) return t("Sans échéance")
   const date = new Date(iso)
-  return Number.isNaN(date.getTime()) ? 'Échéance inconnue' : `À rendre le ${dueFormat.format(date)}`
+  return Number.isNaN(date.getTime()) ? t("Échéance inconnue") : t("À rendre le {0}", [dueFormat().format(date)])
 }
 
 /**

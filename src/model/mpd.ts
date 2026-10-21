@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { AttributeType } from './mcd'
 import type { MldColumn, MldTable } from './mld'
 import { sanitizeSqlName } from './sql'
@@ -12,8 +13,8 @@ import { sanitizeSqlName } from './sql'
 export type SqlDialect = 'mysql' | 'postgresql'
 
 export const SQL_DIALECTS: readonly { id: SqlDialect; label: string }[] = [
-  { id: 'mysql', label: 'MySQL' },
-  { id: 'postgresql', label: 'PostgreSQL' },
+  { id: 'mysql', get label() { return t("MySQL") } },
+  { id: 'postgresql', get label() { return t("PostgreSQL") } },
 ]
 
 /** Réglages mémorisés : dialecte + surcharges par colonne (id stable). */
@@ -156,7 +157,7 @@ export function mpdToSql(tables: MpdTable[], dialect: SqlDialect, options: SqlOp
     parts.push(
       [...ordered]
         .reverse()
-        .map((table) => `DROP TABLE IF EXISTS ${sanitizeSqlName(table.name)};`)
+        .map((table) => ("DROP TABLE IF EXISTS " + String(sanitizeSqlName(table.name)) + ";"))
         .join('\n'),
     )
   }

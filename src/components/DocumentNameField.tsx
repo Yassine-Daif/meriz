@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useId, useState } from 'react'
 
 interface DocumentNameFieldProps {
@@ -12,6 +14,7 @@ interface DocumentNameFieldProps {
  * enregistré : le champ revient au nom précédent.
  */
 export function DocumentNameField({ name, onRename }: DocumentNameFieldProps) {
+  useLanguage()
   const inputId = useId()
   const [draft, setDraft] = useState(name)
   // Nom changé ailleurs (accueil, import) : le brouillon suit.
@@ -40,13 +43,12 @@ export function DocumentNameField({ name, onRename }: DocumentNameFieldProps) {
   return (
     <div className="flex min-w-0 items-center">
       <label htmlFor={inputId} className="sr-only">
-        Nom du document
-      </label>
+        {t("Nom du document")}</label>
       <input
         id={inputId}
         type="text"
         value={draft}
-        title="Renommer le document"
+        title={t("Renommer le document")}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={commit}
         onKeyDown={(event) => {

@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useEffect, useId, useRef } from 'react'
 import type { DocumentMeta } from '../model/document'
 import { Button } from './ui/Button'
@@ -39,6 +41,7 @@ export function ImportLocalDialog({
   onLater,
   onClose,
 }: ImportLocalDialogProps) {
+  useLanguage()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = useId()
 
@@ -66,18 +69,16 @@ export function ImportLocalDialog({
     >
       <div className="p-6">
         <h2 id={titleId} className="text-lg font-semibold tracking-tight">
-          {phase === 'done' ? 'Import terminé' : 'Importer vos documents de cet appareil ?'}
+          {phase === 'done' ? t("Import terminé") : t("Importer vos documents de cet appareil ?")}
         </h2>
 
         {phase !== 'done' && (
           <>
             <p className="mt-2 text-sm leading-6 text-ink-soft">
               {documents.length === 1
-                ? 'Un document a été créé sur cet appareil avant votre connexion.'
-                : `${documents.length} documents ont été créés sur cet appareil avant votre connexion.`}{' '}
-              Vous pouvez en placer une copie dans votre compte, pour les retrouver partout. Les
-              originaux restent sur cet appareil dans tous les cas.
-            </p>
+                ? t("Un document a été créé sur cet appareil avant votre connexion.")
+                : t("{0} documents ont été créés sur cet appareil avant votre connexion.", [documents.length])}{' '}
+              {t("Vous pouvez en placer une copie dans votre compte, pour les retrouver partout. Les originaux restent sur cet appareil dans tous les cas.")}</p>
             <ul className="mt-3 max-h-40 overflow-y-auto rounded-control border border-line bg-surface-soft p-2 text-sm text-ink">
               {documents.map((meta) => (
                 <li key={meta.id} className="truncate px-1 py-0.5">
@@ -90,7 +91,7 @@ export function ImportLocalDialog({
 
         {phase === 'working' && (
           <p role="status" aria-live="polite" className="mt-3 text-sm text-ink-soft">
-            Import {progress} sur {documents.length}…
+            {t("Import ")}{progress} {t(" sur ")}{documents.length}…
           </p>
         )}
 
@@ -98,14 +99,14 @@ export function ImportLocalDialog({
           <div role="status" aria-live="polite" className="mt-2 text-sm leading-6 text-ink-soft">
             <p>
               {report.imported === 0
-                ? 'Aucun document importé.'
+                ? t("Aucun document importé.")
                 : report.imported === 1
-                  ? '1 document a été copié dans votre compte.'
-                  : `${report.imported} documents ont été copiés dans votre compte.`}
+                  ? t("1 document a été copié dans votre compte.")
+                  : t("{0} documents ont été copiés dans votre compte.", [report.imported])}
             </p>
             {report.failed.length > 0 && (
               <p className="mt-1">
-                Non importés, ils restent sur cet appareil et vous seront reproposés :{' '}
+                {t("Non importés, ils restent sur cet appareil et vous seront reproposés :")}{' '}
                 {report.failed.join(', ')}.
               </p>
             )}
@@ -115,24 +116,20 @@ export function ImportLocalDialog({
         <div className="mt-6 flex flex-wrap justify-end gap-2">
           {phase === 'done' ? (
             <Button variant="primary" onClick={onClose}>
-              Fermer
-            </Button>
+              {t("Fermer")}</Button>
           ) : (
             <>
               <Button onClick={onLater} disabled={phase === 'working'}>
-                Plus tard
-              </Button>
+                {t("Plus tard")}</Button>
               <Button onClick={onKeepLocal} disabled={phase === 'working'}>
-                Garder en local
-              </Button>
+                {t("Garder en local")}</Button>
               <Button
                 variant="primary"
                 onClick={onImport}
                 loading={phase === 'working'}
-                loadingLabel="Import…"
+                loadingLabel={t("Import…")}
               >
-                Importer dans mon compte
-              </Button>
+                {t("Importer dans mon compte")}</Button>
             </>
           )}
         </div>

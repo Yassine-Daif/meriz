@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 /**
  * Page d'un cours : une suite ordonnée de blocs. Le serveur garde cette
  * page en JSON sans jamais l'interpréter, donc ce fichier est le seul
@@ -27,17 +28,17 @@ export type LessonBlock =
 export function blockLabel(type: BlockType): string {
   switch (type) {
     case 'heading':
-      return 'Titre de section'
+      return t("Titre de section")
     case 'text':
-      return 'Texte'
+      return t("Texte")
     case 'link':
-      return 'Lien'
+      return t("Lien")
     case 'video':
-      return 'Vidéo'
+      return t("Vidéo")
     case 'image':
-      return 'Image'
+      return t("Image")
     case 'audio':
-      return 'Audio'
+      return t("Audio")
   }
 }
 

@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 /**
  * Les vues de l'éditeur, dans l'ordre pédagogique du rail :
  * dictionnaire des données, puis les trois niveaux Merise, le SQL et le
@@ -21,16 +22,16 @@ export interface ViewInfo {
 }
 
 export const VIEWS: readonly ViewInfo[] = [
-  { id: 'dictionnaire', label: 'Dictionnaire' },
-  { id: 'mcd', label: 'MCD' },
-  { id: 'mld', label: 'MLD' },
-  { id: 'mpd', label: 'MPD' },
-  { id: 'sql', label: 'SQL' },
-  { id: 'code', label: 'Code' },
+  { id: 'dictionnaire', get label() { return t("Dictionnaire") } },
+  { id: 'mcd', get label() { return t("MCD") } },
+  { id: 'mld', get label() { return t("MLD") } },
+  { id: 'mpd', get label() { return t("MPD") } },
+  { id: 'sql', get label() { return t("SQL") } },
+  { id: 'code', get label() { return t("Code") } },
 ]
 
 /** Pied du rail : contenus distincts des vues de travail. */
 export const FOOTER_VIEWS: readonly ViewInfo[] = [
-  { id: 'apprendre', label: 'Apprendre' },
-  { id: 'apropos', label: 'À propos' },
+  { id: 'apprendre', get label() { return t("Apprendre") } },
+  { id: 'apropos', get label() { return t("À propos") } },
 ]

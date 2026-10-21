@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { DocumentOrigin } from '../model/document'
 import type { WorkAssignment } from '../lib/workAssignments'
 
@@ -35,23 +36,23 @@ const WORK_CONFIRM = 'Supprimer mon travail'
 function restartSentence(assignment: WorkAssignment): string {
   if (assignment.hasBase) {
     return assignment.submission === 'none'
-      ? 'Recommencer le devoir repartira de la base préparée par votre prof.'
-      : 'Vous perdez définitivement votre travail en cours, et reprendre le devoir repartira de la base préparée par votre prof, pas de votre rendu.'
+      ? t("Recommencer le devoir repartira de la base préparée par votre prof.")
+      : t("Vous perdez définitivement votre travail en cours, et reprendre le devoir repartira de la base préparée par votre prof, pas de votre rendu.")
   }
   return assignment.submission === 'none'
-    ? 'Recommencer le devoir repartira d’une page vide.'
-    : 'Vous perdez définitivement ce que vous avez fait depuis, et reprendre le devoir repartira de la version que vous avez rendue.'
+    ? t("Recommencer le devoir repartira d’une page vide.")
+    : t("Vous perdez définitivement ce que vous avez fait depuis, et reprendre le devoir repartira de la version que vous avez rendue.")
 }
 
 function assignmentMessage(name: string, assignment: WorkAssignment): string {
-  const start = `Supprimer « ${name} » ? C’est votre travail sur le devoir « ${assignment.title} »`
+  const start = t("Supprimer « {0} » ? C’est votre travail sur le devoir « {1} »", [name, assignment.title])
   if (assignment.submission === 'none') {
-    return `${start}, et vous n’avez encore rien rendu. Ce travail sera perdu, définitivement : rien ne permet de le retrouver. ${restartSentence(assignment)}`
+    return t("{0}, et vous n’avez encore rien rendu. Ce travail sera perdu, définitivement : rien ne permet de le retrouver. {1}", [start, restartSentence(assignment)])
   }
   const kept =
     assignment.submission === 'graded'
-      ? 'Votre rendu, sa note et le retour de votre prof sont gardés : rien de tout cela ne disparaît.'
-      : 'Votre rendu déjà déposé est gardé : votre prof le voit toujours, tel que vous l’avez rendu.'
+      ? t("Votre rendu, sa note et le retour de votre prof sont gardés : rien de tout cela ne disparaît.")
+      : t("Votre rendu déjà déposé est gardé : votre prof le voit toujours, tel que vous l’avez rendu.")
   return `${start}. ${kept} ${restartSentence(assignment)}`
 }
 
@@ -60,15 +61,13 @@ export function deleteDocumentCopy({ name, cloud, origin, assignment }: DeleteTa
     // Devoir pas encore connu : un texte vrai dans les quatre cas.
     const message =
       assignment === null
-        ? `Supprimer « ${name} » ? Ce document porte votre travail sur un devoir. Ce travail sera perdu, définitivement. Vos rendus déjà déposés, leurs notes et les retours de votre prof ne sont pas touchés.`
+        ? t("Supprimer « {0} » ? Ce document porte votre travail sur un devoir. Ce travail sera perdu, définitivement. Vos rendus déjà déposés, leurs notes et les retours de votre prof ne sont pas touchés.", [name])
         : assignmentMessage(name, assignment)
-    return { title: WORK_TITLE, message, confirmLabel: WORK_CONFIRM }
+    return { title: t(WORK_TITLE), message, confirmLabel: t(WORK_CONFIRM) }
   }
   return {
-    title: 'Supprimer le document',
-    message: `Supprimer « ${name} » ? Cette action est définitive${
-      cloud ? ' : le document disparaît de votre compte.' : ' : le document disparaît de ce navigateur.'
-    }`,
-    confirmLabel: 'Supprimer',
+    title: t("Supprimer le document"),
+    message: t("Supprimer « {0} » ? Cette action est définitive{1}", [name, cloud ? ' : le document disparaît de votre compte.' : ' : le document disparaît de ce navigateur.']),
+    confirmLabel: t("Supprimer"),
   }
 }

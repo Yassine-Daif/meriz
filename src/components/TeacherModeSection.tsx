@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useEffect, useRef, useState } from 'react'
 import type { ApiClient } from '../lib/apiClient'
 import type { ApiUser } from '../lib/authApi'
@@ -20,6 +22,7 @@ interface TeacherModeSectionProps {
  * refus éventuel tel quel.
  */
 export function TeacherModeSection({ user, client, onShowClasses }: TeacherModeSectionProps) {
+  useLanguage()
   const { updateUser } = useSession()
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -56,18 +59,14 @@ export function TeacherModeSection({ user, client, onShowClasses }: TeacherModeS
             <span aria-hidden="true" className="text-sage">
               ✓
             </span>
-            Mode prof activé. Vous pouvez maintenant créer des classes.
-          </p>
+            {t("Mode prof activé. Vous pouvez maintenant créer des classes.")}</p>
         ) : (
           <p className="text-sm text-ink-soft">
-            Le mode prof est actif : vous pouvez créer des classes, partager leur code et gérer
-            leurs membres.
-          </p>
+            {t("Le mode prof est actif : vous pouvez créer des classes, partager leur code et gérer leurs membres.")}</p>
         )}
         <div className="mt-3">
           <Button type="button" onClick={onShowClasses}>
-            Aller à mes classes
-          </Button>
+            {t("Aller à mes classes")}</Button>
         </div>
       </>
     )
@@ -77,11 +76,9 @@ export function TeacherModeSection({ user, client, onShowClasses }: TeacherModeS
     content = (
       <>
         <p className="text-sm leading-6 text-ink-soft">
-          Le mode prof demande deux choses : une adresse scolaire ou universitaire, ce qui est le
-          cas de la vôtre, et une adresse confirmée. La vôtre ne l'est pas encore.
-        </p>
+          {t("Le mode prof demande deux choses : une adresse scolaire ou universitaire, ce qui est le cas de la vôtre, et une adresse confirmée. La vôtre ne l'est pas encore.")}</p>
         <div className="mt-3">
-          <ResendVerification client={client} label="Recevoir un nouveau lien" />
+          <ResendVerification client={client} label={t("Recevoir un nouveau lien")} />
         </div>
       </>
     )
@@ -89,11 +86,7 @@ export function TeacherModeSection({ user, client, onShowClasses }: TeacherModeS
     content = (
       <>
         <p className="text-sm leading-6 text-ink-soft">
-          Le mode prof vous permet de créer des classes, d'obtenir un code à partager avec vos
-          élèves et de gérer leurs membres. Vos documents et les classes que vous avez rejointes
-          ne changent pas. Le mode prof reste actif ensuite. Il demande une adresse scolaire ou
-          universitaire, et une adresse confirmée : vous remplissez les deux.
-        </p>
+          {t("Le mode prof vous permet de créer des classes, d'obtenir un code à partager avec vos élèves et de gérer leurs membres. Vos documents et les classes que vous avez rejointes ne changent pas. Le mode prof reste actif ensuite. Il demande une adresse scolaire ou universitaire, et une adresse confirmée : vous remplissez les deux.")}</p>
         <div className="mt-3">
           <FormAlert message={error} attempt={attempt} />
         </div>
@@ -103,26 +96,23 @@ export function TeacherModeSection({ user, client, onShowClasses }: TeacherModeS
             variant="primary"
             onClick={() => void activate()}
             loading={pending}
-            loadingLabel="Activation…"
+            loadingLabel={t("Activation…")}
           >
-            Activer le mode prof
-          </Button>
+            {t("Activer le mode prof")}</Button>
         </div>
       </>
     )
   } else {
     content = (
       <p className="text-sm leading-6 text-ink-soft">
-        Le mode prof est réservé aux adresses email scolaires ou universitaires, confirmées par
-        leur lien. Votre adresse de connexion n'en fait pas partie.
-      </p>
+        {t("Le mode prof est réservé aux adresses email scolaires ou universitaires, confirmées par leur lien. Votre adresse de connexion n'en fait pas partie.")}</p>
     )
   }
 
   return (
     <section aria-labelledby="mode-prof-titre" className="mt-6 rounded-card border border-line bg-surface p-5 shadow-soft sm:p-6">
       <h2 id="mode-prof-titre" className="text-lg font-semibold tracking-tight text-ink">
-        {user.role === 'teacher' ? 'Mode prof' : 'Devenir enseignant'}
+        {user.role === 'teacher' ? t("Mode prof") : t("Devenir enseignant")}
       </h2>
       <div className="mt-2">{content}</div>
     </section>

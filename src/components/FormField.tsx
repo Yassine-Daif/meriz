@@ -1,3 +1,4 @@
+import { useLanguage } from "../lib/useLanguage"
 import { useId } from 'react'
 import type { Ref } from 'react'
 
@@ -49,6 +50,7 @@ export function FormField({
   mono = false,
   inputRef,
 }: FormFieldProps) {
+  useLanguage()
   const inputId = useId()
   const hintId = `${inputId}-aide`
   const errorId = `${inputId}-erreur`

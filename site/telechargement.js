@@ -1,3 +1,4 @@
+var merizEnglish = document.documentElement.lang === 'en'
 /*
  * Les boutons de téléchargement, pointés sur la dernière version.
  *
@@ -28,7 +29,7 @@
 
   /** Le poids d'un fichier, en mégaoctets, à la française. */
   function poids(octets) {
-    return (octets / 1048576).toFixed(1).replace('.', ',') + ' Mo'
+    return merizEnglish ? (octets / 1048576).toFixed(1) + ' MB' : (octets / 1048576).toFixed(1).replace('.', ',') + ' Mo'
   }
 
   /**
@@ -116,8 +117,8 @@
     if (place === 0 || typeof publication.tag_name !== 'string') return
 
     var date = publication.published_at
-      ? ', publiée le ' +
-        new Date(publication.published_at).toLocaleDateString('fr-FR', {
+      ? (merizEnglish ? ', published on ' : ', publiée le ') +
+        new Date(publication.published_at).toLocaleDateString((merizEnglish ? 'en-GB' : 'fr-FR'), {
           day: 'numeric',
           month: 'long',
           year: 'numeric',
@@ -137,7 +138,7 @@
 
     var version = document.querySelector('[data-version]')
     if (version) {
-      version.textContent = 'Dernière version : ' + publication.tag_name + date + '.'
+      version.textContent = (merizEnglish ? 'Latest release: ' : 'Dernière version : ') + publication.tag_name + date + '.'
       version.hidden = false
     }
   }

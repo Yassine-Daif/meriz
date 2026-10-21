@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useId } from 'react'
 
 interface ToggleSwitchProps {
@@ -14,6 +16,7 @@ interface ToggleSwitchProps {
  * porté par la seule couleur.
  */
 export function ToggleSwitch({ label, checked, onChange, description }: ToggleSwitchProps) {
+  useLanguage()
   const labelId = useId()
   const descriptionId = useId()
 
@@ -46,7 +49,7 @@ export function ToggleSwitch({ label, checked, onChange, description }: ToggleSw
           aria-hidden="true"
           className={`h-5 w-5 rounded-full ${checked ? 'bg-on-accent' : 'bg-line-strong'}`}
         />
-        {checked ? 'Oui' : 'Non'}
+        {checked ? t("Oui") : t("Non")}
       </button>
     </div>
   )

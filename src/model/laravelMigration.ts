@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { CodeSchema, SchemaColumn, SchemaTable } from './codeSchema'
 import type { GeneratedFile } from './codegenTypes'
 import { phpString, phpStringList } from './php'
@@ -38,7 +39,7 @@ function blueprintCall(column: SchemaColumn): string {
 
 /** Une surcharge du MPD ne se traduit pas en Blueprint : on la signale. */
 function overrideComment(column: SchemaColumn): string[] {
-  return column.overridden ? [`// Type imposé au MPD : ${column.sqlType}`] : []
+  return column.overridden ? [t("// Type imposé au MPD : {0}", [column.sqlType])] : []
 }
 
 /**
@@ -120,7 +121,7 @@ export function laravelMigrationFile(
     )
   }
   if (table.primaryKey.length === 0) {
-    lines.push(`// Attention : ${table.sourceName} n'a pas d'identifiant dans le MCD.`)
+    lines.push(t("// Attention : {0} n'a pas d'identifiant dans le MCD.", [table.sourceName]))
   }
 
   // Les clés étrangères que `constrained()` n'a pas pu porter.
@@ -140,31 +141,10 @@ export function laravelMigrationFile(
   const suffix = String(index).padStart(6, '0')
   const origin =
     table.origin === 'entity'
-      ? `l'entité ${table.sourceName}`
+      ? t("l'entité {0}", [table.sourceName])
       : `l'association ${table.sourceName}`
 
-  const content = `<?php
-
-use Illuminate\\Database\\Migrations\\Migration;
-use Illuminate\\Database\\Schema\\Blueprint;
-use Illuminate\\Support\\Facades\\Schema;
-
-/** Table ${table.tableName}, dérivée de ${origin} du MCD. */
-return new class extends Migration
-{
-    public function up(): void
-    {
-        Schema::create(${phpString(table.tableName)}, function (Blueprint $table) {
-${body}
-        });
-    }
-
-    public function down(): void
-    {
-        Schema::dropIfExists(${phpString(table.tableName)});
-    }
-};
-`
+  const content = t("<?php\n\nuse Illuminate\\Database\\Migrations\\Migration;\nuse Illuminate\\Database\\Schema\\Blueprint;\nuse Illuminate\\Support\\Facades\\Schema;\n\n/** Table {0}, dérivée de {1} du MCD. */\nreturn new class extends Migration\n{\n    public function up(): void\n    {\n        Schema::create({2}, function (Blueprint $table) {\n{3}\n        });\n    }\n\n    public function down(): void\n    {\n        Schema::dropIfExists({4});\n    }\n};\n", [table.tableName, origin, phpString(table.tableName), body, phpString(table.tableName)])
 
   return {
     path: `database/migrations/${LARAVEL_MIGRATION_DATE}_${suffix}_create_${table.tableName}_table.php`,

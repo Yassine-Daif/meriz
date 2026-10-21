@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ApiClient } from '../lib/apiClient'
@@ -14,6 +16,7 @@ interface CreateClassFormProps {
 
 /** Créer une classe (compte prof). Le serveur reste juge du droit. */
 export function CreateClassForm({ client, onCreated }: CreateClassFormProps) {
+  useLanguage()
   const [className, setClassName] = useState('')
   const [nameError, setNameError] = useState<string | undefined>()
   const [creating, setCreating] = useState(false)
@@ -36,18 +39,17 @@ export function CreateClassForm({ client, onCreated }: CreateClassFormProps) {
   return (
     <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-3">
       <FormField
-        label="Nom de la classe"
+        label={t("Nom de la classe")}
         type="text"
         value={className}
         onChange={setClassName}
         autoComplete="off"
         maxLength={100}
-        hint="Par exemple : BUT MMI 2, groupe B."
+        hint={t("Par exemple : BUT MMI 2, groupe B.")}
         error={nameError}
       />
-      <Button type="submit" variant="primary" loading={creating} loadingLabel="Création…" className="self-start">
-        Créer la classe
-      </Button>
+      <Button type="submit" variant="primary" loading={creating} loadingLabel={t("Création…")} className="self-start">
+        {t("Créer la classe")}</Button>
     </form>
   )
 }

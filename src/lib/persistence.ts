@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type {
   Association,
   PropertyRef,
@@ -76,7 +77,7 @@ export function fileNameFor(name: string): string {
 /** Nom de document déduit d'un nom de fichier importé. */
 export function nameFromFileName(fileName: string): string {
   const base = fileName.replace(/\.meriz\.json$/i, '').replace(/\.json$/i, '').trim()
-  return base === '' ? 'Document importé' : base
+  return base === '' ? t("Document importé") : base
 }
 
 function parseName(raw: unknown): string | null {
@@ -287,16 +288,16 @@ export function parseModelFile(text: string): ParseResult {
   try {
     raw = JSON.parse(text)
   } catch {
-    return { ok: false, error: "Ce fichier n'est pas un JSON lisible." }
+    return { ok: false, error: t("Ce fichier n'est pas un JSON lisible.") }
   }
 
   if (!isRecord(raw)) {
-    return { ok: false, error: "Ce fichier n'a pas la structure d'un modèle Meriz." }
+    return { ok: false, error: t("Ce fichier n'a pas la structure d'un modèle Meriz.") }
   }
   if (raw.format !== MERIZ_FORMAT) {
     return {
       ok: false,
-      error: `Ce fichier n'est pas un modèle Meriz (champ « format » attendu : « ${MERIZ_FORMAT} »).`,
+      error: t("Ce fichier n'est pas un modèle Meriz (champ « format » attendu : « {0} »).", [MERIZ_FORMAT]),
     }
   }
 
@@ -304,11 +305,11 @@ export function parseModelFile(text: string): ParseResult {
   if (!isRecord(rawMcd) || !Array.isArray(rawMcd.entities) || !Array.isArray(rawMcd.associations)) {
     return {
       ok: false,
-      error: 'Le modèle du fichier est mal formé (entités ou associations manquantes).',
+      error: t("Le modèle du fichier est mal formé (entités ou associations manquantes)."),
     }
   }
   if (!isLayout(raw.layout)) {
-    return { ok: false, error: 'Les positions du fichier (layout) sont mal formées.' }
+    return { ok: false, error: t("Les positions du fichier (layout) sont mal formées.") }
   }
 
   if (raw.version === 1) {
@@ -316,14 +317,14 @@ export function parseModelFile(text: string): ParseResult {
     const entities: LegacyOwner[] = []
     for (const value of rawMcd.entities) {
       if (!isLegacyEntity(value)) {
-        return { ok: false, error: 'Le fichier (version 1) contient une entité mal formée.' }
+        return { ok: false, error: t("Le fichier (version 1) contient une entité mal formée.") }
       }
       entities.push(value)
     }
     const associations: (LegacyOwner & { legs: Leg[] })[] = []
     for (const value of rawMcd.associations) {
       if (!isLegacyAssociation(value)) {
-        return { ok: false, error: 'Le fichier (version 1) contient une association mal formée.' }
+        return { ok: false, error: t("Le fichier (version 1) contient une association mal formée.") }
       }
       associations.push(value)
     }
@@ -338,17 +339,17 @@ export function parseModelFile(text: string): ParseResult {
   if (raw.version !== MERIZ_VERSION) {
     return {
       ok: false,
-      error: `Version de fichier non prise en charge (attendu : ${MERIZ_VERSION} ou 1).`,
+      error: t("Version de fichier non prise en charge (attendu : {0} ou 1).", [MERIZ_VERSION]),
     }
   }
 
   if (!Array.isArray(rawMcd.properties)) {
-    return { ok: false, error: 'Le dictionnaire des propriétés est manquant ou mal formé.' }
+    return { ok: false, error: t("Le dictionnaire des propriétés est manquant ou mal formé.") }
   }
   const properties: Property[] = []
   for (const value of rawMcd.properties) {
     if (!isProperty(value)) {
-      return { ok: false, error: 'Le fichier contient une propriété mal formée.' }
+      return { ok: false, error: t("Le fichier contient une propriété mal formée.") }
     }
     properties.push(value)
   }
@@ -356,7 +357,7 @@ export function parseModelFile(text: string): ParseResult {
   const entities: Entity[] = []
   for (const value of rawMcd.entities) {
     if (!isEntity(value)) {
-      return { ok: false, error: 'Le fichier contient une entité mal formée.' }
+      return { ok: false, error: t("Le fichier contient une entité mal formée.") }
     }
     entities.push(value)
   }
@@ -367,7 +368,7 @@ export function parseModelFile(text: string): ParseResult {
       return {
         ok: false,
         error:
-          'Le fichier contient une association mal formée (attributs, pattes ou cardinalités invalides).',
+          t("Le fichier contient une association mal formée (attributs, pattes ou cardinalités invalides)."),
       }
     }
     associations.push(value)

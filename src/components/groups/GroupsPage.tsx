@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useCallback, useMemo, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import { formatJoinCode } from '../../lib/classroomsApi'
@@ -39,6 +41,7 @@ interface GroupsPageProps {
  * travaille avec les autres sur les documents du groupe.
  */
 export function GroupsPage({ client, opening = null, onOpenGroupDocument }: GroupsPageProps) {
+  useLanguage()
   const groups = useGroups(client)
   const { reload } = groups
   const [selected, setSelected] = useState<GroupOpening | null>(opening)
@@ -63,8 +66,8 @@ export function GroupsPage({ client, opening = null, onOpenGroupDocument }: Grou
     const copied = await copyText(formatJoinCode(code))
     setStatus(
       copied
-        ? `Code ${formatJoinCode(code)} copié dans le presse-papiers.`
-        : 'Copie impossible dans ce navigateur : ouvrez le groupe pour lire son code.',
+        ? t("Code {0} copié dans le presse-papiers.", [formatJoinCode(code)])
+        : t("Copie impossible dans ce navigateur : ouvrez le groupe pour lire son code."),
     )
   }
 
@@ -80,7 +83,7 @@ export function GroupsPage({ client, opening = null, onOpenGroupDocument }: Grou
 
   if (selected) {
     return (
-      <PageShell title="Groupe" focusKey={selected.id} onBack={() => backToList(null)} backLabel="Retour à mes groupes">
+      <PageShell title={t("Groupe")} focusKey={selected.id} onBack={() => backToList(null)} backLabel={t("Retour à mes groupes")}>
         <GroupView
           key={selected.id}
           client={client}
@@ -97,8 +100,8 @@ export function GroupsPage({ client, opening = null, onOpenGroupDocument }: Grou
 
   return (
     <PageShell
-      title="Mes groupes"
-      description="Travaillez à plusieurs sur les mêmes modèles. Créez un groupe et partagez son code, ou rejoignez celui d’un camarade."
+      title={t("Mes groupes")}
+      description={t("Travaillez à plusieurs sur les mêmes modèles. Créez un groupe et partagez son code, ou rejoignez celui d’un camarade.")}
     >
       <p role="status" aria-live="polite" className="min-h-5 text-sm">
         {status && (
@@ -114,8 +117,7 @@ export function GroupsPage({ client, opening = null, onOpenGroupDocument }: Grou
       <div className="mt-3 grid gap-4 md:grid-cols-2">
         <Card as="section" aria-labelledby="rejoindre-groupe-titre">
           <h2 id="rejoindre-groupe-titre" className="text-base font-semibold text-ink">
-            Rejoindre un groupe
-          </h2>
+            {t("Rejoindre un groupe")}</h2>
           <div className="mt-3">
             <JoinGroupForm
               client={client}
@@ -123,7 +125,7 @@ export function GroupsPage({ client, opening = null, onOpenGroupDocument }: Grou
                 open({
                   id: group.id,
                   initial: group,
-                  message: `Vous avez rejoint le groupe « ${group.name} ».`,
+                  message: t("Vous avez rejoint le groupe « {0} ».", [group.name]),
                 })
               }
             />
@@ -132,8 +134,7 @@ export function GroupsPage({ client, opening = null, onOpenGroupDocument }: Grou
 
         <Card as="section" aria-labelledby="creer-groupe-titre">
           <h2 id="creer-groupe-titre" className="text-base font-semibold text-ink">
-            Créer un groupe
-          </h2>
+            {t("Créer un groupe")}</h2>
           <div className="mt-3">
             <CreateGroupForm
               client={client}
@@ -141,7 +142,7 @@ export function GroupsPage({ client, opening = null, onOpenGroupDocument }: Grou
                 open({
                   id: group.id,
                   initial: group,
-                  message: `Groupe « ${group.name} » créé. Partagez son code pour que les autres vous rejoignent.`,
+                  message: t("Groupe « {0} » créé. Partagez son code pour que les autres vous rejoignent.", [group.name]),
                   // À la création seulement : le créateur voit son code
                   // tout de suite. Les visites suivantes ouvrent les membres.
                   tab: 'reglages',
@@ -154,16 +155,15 @@ export function GroupsPage({ client, opening = null, onOpenGroupDocument }: Grou
 
       <section aria-labelledby="liste-groupes-titre" className="mt-8">
         <h2 id="liste-groupes-titre" className="text-lg font-semibold tracking-tight text-ink">
-          Vos groupes
-          {total > 0 && <span className="font-normal text-ink-soft"> ({total})</span>}
+          {t("Vos groupes")}{total > 0 && <span className="font-normal text-ink-soft"> ({total})</span>}
         </h2>
         {searchable && (
           <div className="mt-3 max-w-md">
             <SearchField
-              label="Rechercher un groupe"
+              label={t("Rechercher un groupe")}
               value={query}
               onChange={setQuery}
-              placeholder="Nom du groupe"
+              placeholder={t("Nom du groupe")}
               count={searchCountLabel(shown.length, total, 'groupe', 'groupes')}
             />
           </div>
@@ -175,8 +175,8 @@ export function GroupsPage({ client, opening = null, onOpenGroupDocument }: Grou
             onCopyCode={(code) => void copyCode(code)}
             emptyText={
               searching
-                ? 'Aucun groupe ne porte ce nom. Essayez un autre mot, ou effacez la recherche.'
-                : 'Aucun groupe pour l’instant : créez-en un, ou saisissez le code d’un camarade.'
+                ? t("Aucun groupe ne porte ce nom. Essayez un autre mot, ou effacez la recherche.")
+                : t("Aucun groupe pour l’instant : créez-en un, ou saisissez le code d’un camarade.")
             }
           />
         </div>

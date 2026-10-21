@@ -1,3 +1,5 @@
+import { t } from '../i18n/runtime'
+import { useLanguage } from "../lib/useLanguage"
 import { Handle } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
 import { ANCHOR_SIDES } from './anchors'
@@ -10,6 +12,7 @@ import type { AssociationFlowNode } from './mcdToFlow'
  * quatre ronds amorcent le geste « relier » vers une entité.
  */
 export function AssociationNode({ data, selected, isConnectable }: NodeProps<AssociationFlowNode>) {
+  useLanguage()
   const { association, attributes } = data
   return (
     <div
@@ -32,7 +35,7 @@ export function AssociationNode({ data, selected, isConnectable }: NodeProps<Ass
             <li key={attribute.propertyId}>
               {attribute.name}{' '}
               <span className="font-mono text-micro text-ink-soft">
-                {attribute.type}
+                {t(attribute.type)}
                 {attribute.size !== undefined && `(${attribute.size})`}
               </span>
             </li>

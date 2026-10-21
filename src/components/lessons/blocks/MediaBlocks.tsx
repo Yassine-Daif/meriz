@@ -1,3 +1,5 @@
+import { t } from "../../../i18n/runtime"
+import { useLanguage } from "../../../lib/useLanguage"
 import type { ApiClient } from '../../../lib/apiClient'
 import { useMediaUrl } from '../../../lib/useMediaUrl'
 
@@ -10,6 +12,7 @@ interface MediaBlockProps {
 
 /** Message discret : un fichier manquant ne casse pas la page. */
 function Placeholder({ text, alert = false }: { text: string; alert?: boolean }) {
+  useLanguage()
   return (
     <p
       role={alert ? 'alert' : 'status'}
@@ -25,16 +28,17 @@ function Placeholder({ text, alert = false }: { text: string; alert?: boolean })
 
 /** Image d'un cours, avec sa description pour l'accessibilité. */
 export function ImageBlock({ client, lessonId, mediaId, alt }: MediaBlockProps & { alt: string }) {
+  useLanguage()
   const media = useMediaUrl(client, lessonId, mediaId)
 
   if (mediaId === null) {
-    return <Placeholder text="Aucune image choisie pour l'instant." />
+    return <Placeholder text={t("Aucune image choisie pour l'instant.")} />
   }
   if (media.loading) {
-    return <Placeholder text="Chargement de l'image…" />
+    return <Placeholder text={t("Chargement de l'image…")} />
   }
   if (!media.url) {
-    return <Placeholder alert text={media.error ?? "Cette image n'a pas pu être chargée."} />
+    return <Placeholder alert text={media.error ?? t("Cette image n'a pas pu être chargée.")} />
   }
   return (
     <img
@@ -47,16 +51,17 @@ export function ImageBlock({ client, lessonId, mediaId, alt }: MediaBlockProps &
 
 /** Piste audio d'un cours, dans le lecteur du navigateur. */
 export function AudioBlock({ client, lessonId, mediaId, label }: MediaBlockProps & { label: string }) {
+  useLanguage()
   const media = useMediaUrl(client, lessonId, mediaId)
 
   if (mediaId === null) {
-    return <Placeholder text="Aucun audio choisi pour l'instant." />
+    return <Placeholder text={t("Aucun audio choisi pour l'instant.")} />
   }
   if (media.loading) {
-    return <Placeholder text="Chargement de l'audio…" />
+    return <Placeholder text={t("Chargement de l'audio…")} />
   }
   if (!media.url) {
-    return <Placeholder alert text={media.error ?? "Cet audio n'a pas pu être chargé."} />
+    return <Placeholder alert text={media.error ?? t("Cet audio n'a pas pu être chargé.")} />
   }
   return (
     <div className="rounded-card border border-line bg-surface-soft p-3">
@@ -64,7 +69,7 @@ export function AudioBlock({ client, lessonId, mediaId, label }: MediaBlockProps
       <audio
         controls
         src={media.url}
-        aria-label={label.trim() === '' ? 'Piste audio du cours' : label}
+        aria-label={label.trim() === '' ? t("Piste audio du cours") : label}
         className="w-full"
       />
     </div>

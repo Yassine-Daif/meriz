@@ -1,3 +1,7 @@
+import { counted } from "../lib/plural"
+import { localeTag } from "../i18n/runtime"
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useState } from 'react'
 import type { MldTable } from '../model/mld'
 import { copyText } from '../lib/clipboard'
@@ -15,7 +19,7 @@ interface MldViewProps {
  * du MCD : la date est celle de l'affichage ou de la copie.
  */
 function mldrHeader(date: Date): string {
-  return `# Modèle créé le : ${date.toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'medium' })}`
+  return t("# Modèle créé le : {0}", [date.toLocaleString(localeTag(), { dateStyle: 'full', timeStyle: 'medium' })])
 }
 
 /**
@@ -24,31 +28,29 @@ function mldrHeader(date: Date): string {
  * affiché au MPD.
  */
 export function MldView({ tables, hasErrors }: MldViewProps) {
+  useLanguage()
   const [copyStatus, setCopyStatus] = useState('')
 
   if (tables.length === 0) {
-    return <EmptyGeneration viewName="MLD (modèle logique de données)" />
+    return <EmptyGeneration viewName={t("MLD (modèle logique de données)")} />
   }
 
   const handleCopy = async () => {
     const text = [mldrHeader(new Date()), ...tables.map(relationalLine)].join('\n')
     const copied = await copyText(text)
-    setCopyStatus(copied ? 'Notation copiée dans le presse-papiers.' : 'Erreur : copie impossible dans ce navigateur.')
+    setCopyStatus(copied ? t("Notation copiée dans le presse-papiers.") : t("Erreur : copie impossible dans ce navigateur."))
   }
 
   return (
-    <section aria-label="Vue MLD" className="flex min-h-0 flex-1 flex-col">
+    <section aria-label={t("Vue MLD")} className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center gap-3 border-b border-line bg-surface px-4 py-2">
         <Button
           size="sm"
           onClick={() => void handleCopy()}
         >
-          Copier la notation
-        </Button>
+          {t("Copier la notation")}</Button>
         <p className="text-xs text-ink-soft">
-          {tables.length} table{tables.length > 1 ? 's' : ''} dérivée
-          {tables.length > 1 ? 's' : ''} du MCD
-        </p>
+          {counted(tables.length, 'table dérivée du MCD', 'tables dérivées du MCD')}</p>
         <p role="status" aria-live="polite" className="text-xs text-ink-soft">
           {copyStatus}
         </p>
@@ -74,11 +76,10 @@ export function MldView({ tables, hasErrors }: MldViewProps) {
                       {column.name}
                     </span>
                     <span className="text-ink-soft">{column.type}</span>
-                    {column.nullable && <span className="text-ink-soft">NULL</span>}
+                    {column.nullable && <span className="text-ink-soft">{t("NULL")}</span>}
                     {column.isPrimaryKey && (
                       <span className="rounded-sm border border-line bg-accent-soft px-1 text-nano font-medium text-accent-ink">
-                        PK
-                      </span>
+                        {t("PK")}</span>
                     )}
                     {column.references && (
                       <span className="text-ink-soft">→ {column.references.tableName}</span>
@@ -93,7 +94,7 @@ export function MldView({ tables, hasErrors }: MldViewProps) {
         {/* Le MLDR textuel d'AnalyseSI : en-tête daté en commentaire,
             puis la notation relationnelle, FK préfixées #. */}
         <div className="w-full rounded-card border border-line bg-surface p-4 shadow-soft">
-          <h2 className="text-sm font-semibold tracking-tight">Notation relationnelle (MLDR)</h2>
+          <h2 className="text-sm font-semibold tracking-tight">{t("Notation relationnelle (MLDR)")}</h2>
           <div className="mt-2 font-mono text-code leading-7">
             <p className="text-ink-soft">{mldrHeader(new Date())}</p>
             <ul>

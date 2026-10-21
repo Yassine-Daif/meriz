@@ -38,6 +38,7 @@ export interface ReadOnlyModel {
   name: string
   /** Pastille de la barre, ex. « Rendu de Camille ». */
   label: string
+  labelMessage?: { source: string; values: readonly (string | number)[] }
   content: string
   /**
    * Travail suivi en direct : l'élève observé et son document. Le
@@ -65,6 +66,7 @@ export interface LiveCoedition {
   name: string
   /** Pastille de la barre, ex. « Travail de Camille, correction à deux ». */
   label: string
+  labelMessage?: { source: string; values: readonly (string | number)[] }
 }
 
 export type OpenLiveCoedition = (model: LiveCoedition) => void

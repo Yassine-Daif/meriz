@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import type { McdEditorState } from '../model/mcdReducer'
 import { useViewEntrance } from './useViewEntrance'
 import { registerUpdateGuard } from '../lib/updateSafety'
@@ -81,7 +83,8 @@ interface EditorProps {
 }
 
 /** Consultation seule : aucune action n'atteint le modèle. */
-const IGNORE_ACTION = () => {}
+const IGNORE_ACTION = () => {
+  useLanguage()}
 
 /**
  * L'éditeur Merise sur un document : MCD, dictionnaire, MLD, MPD, SQL,
@@ -103,6 +106,7 @@ export function Editor({
   onStartCollaboration,
   onStopCollaboration,
 }: EditorProps) {
+  const locale = useLanguage()
   /*
    * Qui ensemence le document Yjs. L'invité d'une co-édition et le
    * membre d'un groupe naissent vides et se remplissent par la
@@ -175,7 +179,7 @@ export function Editor({
   const [mpdSettings, setMpdSettings] = useState<MpdSettings>(openedDocument.mpdSettings)
   const [syncStatus, setSyncStatus] = useState<SaveStatus>(() => saver.getStatus())
 
-  const problems = useMemo(() => validate(state.mcd), [state.mcd])
+  const problems = useMemo(() => { /* La validation produit des messages localisés. */ void locale; return validate(state.mcd) }, [state.mcd, locale])
   const hasErrors = validationErrors(problems).length > 0
 
   // MLD, MPD et SQL dérivent toujours du MCD courant : dérivation pure,
@@ -332,9 +336,9 @@ export function Editor({
   return (
     <div className="flex h-dvh flex-col bg-shell font-sans text-ink">
       <SkipLink />
-      <ConfirmDialog open={confirmLeaveAnnotations} title="Des commentaires ou traits ne sont pas enregistrés"
-        message="Envoyez votre commentaire ou réessayez l’enregistrement des traits avant de quitter. Les éléments encore en attente risquent d’être perdus."
-        confirmLabel="Quitter malgré tout" onConfirm={onBackToDocuments} onCancel={() => setConfirmLeaveAnnotations(false)} />
+      <ConfirmDialog open={confirmLeaveAnnotations} title={t("Des commentaires ou traits ne sont pas enregistrés")}
+        message={t("Envoyez votre commentaire ou réessayez l’enregistrement des traits avant de quitter. Les éléments encore en attente risquent d’être perdus.")}
+        confirmLabel={t("Quitter malgré tout")} onConfirm={onBackToDocuments} onCancel={() => setConfirmLeaveAnnotations(false)} />
 
       <ReactFlowProvider>
         <TopBar

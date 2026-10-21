@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { formatDate, formatRelativeDate, RELATIVE_LIMIT_MS } from '../../lib/formatDate'
 
 interface UpdatedAtProps {
@@ -12,6 +14,7 @@ interface UpdatedAtProps {
  * infobulle à la souris. Rien ne s'affiche si la date est inexploitable.
  */
 export function UpdatedAt({ iso, className }: UpdatedAtProps) {
+  useLanguage()
   if (iso === null) {
     return null
   }
@@ -25,9 +28,9 @@ export function UpdatedAt({ iso, className }: UpdatedAtProps) {
   const spellOut = Date.now() - new Date(iso).getTime() < RELATIVE_LIMIT_MS
 
   return (
-    <time dateTime={iso} title={`Mis à jour le ${exact}`} className={className}>
-      Mis à jour {relative}
-      {spellOut && <span className="sr-only">, le {exact}</span>}
+    <time dateTime={iso} title={t("Mis à jour le {0}", [exact])} className={className}>
+      {t("Mis à jour ")}{relative}
+      {spellOut && <span className="sr-only">{t(", le ")}{exact}</span>}
     </time>
   )
 }

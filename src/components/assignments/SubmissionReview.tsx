@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
@@ -45,10 +47,11 @@ export function SubmissionReview({
   assignmentTitle,
   solutionContent,
   submissionId,
-  backLabel = 'Retour aux rendus',
+  backLabel = t("Retour aux rendus"),
   onBack,
   onOpenReadOnlyModel,
 }: SubmissionReviewProps) {
+  useLanguage()
   const [submission, setSubmission] = useState<Submission | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [grade, setGrade] = useState('')
@@ -109,7 +112,7 @@ export function SubmissionReview({
     setGradeError(error.fieldErrors.grade?.[0])
     setFeedbackError(error.fieldErrors.feedback?.[0])
     const flagged = error.fieldErrors.grade || error.fieldErrors.feedback
-    setFormError(flagged ? 'Vérifiez les champs signalés.' : error.message)
+    setFormError(flagged ? t("Vérifiez les champs signalés.") : error.message)
     setAttempt((count) => count + 1)
   }
 
@@ -130,7 +133,7 @@ export function SubmissionReview({
     setPending(false)
     if (result.ok) {
       adopt(result.value)
-      setSaved('Note enregistrée. Votre élève la voit, son rendu est verrouillé.')
+      setSaved(t("Note enregistrée. Votre élève la voit, son rendu est verrouillé."))
       return
     }
     report(result.error)
@@ -146,7 +149,7 @@ export function SubmissionReview({
     setPending(false)
     if (result.ok) {
       adopt(result.value)
-      setSaved('Note retirée. Votre élève peut rendre à nouveau.')
+      setSaved(t("Note retirée. Votre élève peut rendre à nouveau."))
     } else {
       report(result.error)
     }
@@ -165,8 +168,7 @@ export function SubmissionReview({
           announce={false}
           action={
             <Button size="sm" onClick={() => void load()}>
-              Réessayer
-            </Button>
+              {t("Réessayer")}</Button>
           }
         >
           {loadError}
@@ -180,8 +182,7 @@ export function SubmissionReview({
       <div>
         {back}
         <p role="status" className="text-sm text-ink-soft">
-          Chargement du rendu…
-        </p>
+          {t("Chargement du rendu…")}</p>
       </div>
     )
   }
@@ -199,24 +200,22 @@ export function SubmissionReview({
           <h3 className="text-xl font-semibold tracking-tight text-ink">{name}</h3>
           <p className="text-sm text-ink-soft">
             {formatSubmittedAt(submission.submittedAt)}
-            {submission.isLate && ', après l’échéance'}.
+            {submission.isLate && t(", après l’échéance")}.
           </p>
         </div>
         <span className="flex flex-wrap items-center gap-1.5">
           <Badge tone={submission.status === 'graded' ? 'accent' : 'sage'}>
-            {submission.status === 'graded' ? 'Noté' : 'Rendu'}
+            {submission.status === 'graded' ? t("Noté") : t("Rendu")}
           </Badge>
-          {submission.isLate && <Badge tone="apricot">En retard</Badge>}
+          {submission.isLate && <Badge tone="apricot">{t("En retard")}</Badge>}
         </span>
       </div>
 
       <Card as="section" aria-labelledby="modele-rendu-titre" className="mt-5">
         <h4 id="modele-rendu-titre" className="text-base font-semibold text-ink">
-          Le modèle remis
-        </h4>
+          {t("Le modèle remis")}</h4>
         <p className="mt-1 text-sm text-ink-soft">
-          Il s'ouvre en consultation : vous pouvez le parcourir, le vérifier et l'exporter, sans rien y changer.
-        </p>
+          {t("Il s'ouvre en consultation : vous pouvez le parcourir, le vérifier et l'exporter, sans rien y changer.")}</p>
         <div className="mt-3">
           <Button
             variant="primary"
@@ -227,13 +226,13 @@ export function SubmissionReview({
                 submissionId: submission.id,
                 key: `${submission.id}:rendu`,
                 name: `${assignmentTitle} : ${name}`,
-                label: `Rendu de ${name}`,
+                label: t("Rendu de {0}", [name]),
+            labelMessage: { source: "Rendu de {0}", values: [name] },
                 content: submission.content,
               })
             }
           >
-            Consulter le modèle rendu
-          </Button>
+            {t("Consulter le modèle rendu")}</Button>
         </div>
       </Card>
 
@@ -249,8 +248,8 @@ export function SubmissionReview({
       ) : (
         <p className="mt-4 text-sm text-ink-soft">
           {solutionContent === null
-            ? 'Pas de comparaison : ce devoir n’a pas de corrigé. Construisez-en un pour obtenir cette aide.'
-            : 'Pas de comparaison : le corrigé ou le rendu n’a pas pu être relu.'}
+            ? t("Pas de comparaison : ce devoir n’a pas de corrigé. Construisez-en un pour obtenir cette aide.")
+            : t("Pas de comparaison : le corrigé ou le rendu n’a pas pu être relu.")}
         </p>
       )}
 
@@ -258,18 +257,18 @@ export function SubmissionReview({
         <FormAlert message={formError} attempt={attempt} />
 
         <FormField
-          label="Note"
+          label={t("Note")}
           type="text"
           value={grade}
           onChange={setGrade}
           autoComplete="off"
           maxLength={50}
-          hint="Libre : « 16/20 », « Acquis », « À revoir »."
+          hint={t("Libre : « 16/20 », « Acquis », « À revoir ».")}
           error={gradeError}
         />
 
         <FormField
-          label="Commentaire"
+          label={t("Commentaire")}
           type="text"
           value={feedback}
           onChange={setFeedback}
@@ -277,18 +276,17 @@ export function SubmissionReview({
           multiline
           required={false}
           maxLength={2000}
-          hint="Facultatif. Ce que votre élève lira avec sa note."
+          hint={t("Facultatif. Ce que votre élève lira avec sa note.")}
           error={feedbackError}
         />
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="submit" variant="primary" loading={pending} loadingLabel="Enregistrement…">
-            {submission.status === 'graded' ? 'Modifier la note' : 'Enregistrer la note'}
+          <Button type="submit" variant="primary" loading={pending} loadingLabel={t("Enregistrement…")}>
+            {submission.status === 'graded' ? t("Modifier la note") : t("Enregistrer la note")}
           </Button>
           {submission.status === 'graded' && (
             <Button onClick={() => setConfirmRemove(true)} disabled={pending}>
-              Retirer la note
-            </Button>
+              {t("Retirer la note")}</Button>
           )}
           <p role="status" aria-live="polite" className="text-sm text-ink-soft">
             {saved && (
@@ -303,9 +301,9 @@ export function SubmissionReview({
 
       <ConfirmDialog
         open={confirmRemove}
-        title="Retirer la note"
-        message={`La note et le commentaire seront effacés, et ${name} pourra rendre une nouvelle version.`}
-        confirmLabel="Retirer la note"
+        title={t("Retirer la note")}
+        message={t("La note et le commentaire seront effacés, et {0} pourra rendre une nouvelle version.", [name])}
+        confirmLabel={t("Retirer la note")}
         onConfirm={() => void withdraw()}
         onCancel={() => setConfirmRemove(false)}
       />

@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useState } from 'react'
 import type { ApiClient } from '../lib/apiClient'
 import { fetchCurrentUser } from '../lib/authApi'
@@ -22,9 +24,10 @@ interface ResendVerificationProps {
  */
 export function ResendVerification({
   client,
-  label = 'Renvoyer le lien',
+  label = t("Renvoyer le lien"),
   variant = 'secondary',
 }: ResendVerificationProps) {
+  useLanguage()
   const { updateUser } = useSession()
   const [pending, setPending] = useState(false)
   const [notice, setNotice] = useState<{ tone: 'success' | 'warning' | 'error'; text: string } | null>(null)
@@ -56,7 +59,7 @@ export function ResendVerification({
         variant={variant}
         onClick={() => void send()}
         loading={pending}
-        loadingLabel="Envoi…"
+        loadingLabel={t("Envoi…")}
       >
         {label}
       </Button>

@@ -1,3 +1,6 @@
+import { counted } from '../lib/plural'
+import { localeTag } from '../i18n/runtime'
+import { t } from "../i18n/runtime"
 import type { Association, Cardinality, Entity, Mcd } from './mcd'
 import { resolveAttributes } from './queries'
 import type { ResolvedAttribute } from './queries'
@@ -82,7 +85,7 @@ export function normalizeName(name: string): string {
 
 /** Nom affichable, même vide. */
 function shown(name: string): string {
-  return name.trim() === '' ? '(sans nom)' : name.trim()
+  return name.trim() === '' ? t("(sans nom)") : name.trim()
 }
 
 function cardinalityLabel(cardinality: Cardinality): string {
@@ -159,7 +162,7 @@ function compareAttributes(
     differences.push({
       kind: 'attribute-missing',
       scope,
-      message: `L'attribut « ${shown(attribute.name)} » du corrigé ne se retrouve pas dans le rendu. À vérifier.`,
+      message: t("L'attribut « {0} » du corrigé ne se retrouve pas dans le rendu. À vérifier.", [shown(attribute.name)]),
     })
   }
   for (const attribute of extra) {
@@ -167,7 +170,7 @@ function compareAttributes(
     differences.push({
       kind: 'attribute-extra',
       scope,
-      message: `L'attribut « ${shown(attribute.name)} » du rendu n'est pas au corrigé. Peut-être un choix volontaire.`,
+      message: t("L'attribut « {0} » du rendu n'est pas au corrigé. Peut-être un choix volontaire.", [shown(attribute.name)]),
     })
   }
 
@@ -178,7 +181,7 @@ function compareAttributes(
       differences.push({
         kind: 'attribute-type',
         scope,
-        message: `« ${shown(got.name)} » : ${TYPE_LABEL} ${want.type} au corrigé, ${got.type} au rendu. À vérifier.`,
+        message: t("« {0} » : {1} {2} au corrigé, {3} au rendu. À vérifier.", [shown(got.name), TYPE_LABEL, want.type, got.type]),
       })
     }
     if (want.isIdentifier !== got.isIdentifier) {
@@ -187,8 +190,8 @@ function compareAttributes(
         kind: 'attribute-identifier',
         scope,
         message: want.isIdentifier
-          ? `« ${shown(got.name)} » fait partie de l'identifiant au corrigé, pas au rendu. À vérifier.`
-          : `« ${shown(got.name)} » fait partie de l'identifiant au rendu, pas au corrigé. À vérifier.`,
+          ? t("« {0} » fait partie de l'identifiant au corrigé, pas au rendu. À vérifier.", [shown(got.name)])
+          : t("« {0} » fait partie de l'identifiant au rendu, pas au corrigé. À vérifier.", [shown(got.name)]),
       })
     }
   }
@@ -236,11 +239,11 @@ function compareLegs(
     const got = chosen.leg.cardinality
     if (want.min !== got.min || want.max !== got.max) {
       counter.checks += 1
-      const side = leg.role ? `côté ${shown(entityName)} (${leg.role})` : `côté ${shown(entityName)}`
+      const side = leg.role ? t("côté {0} ({1})", [shown(entityName), leg.role]) : t("côté {0}", [shown(entityName)])
       differences.push({
         kind: 'cardinality',
         scope,
-        message: `${side} : ${cardinalityLabel(want)} au corrigé, ${cardinalityLabel(got)} au rendu. À vérifier.`,
+        message: t("{0} : {1} au corrigé, {2} au rendu. À vérifier.", [side, cardinalityLabel(want), cardinalityLabel(got)]),
       })
     }
   }
@@ -262,16 +265,16 @@ export function compareMcd(submitted: Mcd, expected: Mcd): Comparison {
   for (const entity of entities.missing) {
     differences.push({
       kind: 'entity-missing',
-      scope: `Entité ${shown(entity.name)}`,
-      message: `L'entité « ${shown(entity.name)} » du corrigé ne se retrouve pas dans le rendu. À vérifier.`,
+      scope: t("Entité {0}", [shown(entity.name)]),
+      message: t("L'entité « {0} » du corrigé ne se retrouve pas dans le rendu. À vérifier.", [shown(entity.name)]),
     })
   }
   for (const entity of entities.extra) {
     counter.extras += 1
     differences.push({
       kind: 'entity-extra',
-      scope: `Entité ${shown(entity.name)}`,
-      message: `L'entité « ${shown(entity.name)} » du rendu n'est pas au corrigé. Peut-être un découpage différent, à regarder.`,
+      scope: t("Entité {0}", [shown(entity.name)]),
+      message: t("L'entité « {0} » du rendu n'est pas au corrigé. Peut-être un découpage différent, à regarder.", [shown(entity.name)]),
     })
   }
 
@@ -280,7 +283,7 @@ export function compareMcd(submitted: Mcd, expected: Mcd): Comparison {
     counter.matched += 1
     matchedEntities.push({ expected: shown(want.name), submitted: shown(got.name) })
     compareAttributes(
-      `Entité ${shown(want.name)}`,
+      t("Entité {0}", [shown(want.name)]),
       resolveAttributes(expected, want.attributes),
       resolveAttributes(submitted, got.attributes),
       differences,
@@ -334,23 +337,23 @@ export function compareMcd(submitted: Mcd, expected: Mcd): Comparison {
   for (const association of stillMissing) {
     differences.push({
       kind: 'association-missing',
-      scope: `Association ${shown(association.name)}`,
-      message: `L'association « ${shown(association.name)} » du corrigé ne se retrouve pas dans le rendu. À vérifier.`,
+      scope: t("Association {0}", [shown(association.name)]),
+      message: t("L'association « {0} » du corrigé ne se retrouve pas dans le rendu. À vérifier.", [shown(association.name)]),
     })
   }
   for (const association of remaining) {
     counter.extras += 1
     differences.push({
       kind: 'association-extra',
-      scope: `Association ${shown(association.name)}`,
-      message: `L'association « ${shown(association.name)} » du rendu n'est pas au corrigé. Peut-être une lecture différente de l'énoncé.`,
+      scope: t("Association {0}", [shown(association.name)]),
+      message: t("L'association « {0} » du rendu n'est pas au corrigé. Peut-être une lecture différente de l'énoncé.", [shown(association.name)]),
     })
   }
 
   const matchedAssociations: MatchedPair[] = []
   for (const { expected: want, submitted: got, sameEntities } of pairs) {
     counter.matched += 1
-    const scope = `Association ${shown(want.name)}`
+    const scope = t("Association {0}", [shown(want.name)])
     matchedAssociations.push({ expected: shown(want.name), submitted: shown(got.name) })
 
     if (!sameEntities) {
@@ -364,7 +367,7 @@ export function compareMcd(submitted: Mcd, expected: Mcd): Comparison {
       differences.push({
         kind: 'association-legs',
         scope,
-        message: `Entités reliées : ${wantNames} au corrigé, ${gotNames} au rendu. À vérifier.`,
+        message: t("Entités reliées : {0} au corrigé, {1} au rendu. À vérifier.", [wantNames, gotNames]),
       })
     }
 
@@ -406,11 +409,11 @@ export function compareMcd(submitted: Mcd, expected: Mcd): Comparison {
 
 /** « 17,5 » : virgule décimale, entier sans décimale inutile. */
 export function formatGrade(grade: number): string {
-  return Number.isInteger(grade) ? String(grade) : grade.toFixed(1).replace('.', ',')
+  return new Intl.NumberFormat(localeTag(), { maximumFractionDigits: 1, useGrouping: false }).format(grade)
 }
 
 function plural(count: number, one: string, many: string): string {
-  return `${count} ${count > 1 ? many : one}`
+  return counted(count, one, many)
 }
 
 /**
@@ -420,15 +423,15 @@ function plural(count: number, one: string, many: string): string {
 export function comparisonSummaryText(comparison: Comparison): string {
   const { expectedPoints, matchedPoints, checks, extras } = comparison.summary
   const lines = [
-    `Comparaison au corrigé : ${matchedPoints} éléments attendus retrouvés sur ${expectedPoints}.`,
+    t("Comparaison au corrigé : {0} éléments attendus retrouvés sur {1}.", [matchedPoints, expectedPoints]),
   ]
   if (checks > 0) {
-    lines.push(`${plural(checks, 'point à vérifier', 'points à vérifier')} sur ces éléments.`)
+    lines.push(t("{0} sur ces éléments.", [plural(checks, 'point à vérifier', 'points à vérifier')]))
   }
   if (extras > 0) {
-    lines.push(`${plural(extras, 'élément', 'éléments')} en plus du corrigé, ce qui peut être un choix valable.`)
+    lines.push(t("{0} en plus du corrigé, ce qui peut être un choix valable.", [plural(extras, 'élément', 'éléments')]))
   }
-  lines.push('Ce relevé est indicatif : une différence n’est pas forcément une faute.')
+  lines.push(t("Ce relevé est indicatif : une différence n’est pas forcément une faute."))
   return lines.join('\n')
 }
 
@@ -436,10 +439,10 @@ export function comparisonSummaryText(comparison: Comparison): string {
 export function comparisonDetailText(comparison: Comparison): string {
   const lines = [comparisonSummaryText(comparison), '']
   if (comparison.differences.length === 0) {
-    lines.push('Aucune différence relevée avec le corrigé.')
+    lines.push(t("Aucune différence relevée avec le corrigé."))
     return lines.join('\n')
   }
-  lines.push('Points à regarder :')
+  lines.push(t("Points à regarder :"))
   let current = ''
   for (const difference of comparison.differences) {
     if (difference.scope !== current) {

@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { Edge, Node } from '@xyflow/react'
 import type { Association, Cardinality, Entity, Mcd } from '../model/mcd'
 import type { McdLayout } from '../model/layout'
@@ -49,7 +50,7 @@ export function mcdToFlow(
         type: 'entity',
         position: layout[entity.id] ?? FALLBACK_POSITION,
         data: { entity, attributes: resolveAttributes(mcd, entity.attributes) },
-        ariaLabel: `Entité ${entity.name}`,
+        ariaLabel: t("Entité {0}", [entity.name]),
       }),
     ),
     ...mcd.associations.map(
@@ -58,7 +59,7 @@ export function mcdToFlow(
         type: 'association',
         position: layout[association.id] ?? FALLBACK_POSITION,
         data: { association, attributes: resolveAttributes(mcd, association.attributes) },
-        ariaLabel: `Association ${association.name}`,
+        ariaLabel: t("Association {0}", [association.name]),
       }),
     ),
   ]
@@ -72,7 +73,7 @@ export function mcdToFlow(
         source: association.id,
         target: leg.entityId,
         data: { cardinality: leg.cardinality, role: leg.role, labelPosition: layout[leg.id] },
-        ariaLabel: `Patte de ${association.name} vers ${entityName}, cardinalité ${leg.cardinality.min},${leg.cardinality.max}`,
+        ariaLabel: t("Patte de {0} vers {1}, cardinalité {2},{3}", [association.name, entityName, leg.cardinality.min, leg.cardinality.max]),
       }
     }),
   )

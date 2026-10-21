@@ -1,3 +1,5 @@
+import { getLanguage } from '../i18n/runtime'
+import { t } from "../i18n/runtime"
 import { translateValidationMessage } from './validationMessages'
 
 /**
@@ -68,14 +70,14 @@ interface ApiClientOptions {
 }
 
 const MESSAGES = {
-  notConfigured: "Les comptes ne sont pas disponibles : l'adresse du serveur n'est pas configurée.",
-  network: 'Serveur injoignable. Vérifiez votre connexion internet, puis réessayez.',
-  unauthorized: 'Votre session a expiré. Reconnectez-vous.',
-  forbidden: "Cette action n'est pas autorisée.",
-  notFound: 'Document introuvable. Il a peut-être été supprimé.',
-  validation: 'Vérifiez les informations saisies.',
-  server: 'Le serveur a rencontré une erreur. Réessayez dans quelques instants.',
-  unexpected: 'Réponse inattendue du serveur. Réessayez plus tard.',
+  get notConfigured() { return t("Les comptes ne sont pas disponibles : l'adresse du serveur n'est pas configurée.") },
+  get network() { return t("Serveur injoignable. Vérifiez votre connexion internet, puis réessayez.") },
+  get unauthorized() { return t("Votre session a expiré. Reconnectez-vous.") },
+  get forbidden() { return t("Cette action n'est pas autorisée.") },
+  get notFound() { return t("Document introuvable. Il a peut-être été supprimé.") },
+  get validation() { return t("Vérifiez les informations saisies.") },
+  get server() { return t("Le serveur a rencontré une erreur. Réessayez dans quelques instants.") },
+  get unexpected() { return t("Réponse inattendue du serveur. Réessayez plus tard.") },
 }
 
 export function apiError(kind: ApiErrorKind, status: number | null, message: string): ApiError {
@@ -109,8 +111,8 @@ function readFieldErrors(payload: unknown): Record<string, string[]> {
 
 function rateLimitMessage(seconds: number | undefined): string {
   return seconds !== undefined && seconds > 0
-    ? `Trop de tentatives. Réessayez dans ${seconds} seconde${seconds > 1 ? 's' : ''}.`
-    : 'Trop de tentatives. Réessayez dans un instant.'
+    ? t("Trop de tentatives. Réessayez dans {0} seconde{1}.", [seconds, seconds > 1 ? 's' : ''])
+    : t("Trop de tentatives. Réessayez dans un instant.")
 }
 
 export function createApiClient(options: ApiClientOptions): ApiClient {
@@ -132,13 +134,13 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     }
 
     const multipart = typeof FormData !== 'undefined' && body instanceof FormData
-    const headers: Record<string, string> = { Accept: 'application/json' }
+    const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': getLanguage() }
     if (body !== undefined && !multipart) {
       headers['Content-Type'] = 'application/json'
     }
     const token = options.getToken()
     if (token) {
-      headers.Authorization = `Bearer ${token}`
+      headers.Authorization = ("Bearer " + String(token) + "")
     }
 
     // Délai maximal : au-delà, la requête est abandonnée comme un échec réseau.

@@ -126,4 +126,4 @@ export function resolveVideo(input: string): VideoEmbed | null {
 }
 
 /** Hébergeurs acceptés, pour l'aide affichée au prof. */
-export const KNOWN_PROVIDERS = 'YouTube, Vimeo et Dailymotion'
+export const KNOWN_PROVIDERS = 'YouTube, Vimeo, Dailymotion'

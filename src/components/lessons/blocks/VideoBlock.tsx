@@ -1,3 +1,5 @@
+import { t } from "../../../i18n/runtime"
+import { useLanguage } from "../../../lib/useLanguage"
 import { resolveVideo } from '../../../lib/videoEmbed'
 import { ExternalLink } from './ExternalLink'
 
@@ -12,6 +14,7 @@ interface VideoBlockProps {
  * Tout le reste devient un lien.
  */
 export function VideoBlock({ url }: VideoBlockProps) {
+  useLanguage()
   const embed = resolveVideo(url)
 
   if (!embed) {
@@ -27,7 +30,7 @@ export function VideoBlock({ url }: VideoBlockProps) {
       <div className="relative aspect-video">
         <iframe
           src={embed.embedUrl}
-          title={`Vidéo ${embed.providerLabel}`}
+          title={t("Vidéo {0}", [embed.providerLabel])}
           loading="lazy"
           referrerPolicy="strict-origin-when-cross-origin"
           sandbox="allow-scripts allow-same-origin allow-presentation"

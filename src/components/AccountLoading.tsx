@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useSession } from './sessionContext'
 import { Button } from './ui/Button'
 import { Card } from './ui/Card'
@@ -14,30 +16,27 @@ interface AccountLoadingProps {
  * jamais les documents d'un espace tant que le compte n'est pas connu.
  */
 export function AccountLoading({ kind }: AccountLoadingProps) {
+  useLanguage()
   const { retry } = useSession()
 
   return (
     <div className="flex h-dvh flex-col bg-shell font-sans text-ink">
       <SkipLink />
       <header className="flex items-center border-b border-line bg-surface px-4 py-2.5 sm:px-6">
-        <Lockup size={30} label="Meriz" />
+        <Lockup size={30} label={t("Meriz")} />
       </header>
       <main id="contenu" className="flex flex-1 items-center justify-center px-4">
         <Card className="max-w-md text-center">
           {kind === 'loading' ? (
             <p role="status" className="text-base text-ink-soft">
-              Vérification de votre compte…
-            </p>
+              {t("Vérification de votre compte…")}</p>
           ) : (
             <>
-              <h1 className="text-xl font-semibold tracking-tight text-ink">Serveur injoignable</h1>
+              <h1 className="text-xl font-semibold tracking-tight text-ink">{t("Serveur injoignable")}</h1>
               <p role="status" className="mt-2 text-sm leading-6 text-ink-soft">
-                Vos documents sont dans votre compte, et ce navigateur n'en garde aucune copie. Ils réapparaîtront
-                dès que le serveur répondra.
-              </p>
+                {t("Vos documents sont dans votre compte, et ce navigateur n'en garde aucune copie. Ils réapparaîtront dès que le serveur répondra.")}</p>
               <Button className="mt-5" onClick={retry}>
-                Réessayer
-              </Button>
+                {t("Réessayer")}</Button>
             </>
           )}
         </Card>

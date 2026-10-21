@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useCallback, useEffect, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import type { Assignment } from '../../lib/assignmentsApi'
@@ -32,6 +34,7 @@ export function SubmissionsPanel({
   openSubmissionId,
   onOpenReadOnlyModel,
 }: SubmissionsPanelProps) {
+  useLanguage()
   const [submissions, setSubmissions] = useState<SubmissionSummary[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [view, setView] = useState<View>(
@@ -72,15 +75,14 @@ export function SubmissionsPanel({
   return (
     <section aria-labelledby="rendus-titre">
       <h4 id="rendus-titre" className="text-base font-semibold text-ink">
-        Travaux remis
-        {submissions && submissions.length > 0 && (
+        {t("Travaux remis")}{submissions && submissions.length > 0 && (
           <span className="font-normal text-ink-soft"> ({submissions.length})</span>
         )}
       </h4>
       <p className="mt-1 text-sm text-ink-soft">
         {assignment.status === 'published'
-          ? 'Les travaux remis par vos élèves, à consulter et à noter.'
-          : 'Ce devoir est un brouillon : vos élèves ne peuvent pas encore rendre leur travail.'}
+          ? t("Les travaux remis par vos élèves, à consulter et à noter.")
+          : t("Ce devoir est un brouillon : vos élèves ne peuvent pas encore rendre leur travail.")}
       </p>
 
       <p role="status" aria-live="polite" className="mt-2 min-h-5 text-sm text-ink-soft">
@@ -93,20 +95,17 @@ export function SubmissionsPanel({
           announce={false}
           action={
             <Button size="sm" onClick={() => void load()}>
-              Réessayer
-            </Button>
+              {t("Réessayer")}</Button>
           }
         >
           {loadError}
         </Notice>
       ) : submissions === null ? (
         <p role="status" className="text-sm text-ink-soft">
-          Chargement des rendus…
-        </p>
+          {t("Chargement des rendus…")}</p>
       ) : submissions.length === 0 ? (
         <p className="rounded-card border border-dashed border-line-strong bg-surface-soft p-6 text-center text-sm text-ink-soft">
-          Aucun rendu pour l’instant. Ils arriveront ici au fur et à mesure.
-        </p>
+          {t("Aucun rendu pour l’instant. Ils arriveront ici au fur et à mesure.")}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {submissions.map((submission) => (
@@ -114,7 +113,7 @@ export function SubmissionsPanel({
               <button
                 type="button"
                 onClick={() => setView({ kind: 'review', submissionId: submission.id })}
-                aria-label={`Ouvrir le rendu de ${displayName(submission.student)}`}
+                aria-label={t("Ouvrir le rendu de {0}", [displayName(submission.student)])}
                 className="flex w-full items-center gap-3 rounded-card border border-line bg-surface p-4 text-left shadow-soft transition duration-150 hover:shadow-lift motion-safe:hover:-translate-y-0.5"
               >
                 <Avatar person={submission.student} size="md" />
@@ -129,12 +128,12 @@ export function SubmissionsPanel({
                 <span className="flex flex-wrap items-center justify-end gap-1.5">
                   <Badge tone={submission.status === 'graded' ? 'accent' : 'sage'}>
                     {submission.status === 'graded' && submission.grade
-                      ? `Noté : ${submission.grade}`
+                      ? t("Noté : {0}", [submission.grade])
                       : submission.status === 'graded'
-                        ? 'Noté'
-                        : 'Rendu'}
+                        ? t("Noté")
+                        : t("Rendu")}
                   </Badge>
-                  {submission.isLate && <Badge tone="apricot">En retard</Badge>}
+                  {submission.isLate && <Badge tone="apricot">{t("En retard")}</Badge>}
                 </span>
               </button>
             </li>

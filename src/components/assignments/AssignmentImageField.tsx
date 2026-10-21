@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useEffect, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import { fetchAssignmentImage, removeAssignmentImage, uploadAssignmentImage } from '../../lib/assignmentsApi'
@@ -20,6 +22,7 @@ interface AssignmentImageFieldProps {
  * navigateur, en libérant l'adresse au démontage.
  */
 export function AssignmentImageField({ client, assignment, onChanged }: AssignmentImageFieldProps) {
+  useLanguage()
   const [preview, setPreview] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -77,11 +80,10 @@ export function AssignmentImageField({ client, assignment, onChanged }: Assignme
       {hasImage && (
         <div className="max-w-md overflow-hidden rounded-card border border-line bg-surface-soft">
           {preview ? (
-            <img src={preview} alt={`Image du devoir ${assignment.title}`} className="block h-auto w-full" />
+            <img src={preview} alt={t("Image du devoir {0}", [assignment.title])} className="block h-auto w-full" />
           ) : (
             <p role="status" className="p-4 text-sm text-ink-soft">
-              Chargement de l'image…
-            </p>
+              {t("Chargement de l'image…")}</p>
           )}
         </div>
       )}
@@ -92,15 +94,14 @@ export function AssignmentImageField({ client, assignment, onChanged }: Assignme
           accept="image/jpeg,image/png,image/webp"
           onFile={(file) => void upload(file)}
         >
-          {hasImage ? "Remplacer l'image" : 'Ajouter une image'}
+          {hasImage ? t("Remplacer l'image") : t("Ajouter une image")}
         </ImportFileButton>
         {hasImage && (
           <Button variant="ghost" onClick={() => setConfirmRemove(true)} disabled={busy}>
-            Retirer l'image
-          </Button>
+            {t("Retirer l'image")}</Button>
         )}
         <p role="status" aria-live="polite" className="text-sm text-ink-soft empty:hidden">
-          {busy ? 'Envoi…' : ''}
+          {busy ? t("Envoi…") : ''}
         </p>
       </div>
 
@@ -113,9 +114,9 @@ export function AssignmentImageField({ client, assignment, onChanged }: Assignme
 
       <ConfirmDialog
         open={confirmRemove}
-        title="Retirer l'image"
-        message="L'image sera supprimée du devoir. Vous pourrez en envoyer une autre."
-        confirmLabel="Retirer l'image"
+        title={t("Retirer l'image")}
+        message={t("L'image sera supprimée du devoir. Vous pourrez en envoyer une autre.")}
+        confirmLabel={t("Retirer l'image")}
         onConfirm={() => void remove()}
         onCancel={() => setConfirmRemove(false)}
       />

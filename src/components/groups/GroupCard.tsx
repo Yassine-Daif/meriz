@@ -1,3 +1,6 @@
+import { counted } from "../../lib/plural"
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { displayName } from '../../lib/authApi'
 import { formatJoinCode } from '../../lib/classroomsApi'
 import type { GroupSummary } from '../../lib/groupsApi'
@@ -15,10 +18,11 @@ interface GroupCardProps {
  * toutes lettres. Pour le créateur, le code et un bouton pour le copier.
  */
 export function GroupCard({ group, onOpen, onCopyCode }: GroupCardProps) {
+  useLanguage()
   const admin = group.myRole === 'admin'
   const counts = [
-    group.membersCount !== null && `${group.membersCount} membre${group.membersCount > 1 ? 's' : ''}`,
-    group.documentsCount !== null && `${group.documentsCount} document${group.documentsCount > 1 ? 's' : ''}`,
+    group.membersCount !== null && counted(group.membersCount, 'membre', 'membres'),
+    group.documentsCount !== null && counted(group.documentsCount, 'document', 'documents'),
   ].filter((part): part is string => part !== false)
 
   return (
@@ -30,27 +34,26 @@ export function GroupCard({ group, onOpen, onCopyCode }: GroupCardProps) {
       >
         <span className="flex w-full items-start justify-between gap-2">
           <span className="text-base font-semibold text-ink">{group.name}</span>
-          <Badge tone={admin ? 'accent' : 'sky'}>{admin ? 'Créateur' : 'Membre'}</Badge>
+          <Badge tone={admin ? 'accent' : 'sky'}>{admin ? t("Créateur") : t("Membre")}</Badge>
         </span>
         <span className="text-sm text-ink-soft">
-          {group.creator ? `Créé par ${displayName(group.creator)}` : 'Créateur inconnu'}
+          {group.creator ? t("Créé par {0}", [displayName(group.creator)]) : t("Créateur inconnu")}
           {counts.length > 0 && ` · ${counts.join(' · ')}`}
         </span>
       </button>
       {admin && group.joinCode && onCopyCode && (
         <div className="flex flex-wrap items-center gap-2 border-t border-line px-4 py-2.5">
-          <span className="text-xs text-ink-soft">Code</span>
+          <span className="text-xs text-ink-soft">{t("Code")}</span>
           <span className="font-mono text-sm font-semibold tracking-widest text-ink">
             {formatJoinCode(group.joinCode)}
           </span>
           <button
             type="button"
             onClick={() => onCopyCode(group.joinCode ?? '')}
-            aria-label={`Copier le code du groupe ${group.name}`}
+            aria-label={t("Copier le code du groupe {0}", [group.name])}
             className="ml-auto rounded-control px-2.5 py-1 text-xs font-medium text-accent-ink transition-colors duration-150 hover:bg-accent-soft hover:text-accent-ink"
           >
-            Copier
-          </button>
+            {t("Copier")}</button>
         </div>
       )}
     </li>

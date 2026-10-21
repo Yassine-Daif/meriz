@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useEffect, useState } from 'react'
 
 const UI_SCALE_KEY = 'meriz-ui-scale'
@@ -9,10 +11,10 @@ const UI_SCALE_KEY = 'meriz-ui-scale'
  * mémorisé garde son nom et gagne le cran.
  */
 const UI_SCALES: readonly { id: string; label: string; fontSize: string }[] = [
-  { id: 'small', label: 'Petite', fontSize: '93.75%' },
-  { id: 'normal', label: 'Normale', fontSize: '106.25%' },
-  { id: 'large', label: 'Grande', fontSize: '118.75%' },
-  { id: 'xlarge', label: 'Très grande', fontSize: '131.25%' },
+  { id: 'small', get label() { return t("Petite") }, fontSize: '93.75%' },
+  { id: 'normal', get label() { return t("Normale") }, fontSize: '106.25%' },
+  { id: 'large', get label() { return t("Grande") }, fontSize: '118.75%' },
+  { id: 'xlarge', get label() { return t("Très grande") }, fontSize: '131.25%' },
 ]
 
 function loadScale(): string {
@@ -31,6 +33,7 @@ function loadScale(): string {
  * les petits.
  */
 export function UiScaleControl() {
+  useLanguage()
   const [scale, setScale] = useState(loadScale)
 
   useEffect(() => {
@@ -46,9 +49,8 @@ export function UiScaleControl() {
   return (
     <label className="flex items-center gap-1.5 text-sm font-medium text-ink-soft">
       <span aria-hidden="true" className="font-semibold">
-        Aa
-      </span>
-      <span className="sr-only">Taille de l'interface et des textes</span>
+        {t("Aa")}</span>
+      <span className="sr-only">{t("Taille de l'interface et des textes")}</span>
       <select
         value={scale}
         onChange={(event) => setScale(event.target.value)}

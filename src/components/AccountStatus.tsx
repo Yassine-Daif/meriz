@@ -1,3 +1,6 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
+import { Icon } from './ui/Icon'
 import { DesktopUpdateButton } from './DesktopUpdates'
 import { useState } from 'react'
 import { displayName } from '../lib/authApi'
@@ -28,6 +31,7 @@ export function AccountStatus({
   onShowProfile,
   onShowClasses,
 }: AccountStatusProps) {
+  useLanguage()
   const { session, signOut, retry } = useSession()
   const [pending, setPending] = useState(false)
   const [announcement, setAnnouncement] = useState('')
@@ -38,8 +42,8 @@ export function AccountStatus({
     setPending(false)
     setAnnouncement(
       stashed === 0
-        ? 'Vous êtes déconnecté. Vos documents de ce compte sont enregistrés.'
-        : `Vous êtes déconnecté. ${stashed} document${stashed > 1 ? 's ont' : ' a'} des modifications gardées pour votre prochaine connexion.`,
+        ? t("Vous êtes déconnecté. Vos documents de ce compte sont enregistrés.")
+        : t("Vous êtes déconnecté. {0} document{1} des modifications gardées pour votre prochaine connexion.", [stashed, stashed > 1 ? 's ont' : ' a']),
     )
   }
 
@@ -49,7 +53,7 @@ export function AccountStatus({
       content = (
         <>
           <Avatar person={session.user} size="sm" />
-          <span className="min-w-0 truncate text-sm text-ink-soft" title={session.user.email}>
+          <span className={compact ? 'hidden max-w-36 min-w-0 truncate text-sm text-ink-soft sm:inline' : 'max-w-36 min-w-0 truncate text-sm text-ink-soft'} title={session.user.email}>
             <span className="font-semibold text-ink">{displayName(session.user)}</span>
             {compact ? (
               <span className="sr-only"> ({session.user.email})</span>
@@ -59,22 +63,22 @@ export function AccountStatus({
           </span>
           {!compact && onShowProfile && (
             <Button type="button" size="sm" onClick={onShowProfile}>
-              Mon profil
-            </Button>
+              {t("Mon profil")}</Button>
           )}
           {!compact && onShowClasses && (
             <Button type="button" size="sm" onClick={onShowClasses}>
-              Mes classes
-            </Button>
+              {t("Mes classes")}</Button>
           )}
           <Button
             type="button"
             size="sm"
             onClick={() => void handleSignOut()}
             loading={pending}
-            loadingLabel="Envoi et déconnexion…"
+            loadingLabel={compact ? undefined : t("Envoi et déconnexion…")}
+            title={t("Se déconnecter")}
+            aria-label={t("Se déconnecter")}
           >
-            Se déconnecter
+            {compact ? <Icon name="logout" /> : t("Se déconnecter")}
           </Button>
         </>
       )
@@ -84,11 +88,9 @@ export function AccountStatus({
         content = (
           <>
             <Button type="button" size="sm" onClick={onShowSignIn}>
-              Se connecter
-            </Button>
+              {t("Se connecter")}</Button>
             <Button type="button" size="sm" variant="primary" onClick={onShowSignUp}>
-              Créer un compte
-            </Button>
+              {t("Créer un compte")}</Button>
           </>
         )
       }
@@ -98,30 +100,27 @@ export function AccountStatus({
         <>
           <span className="text-sm text-ink-soft">
             <span aria-hidden="true">⚠ </span>
-            Serveur de comptes injoignable
-          </span>
+            {t("Serveur de comptes injoignable")}</span>
           <Button type="button" size="sm" onClick={retry}>
-            Réessayer
-          </Button>
+            {t("Réessayer")}</Button>
         </>
       )
       break
     case 'restoring':
-      content = <span className="text-sm text-ink-soft">Connexion au compte…</span>
+      content = <span className="text-sm text-ink-soft">{t("Connexion au compte…")}</span>
       break
     case 'unavailable':
       if (!compact) {
         content = (
-          <span className="text-sm text-ink-soft" title="Adresse du serveur non configurée (VITE_API_URL)">
-            Comptes indisponibles
-          </span>
+          <span className="text-sm text-ink-soft" title={t("Adresse du serveur non configurée (VITE_API_URL)")}>
+            {t("Comptes indisponibles")}</span>
         )
       }
       break
   }
 
   return (
-    <div className="flex min-w-0 items-center gap-2" aria-label="Compte" role="group">
+    <div data-account-status="true" className="flex min-w-0 items-center gap-2" aria-label={t("Compte")} role="group">
       <DesktopUpdateButton />
       {content}
       <span role="status" aria-live="polite" className="sr-only">

@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { McdEditorState } from '../model/mcdReducer'
 import { DEFAULT_MPD_SETTINGS } from '../model/mpd'
 import type { MpdSettings } from '../model/mpd'
@@ -17,7 +18,7 @@ export async function importModelFile(file: File): Promise<ImportResult> {
   try {
     text = await file.text()
   } catch {
-    return { ok: false, error: 'Impossible de lire ce fichier.' }
+    return { ok: false, error: t("Impossible de lire ce fichier.") }
   }
   const result = parseModelFile(text)
   if (!result.ok) {

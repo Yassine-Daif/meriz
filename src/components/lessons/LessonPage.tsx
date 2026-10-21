@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import type { ApiClient } from '../../lib/apiClient'
 import type { LessonBlock } from '../../lib/lessonBlocks'
 import { mediaIdOf } from '../../lib/lessonBlocks'
@@ -16,11 +18,11 @@ interface LessonPageProps {
  * sans aucune action. Sert aussi bien à l'élève qu'à l'aperçu du prof.
  */
 export function LessonPage({ client, lessonId, blocks }: LessonPageProps) {
+  useLanguage()
   if (blocks.length === 0) {
     return (
       <p className="rounded-card border border-dashed border-line-strong bg-surface-soft p-6 text-center text-sm text-ink-soft">
-        Ce cours est encore vide.
-      </p>
+        {t("Ce cours est encore vide.")}</p>
     )
   }
 
@@ -41,6 +43,7 @@ interface LessonBlockViewProps {
 
 /** Un bloc, rendu selon son type. */
 export function LessonBlockView({ client, lessonId, block }: LessonBlockViewProps) {
+  useLanguage()
   switch (block.type) {
     case 'heading':
       return <h4 className="mt-2 text-lg font-semibold tracking-tight text-ink">{block.text}</h4>

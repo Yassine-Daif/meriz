@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import type { GroupSummary } from '../../lib/groupsApi'
 import type { GroupsState } from '../../lib/useGroups'
 import { Button } from '../ui/Button'
@@ -13,6 +15,7 @@ interface GroupGridProps {
 
 /** Groupes en cartes, avec les états chargement, erreur et vide. */
 export function GroupGrid({ state, onOpen, onCopyCode, emptyText }: GroupGridProps) {
+  useLanguage()
   const { groups, error, reload } = state
   if (error) {
     return (
@@ -21,8 +24,7 @@ export function GroupGrid({ state, onOpen, onCopyCode, emptyText }: GroupGridPro
         announce={false}
         action={
           <Button size="sm" onClick={() => void reload()}>
-            Réessayer
-          </Button>
+            {t("Réessayer")}</Button>
         }
       >
         {error}
@@ -32,8 +34,7 @@ export function GroupGrid({ state, onOpen, onCopyCode, emptyText }: GroupGridPro
   if (groups === null) {
     return (
       <p role="status" className="text-sm text-ink-soft">
-        Chargement de vos groupes…
-      </p>
+        {t("Chargement de vos groupes…")}</p>
     )
   }
   if (groups.length === 0) {

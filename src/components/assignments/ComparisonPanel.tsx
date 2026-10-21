@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import type { Comparison } from '../../model/compare'
 import { comparisonDetailText, comparisonSummaryText, formatGrade } from '../../model/compare'
 import { Badge } from '../ui/Badge'
@@ -35,6 +37,7 @@ function groupByScope(comparison: Comparison): { scope: string; messages: string
  * vers l'élève sans un geste du prof.
  */
 export function ComparisonPanel({ comparison, onUseGrade, onAddToFeedback }: ComparisonPanelProps) {
+  useLanguage()
   const { expectedPoints, matchedPoints, checks, extras, suggestedGrade } = comparison.summary
   const groups = groupByScope(comparison)
   const matched = [...comparison.matchedEntities, ...comparison.matchedAssociations]
@@ -42,29 +45,26 @@ export function ComparisonPanel({ comparison, onUseGrade, onAddToFeedback }: Com
   return (
     <Card as="section" aria-labelledby="comparaison-titre" className="mt-4">
       <h4 id="comparaison-titre" className="text-base font-semibold text-ink">
-        Comparaison au corrigé
-      </h4>
+        {t("Comparaison au corrigé")}</h4>
 
       <div className="mt-2">
-        <Notice tone="info" title="Une aide, pas un verdict">
-          Une différence peut être un choix valable : en Merise, un même énoncé admet souvent plusieurs modèles
-          corrects. C’est vous qui décidez.
-        </Notice>
+        <Notice tone="info" title={t("Une aide, pas un verdict")}>
+          {t("Une différence peut être un choix valable : en Merise, un même énoncé admet souvent plusieurs modèles corrects. C’est vous qui décidez.")}</Notice>
       </div>
 
       <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
         <div>
-          <dt className="text-ink-soft">Éléments attendus retrouvés</dt>
+          <dt className="text-ink-soft">{t("Éléments attendus retrouvés")}</dt>
           <dd className="font-semibold text-ink">
-            {matchedPoints} sur {expectedPoints}
+            {matchedPoints} {t(" sur ")}{expectedPoints}
           </dd>
         </div>
         <div>
-          <dt className="text-ink-soft">Points à vérifier</dt>
+          <dt className="text-ink-soft">{t("Points à vérifier")}</dt>
           <dd className="font-semibold text-ink">{checks}</dd>
         </div>
         <div>
-          <dt className="text-ink-soft">Éléments en plus du corrigé</dt>
+          <dt className="text-ink-soft">{t("Éléments en plus du corrigé")}</dt>
           <dd className="font-semibold text-ink">{extras}</dd>
         </div>
       </dl>
@@ -72,27 +72,21 @@ export function ComparisonPanel({ comparison, onUseGrade, onAddToFeedback }: Com
       {suggestedGrade !== null && (
         <div className="mt-4 rounded-card bg-accent-soft p-4">
           <p className="text-sm text-ink">
-            Note indicative : <strong>{formatGrade(suggestedGrade)} sur 20</strong>. C’est une proposition, calculée sur
-            les seuls éléments du corrigé retrouvés. Reprenez-la, modifiez-la, ou ignorez-la.
-          </p>
+            {t("Note indicative : ")}<strong>{formatGrade(suggestedGrade)} {t(" sur 20")}</strong>{t(". C’est une proposition, calculée sur les seuls éléments du corrigé retrouvés. Reprenez-la, modifiez-la, ou ignorez-la.")}</p>
           <div className="mt-3">
             <Button size="sm" onClick={() => onUseGrade(`${formatGrade(suggestedGrade)}/20`)}>
-              Reprendre cette note
-            </Button>
+              {t("Reprendre cette note")}</Button>
           </div>
         </div>
       )}
 
       {groups.length === 0 ? (
         <p className="mt-4 rounded-card border border-dashed border-line-strong bg-surface-soft p-4 text-sm text-ink-soft">
-          Aucune différence relevée avec le corrigé. À vous de juger le reste, la mise en forme et la lisibilité du
-          modèle notamment.
-        </p>
+          {t("Aucune différence relevée avec le corrigé. À vous de juger le reste, la mise en forme et la lisibilité du modèle notamment.")}</p>
       ) : (
         <section aria-labelledby="a-verifier-titre" className="mt-4">
           <h5 id="a-verifier-titre" className="text-sm font-semibold text-ink">
-            À vérifier
-          </h5>
+            {t("À vérifier")}</h5>
           <ul className="mt-2 flex flex-col gap-3">
             {groups.map((group) => (
               <li key={group.scope}>
@@ -119,13 +113,13 @@ export function ComparisonPanel({ comparison, onUseGrade, onAddToFeedback }: Com
             >
               ▸
             </span>
-            Ce qui correspond ({matched.length})
+            {t("Ce qui correspond (")}{matched.length})
           </summary>
           <ul className="mt-2 ml-4 list-disc text-sm leading-6 text-ink-soft">
             {matched.map((pair) => (
               <li key={`${pair.expected}:${pair.submitted}`}>
                 {pair.expected}
-                {pair.expected !== pair.submitted && <span> (écrit « {pair.submitted} » au rendu)</span>}
+                {pair.expected !== pair.submitted && <span> {t(" (écrit « ")}{pair.submitted} {t(" » au rendu)")}</span>}
               </li>
             ))}
           </ul>
@@ -134,20 +128,15 @@ export function ComparisonPanel({ comparison, onUseGrade, onAddToFeedback }: Com
 
       <div className="mt-5 border-t border-line pt-4">
         <p className="text-sm text-ink-soft">
-          Votre élève ne voit rien de tout ceci. Vous pouvez en ajouter une trace à votre commentaire, puis la relire et
-          la modifier avant d’enregistrer.
-        </p>
+          {t("Votre élève ne voit rien de tout ceci. Vous pouvez en ajouter une trace à votre commentaire, puis la relire et la modifier avant d’enregistrer.")}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Button size="sm" onClick={() => onAddToFeedback(comparisonSummaryText(comparison))}>
-            Ajouter le résumé au commentaire
-          </Button>
+            {t("Ajouter le résumé au commentaire")}</Button>
           <Button size="sm" onClick={() => onAddToFeedback(comparisonDetailText(comparison))}>
-            Ajouter le détail au commentaire
-          </Button>
+            {t("Ajouter le détail au commentaire")}</Button>
         </div>
         <p className="mt-2 text-xs text-ink-soft">
-          Le résumé ne donne que des compteurs. Le détail nomme les différences, donc une partie de votre corrigé.
-        </p>
+          {t("Le résumé ne donne que des compteurs. Le détail nomme les différences, donc une partie de votre corrigé.")}</p>
       </div>
     </Card>
   )

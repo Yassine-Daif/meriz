@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { ApiClient, Outcome } from './apiClient'
 import { DEFAULT_AVATAR_BG, DEFAULT_AVATAR_FG, parseAvatarColor } from './color'
 import { unexpectedResponse } from './apiClient'
@@ -135,8 +136,8 @@ function parseAuthSuccess(raw: unknown): AuthSuccess | null {
 /** Nom de l'appareil associé au jeton, visible dans la liste des sessions. */
 export function deviceName(): string {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
-    ? 'Meriz bureau'
-    : 'Meriz web'
+    ? t("Meriz bureau")
+    : t("Meriz web")
 }
 
 async function authenticate(

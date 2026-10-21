@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import type { ApiUser } from '../lib/authApi'
 import { displayName } from '../lib/authApi'
 import { useSession } from './sessionContext'
@@ -21,28 +23,29 @@ interface AuthPageProps {
 
 const TITLES: Record<AuthMode, { title: string; lede: string }> = {
   'sign-in': {
-    title: 'Se connecter',
-    lede: 'Retrouvez votre compte Meriz.',
+    get title() { return t("Se connecter") },
+    get lede() { return t("Retrouvez votre compte Meriz.") },
   },
   'sign-up': {
-    title: 'Créer un compte',
-    lede: 'Un compte gratuit, pour retrouver bientôt vos documents partout. Meriz reste utilisable sans compte.',
+    get title() { return t("Créer un compte") },
+    get lede() { return t("Un compte gratuit, pour retrouver bientôt vos documents partout. Meriz reste utilisable sans compte.") },
   },
   forgot: {
-    title: 'Mot de passe oublié',
-    lede: 'Indiquez votre adresse : si un compte existe, un lien pour choisir un nouveau mot de passe vous sera envoyé.',
+    get title() { return t("Mot de passe oublié") },
+    get lede() { return t("Indiquez votre adresse : si un compte existe, un lien pour choisir un nouveau mot de passe vous sera envoyé.") },
   },
 }
 
 /** Écran de connexion ou d'inscription, hors de l'éditeur. */
 export function AuthPage({ mode, initialEmail, onModeChange, onBack, onAuthenticated }: AuthPageProps) {
+  useLanguage()
   const { session } = useSession()
 
   const handleSuccess = (user: ApiUser) => {
     onAuthenticated(
       mode === 'sign-in'
-        ? `Connecté en tant que ${displayName(user)}.`
-        : `Compte créé. Bienvenue, ${user.firstName ?? displayName(user)} !`,
+        ? t("Connecté en tant que {0}.", [displayName(user)])
+        : t("Compte créé. Bienvenue, {0} !", [user.firstName ?? displayName(user)]),
     )
   }
 
@@ -50,15 +53,13 @@ export function AuthPage({ mode, initialEmail, onModeChange, onBack, onAuthentic
   if (session.status === 'unavailable') {
     content = (
       <Notice tone="warning" announce={false}>
-        Les comptes ne sont pas disponibles : l'adresse du serveur n'est pas configurée (variable{' '}
-        <span className="font-mono">VITE_API_URL</span>). Meriz reste utilisable sans compte, vos documents sont
-        gardés dans ce navigateur.
-      </Notice>
+        {t("Les comptes ne sont pas disponibles : l'adresse du serveur n'est pas configurée (variable")}{' '}
+        <span className="font-mono">{t("VITE_API_URL")}</span>{t("). Meriz reste utilisable sans compte, vos documents sont gardés dans ce navigateur.")}</Notice>
     )
   } else if (session.status === 'signed-in') {
     content = (
       <p className="text-sm text-ink-soft">
-        Vous êtes déjà connecté en tant que <span className="font-semibold text-ink">{displayName(session.user)}</span>.
+        {t("Vous êtes déjà connecté en tant que ")}<span className="font-semibold text-ink">{displayName(session.user)}</span>.
       </p>
     )
   } else if (mode === 'sign-in') {

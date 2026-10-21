@@ -1,3 +1,4 @@
+var merizEnglish = document.documentElement.lang === 'en'
 /*
  * Le script du site vitrine.
  *
@@ -192,13 +193,13 @@
   function fermer() {
     panneau.hidden = true
     bouton.setAttribute('aria-expanded', 'false')
-    bouton.setAttribute('aria-label', 'Ouvrir le menu')
+    bouton.setAttribute('aria-label', (merizEnglish ? 'Open menu' : 'Ouvrir le menu'))
   }
 
   function ouvrir() {
     panneau.hidden = false
     bouton.setAttribute('aria-expanded', 'true')
-    bouton.setAttribute('aria-label', 'Fermer le menu')
+    bouton.setAttribute('aria-label', (merizEnglish ? 'Close menu' : 'Fermer le menu'))
     var premier = panneau.querySelector('a, button')
     if (premier) premier.focus()
   }
@@ -286,7 +287,7 @@
 
   function suivre(index) {
     if (etiquette) {
-      etiquette.textContent = 'Étape ' + deuxChiffres(index + 1) + ' sur ' + deuxChiffres(total)
+      etiquette.textContent = (merizEnglish ? 'Step ' : 'Étape ') + deuxChiffres(index + 1) + (merizEnglish ? ' of ' : ' sur ') + deuxChiffres(total)
     }
     if (barre) barre.style.width = ((index + 1) / total) * 100 + '%'
 
@@ -390,15 +391,20 @@
 
     if (ligne) {
       var date = publication.published_at
-        ? ', publiée le ' +
-          new Date(publication.published_at).toLocaleDateString('fr-FR', {
+        ? (merizEnglish ? ', published on ' : ', publiée le ') +
+          new Date(publication.published_at).toLocaleDateString((merizEnglish ? 'en-GB' : 'fr-FR'), {
             day: 'numeric',
             month: 'long',
             year: 'numeric',
           })
         : ''
-      ligne.textContent = 'Dernière version : ' + publication.tag_name + date + '.'
+      ligne.textContent = (merizEnglish ? 'Latest release: ' : 'Dernière version : ') + publication.tag_name + date + '.'
       ligne.hidden = false
     }
   })()
 })()
+
+// Les URL de langue sont de vraies pages, lisibles aussi sans JavaScript.
+for (var languageLink of document.querySelectorAll('[data-language]')) {
+  languageLink.addEventListener('click', function(event) { try { localStorage.setItem('meriz-language', event.currentTarget.dataset.language) } catch {} })
+}

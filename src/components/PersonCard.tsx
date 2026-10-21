@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { displayName } from '../lib/authApi'
 import type { PublicProfile } from '../lib/classroomsApi'
 import { Avatar } from './ui/Avatar'
@@ -9,6 +11,7 @@ import { Avatar } from './ui/Avatar'
  * à la demande.
  */
 export function PersonCard({ person, extra }: { person: PublicProfile; extra?: string }) {
+  useLanguage()
   return (
     <div className="flex min-w-0 items-start gap-3">
       <Avatar person={person} size="md" />
@@ -17,7 +20,7 @@ export function PersonCard({ person, extra }: { person: PublicProfile; extra?: s
         {extra && <p className="mt-0.5 text-xs text-ink-soft">{extra}</p>}
         {person.contact && (
           <p className="mt-0.5 text-xs text-ink-soft">
-            Contact : <span className="font-mono">{person.contact}</span>
+            {t("Contact : ")}<span className="font-mono">{person.contact}</span>
           </p>
         )}
         {person.bio && (
@@ -29,8 +32,7 @@ export function PersonCard({ person, extra }: { person: PublicProfile; extra?: s
               >
                 ▸
               </span>
-              Présentation
-            </summary>
+              {t("Présentation")}</summary>
             <p className="mt-1 text-sm leading-6 text-ink-soft">{person.bio}</p>
           </details>
         )}

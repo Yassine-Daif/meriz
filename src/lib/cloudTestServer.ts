@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { ApiClient, ApiResult } from './apiClient'
 import { apiError } from './apiClient'
 
@@ -55,7 +56,7 @@ export function createCloudTestServer() {
     data,
     body,
   })
-  const notFound: ApiResult = { ok: false, error: apiError('not_found', 404, 'Document introuvable.') }
+  const notFound: ApiResult = { ok: false, error: apiError('not_found', 404, t("Document introuvable.")) }
 
   const handle = (userId: string, method: string, path: string, body: unknown): ApiResult => {
     const input = (body ?? {}) as { name?: string; content?: string }
@@ -111,7 +112,7 @@ export function createCloudTestServer() {
       documents.delete(id)
       return success(204, undefined, undefined)
     }
-    return { ok: false, error: apiError('unexpected', 405, 'Méthode inattendue.') }
+    return { ok: false, error: apiError('unexpected', 405, t("Méthode inattendue.")) }
   }
 
   return {
@@ -141,16 +142,16 @@ export function createCloudTestServer() {
         const token = getToken()
         requests.push({ method, path, token, body })
         if (!online) {
-          return { ok: false, error: apiError('network', null, 'Serveur injoignable.') }
+          return { ok: false, error: apiError('network', null, t("Serveur injoignable.")) }
         }
         const userId = token ? tokens.get(token) : undefined
         if (!userId) {
-          return { ok: false, error: apiError('unauthorized', 401, 'Session expirée.') }
+          return { ok: false, error: apiError('unauthorized', 401, t("Session expirée.")) }
         }
         return handle(userId, method, path, body)
       },
       // Ce faux serveur ne sert que des documents : aucun binaire.
-      requestBlob: async () => ({ ok: false, error: apiError('unexpected', null, 'Binaire non simulé.') }),
+      requestBlob: async () => ({ ok: false, error: apiError('unexpected', null, t("Binaire non simulé.")) }),
     }),
     documentsOf: (userId: string) => [...documents.values()].filter((d) => d.ownerId === userId),
 
@@ -170,7 +171,7 @@ export function createCloudTestServer() {
       const document: StoredDocument = {
         id: `doc-${++sequence}`,
         ownerId: userId,
-        name: `Travail ${assignmentId}`,
+        name: t("Travail {0}", [assignmentId]),
         assignmentId,
         groupId: null,
         content,
@@ -187,7 +188,7 @@ export function createCloudTestServer() {
       const document: StoredDocument = {
         id: `doc-${++sequence}`,
         ownerId: userId,
-        name: `Modèle du groupe ${groupId}`,
+        name: t("Modèle du groupe {0}", [groupId]),
         assignmentId: null,
         groupId,
         content,

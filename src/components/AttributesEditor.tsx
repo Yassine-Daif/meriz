@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useState } from 'react'
 import type { AttributeType, Property } from '../model/mcd'
 import { ATTRIBUTE_TYPES } from '../model/mcd'
@@ -40,6 +42,7 @@ export function AttributesEditor({
   onToggleIdentifier,
   onRemove,
 }: AttributesEditorProps) {
+  useLanguage()
   const [propertyToPlace, setPropertyToPlace] = useState('')
 
   const handlePlace = () => {
@@ -51,19 +54,19 @@ export function AttributesEditor({
 
   return (
     <fieldset className="flex min-w-0 flex-col gap-2">
-      <legend className="text-xs font-medium text-ink-soft">Attributs</legend>
+      <legend className="text-xs font-medium text-ink-soft">{t("Attributs")}</legend>
 
       {/* Le dictionnaire d'abord : on place une propriété existante
           au lieu de la réécrire. */}
       {unplaced.length > 0 ? (
         <div className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-line bg-accent-soft p-1.5">
           <select
-            aria-label="Propriété du dictionnaire à placer ici"
+            aria-label={t("Propriété du dictionnaire à placer ici")}
             value={propertyToPlace}
             onChange={(event) => setPropertyToPlace(event.target.value)}
             className="w-full min-w-0 rounded-lg border border-line-strong bg-surface px-1.5 py-1 text-xs"
           >
-            <option value="">Placer depuis le dictionnaire</option>
+            <option value="">{t("Placer depuis le dictionnaire")}</option>
             {unplaced.map((property) => (
               <option key={property.id} value={property.id}>
                 {property.name} ({property.type})
@@ -76,16 +79,14 @@ export function AttributesEditor({
             disabled={propertyToPlace === ''}
             className="self-end rounded-lg border border-line-strong bg-surface px-2 py-1 text-xs hover:bg-shell disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Placer
-          </button>
+            {t("Placer")}</button>
         </div>
       ) : (
         <p className="text-xs text-ink-soft">
-          Aucune propriété libre au dictionnaire : elles sont toutes placées.
-        </p>
+          {t("Aucune propriété libre au dictionnaire : elles sont toutes placées.")}</p>
       )}
 
-      {attributes.length === 0 && <p className="text-xs text-ink-soft">Aucun attribut.</p>}
+      {attributes.length === 0 && <p className="text-xs text-ink-soft">{t("Aucun attribut.")}</p>}
       <ul className="flex min-w-0 flex-col gap-1.5">
         {attributes.map((attribute, index) => (
           <li
@@ -94,14 +95,14 @@ export function AttributesEditor({
           >
             <input
               type="text"
-              aria-label={`Nom de l'attribut ${index + 1}`}
+              aria-label={t("Nom de l'attribut {0}", [index + 1])}
               value={attribute.name}
               onChange={(event) => onRename(attribute.propertyId, event.target.value)}
               className="w-full min-w-0 rounded-lg border border-line-strong bg-surface px-2 py-1 text-sm"
             />
             <div className="mt-1.5 flex min-w-0 items-center gap-2">
               <select
-                aria-label={`Type de l'attribut ${index + 1}`}
+                aria-label={t("Type de l'attribut {0}", [index + 1])}
                 value={attribute.type}
                 onChange={(event) =>
                   onChangeType(attribute.propertyId, event.target.value as AttributeType)
@@ -110,14 +111,14 @@ export function AttributesEditor({
               >
                 {ATTRIBUTE_TYPES.map((type) => (
                   <option key={type} value={type}>
-                    {type}
+                    {t(type)}
                   </option>
                 ))}
               </select>
               {allowIdentifier && onToggleIdentifier && (
                 <label
                   className="flex shrink-0 items-center gap-1 text-xs"
-                  title="Fait partie de l'identifiant"
+                  title={t("Fait partie de l'identifiant")}
                 >
                   <input
                     type="checkbox"
@@ -126,13 +127,12 @@ export function AttributesEditor({
                       onToggleIdentifier(attribute.propertyId, event.target.checked)
                     }
                   />
-                  clé
-                </label>
+                  {t("clé")}</label>
               )}
               <button
                 type="button"
-                aria-label={`Retirer l'attribut ${index + 1} (la propriété reste au dictionnaire)`}
-                title="Retirer (la propriété reste au dictionnaire)"
+                aria-label={t("Retirer l'attribut {0} (la propriété reste au dictionnaire)", [index + 1])}
+                title={t("Retirer (la propriété reste au dictionnaire)")}
                 onClick={() => onRemove(attribute.propertyId)}
                 className="shrink-0 rounded-lg border border-line-strong bg-surface px-1.5 py-0.5 text-sm hover:bg-surface-soft"
               >
@@ -147,8 +147,7 @@ export function AttributesEditor({
         onClick={onAdd}
         className="self-start rounded-lg border border-line-strong px-2 py-1 text-xs hover:bg-surface-soft"
       >
-        Nouvelle propriété
-      </button>
+        {t("Nouvelle propriété")}</button>
     </fieldset>
   )
 }

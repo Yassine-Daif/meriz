@@ -1,3 +1,4 @@
+import { useLanguage } from "../../lib/useLanguage"
 import type { ReactNode } from 'react'
 
 export type BadgeTone = 'neutral' | 'accent' | 'cherry' | 'apricot' | 'sage' | 'sky' | 'danger' | 'warning'
@@ -24,6 +25,7 @@ interface BadgeProps {
  * la couleur n'est qu'un repère en plus.
  */
 export function Badge({ tone = 'neutral', children, className }: BadgeProps) {
+  useLanguage()
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium whitespace-nowrap ${TONES[tone]} ${className ?? ''}`}

@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import type { ReactNode } from 'react'
 import type { ViewId, ViewInfo } from './views'
 import { FOOTER_VIEWS, VIEWS } from './views'
@@ -85,6 +87,7 @@ interface RailItemProps {
 }
 
 function RailItem({ view, active, onSelectView }: RailItemProps) {
+  useLanguage()
   return (
     <li>
       <button
@@ -109,9 +112,10 @@ function RailItem({ view, active, onSelectView }: RailItemProps) {
  * pied. Icônes seules sur écran étroit, libellés à partir de md.
  */
 export function NavRail({ activeView, onSelectView }: NavRailProps) {
+  useLanguage()
   return (
     <nav
-      aria-label="Vues"
+      aria-label={t("Vues")}
       className="flex w-14 shrink-0 flex-col border-r border-line bg-shell md:w-52"
     >
       <ul className="flex flex-col gap-1 p-2">

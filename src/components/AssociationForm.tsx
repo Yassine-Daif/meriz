@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useId } from 'react'
 import type { Dispatch } from 'react'
 import type { Association, Mcd } from '../model/mcd'
@@ -17,14 +19,14 @@ interface AssociationFormProps {
  * L'option identifiant n'est jamais proposée ici (invariant du modèle).
  */
 export function AssociationForm({ mcd, association, dispatch }: AssociationFormProps) {
+  useLanguage()
   const nameId = useId()
   return (
     <form onSubmit={(event) => event.preventDefault()} className="flex flex-col gap-3">
-      <h2 className="text-sm font-semibold">Association</h2>
+      <h2 className="text-sm font-semibold">{t("Association")}</h2>
       <div>
         <label htmlFor={nameId} className="block text-xs font-medium text-ink-soft">
-          Nom
-        </label>
+          {t("Nom")}</label>
         <input
           id={nameId}
           type="text"

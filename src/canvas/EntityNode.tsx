@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { Handle } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
 import { ANCHOR_SIDES } from './anchors'
@@ -11,6 +13,7 @@ import type { EntityFlowNode } from './mcdToFlow'
  * couleur seule.
  */
 export function EntityNode({ data, selected, isConnectable }: NodeProps<EntityFlowNode>) {
+  useLanguage()
   const { entity, attributes } = data
   return (
     <div
@@ -42,13 +45,12 @@ export function EntityNode({ data, selected, isConnectable }: NodeProps<EntityFl
               {attribute.name}
             </span>
             <span className="font-mono text-micro text-ink-soft">
-              {attribute.type}
+              {t(attribute.type)}
               {attribute.size !== undefined && `(${attribute.size})`}
             </span>
             {attribute.isIdentifier && (
               <span className="ml-auto self-center rounded-full bg-accent-soft px-1.5 font-mono text-nano font-medium text-accent-ink">
-                clé
-              </span>
+                {t("clé")}</span>
             )}
           </li>
         ))}

@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useId, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ClassroomSummary } from '../lib/classroomsApi'
@@ -30,6 +32,7 @@ interface ClassShortcutsProps {
  * Sans classe, il n'y a rien à proposer : le bloc ne s'affiche pas.
  */
 export function ClassShortcuts({ title, classrooms, shortcuts, action, onOpen }: ClassShortcutsProps) {
+  useLanguage()
   const selectId = useId()
   const titleId = `${selectId}-titre`
   const [chosen, setChosen] = useState(classrooms[0]?.id ?? '')
@@ -54,13 +57,12 @@ export function ClassShortcuts({ title, classrooms, shortcuts, action, onOpen }:
       <div className="mt-3 rounded-card border border-line bg-surface p-5 shadow-soft">
         {only ? (
           <p className="text-sm text-ink">
-            Classe <strong className="font-semibold">{current.name}</strong>.
+            {t("Classe ")}<strong className="font-semibold">{current.name}</strong>.
           </p>
         ) : (
           <div className="flex flex-wrap items-center gap-2">
             <label htmlFor={selectId} className="text-sm font-medium text-ink">
-              Classe
-            </label>
+              {t("Classe")}</label>
             <select
               id={selectId}
               value={current.id}

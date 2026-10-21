@@ -11,7 +11,7 @@ function readPreference(): boolean {
 }
 
 function createMotionStore() {
-  const media = typeof window !== 'undefined' ? window.matchMedia?.('(prefers-reduced-motion: reduce)') : undefined
+  const media = typeof window !== 'undefined' ? window.matchMedia?.("(prefers-reduced-motion: reduce)") : undefined
   const listeners = new Set<() => void>()
   const resolve = (preference: boolean): MotionState => ({
     preference, reduced: media?.matches === true, enabled: preference && media?.matches !== true,

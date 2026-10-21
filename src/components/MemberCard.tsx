@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import type { ReactNode } from 'react'
 import { displayName } from '../lib/authApi'
 import type { PublicProfile } from '../lib/classroomsApi'
@@ -26,7 +28,8 @@ interface MemberCardProps {
  * La présentation, elle, reste repliée et vient en dernier, pour que son
  * ouverture pousse vers le bas sans décaler ce qui précède.
  */
-export function MemberCard({ person, joined, joinedLabel = 'Arrivé le', badge, action }: MemberCardProps) {
+export function MemberCard({ person, joined, joinedLabel = t("Arrivé le"), badge, action }: MemberCardProps) {
+  useLanguage()
   return (
     <Card as="li" className="flex h-full flex-col">
       <div className="flex items-start gap-3">
@@ -44,7 +47,7 @@ export function MemberCard({ person, joined, joinedLabel = 'Arrivé le', badge, 
               ''
             ) : (
               <>
-                Contact : <span className="font-mono">{person.contact}</span>
+                {t("Contact : ")}<span className="font-mono">{person.contact}</span>
               </>
             )}
           </p>
@@ -67,8 +70,7 @@ export function MemberCard({ person, joined, joinedLabel = 'Arrivé le', badge, 
             >
               ▸
             </span>
-            Présentation
-          </summary>
+            {t("Présentation")}</summary>
           <p className="mt-1 text-sm leading-6 text-ink-soft">{person.bio}</p>
         </details>
       )}

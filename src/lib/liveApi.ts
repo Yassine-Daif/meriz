@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { ApiClient, Outcome } from './apiClient'
 import { unexpectedResponse } from './apiClient'
 import { optionalText } from './authApi'
@@ -199,9 +200,9 @@ export async function getLastObservedAt(client: ApiClient, documentId: string): 
 
 /** L'avancement d'un élève, en toutes lettres. */
 export function liveStateLabel(worker: LiveWorker): string {
-  if (worker.submissionStatus === 'graded') return 'Noté'
-  if (worker.submissionStatus === 'submitted') return 'Rendu'
-  return worker.hasStarted ? 'Au travail' : 'N’a pas commencé'
+  if (worker.submissionStatus === 'graded') return t("Noté")
+  if (worker.submissionStatus === 'submitted') return t("Rendu")
+  return worker.hasStarted ? t("Au travail") : t("N’a pas commencé")
 }
 
 /** Moins d'une minute : le relatif dirait « maintenant », on préfère la phrase. */
@@ -213,7 +214,7 @@ function since(iso: string, now: number, prefix: string): string | null {
     return null
   }
   if (now - time < JUST_NOW_MS) {
-    return `${prefix} à l’instant`
+    return t("{0} à l’instant", [prefix])
   }
   const relative = formatRelativeDate(iso, now)
   return relative === null ? null : `${prefix} ${relative}`
@@ -221,8 +222,8 @@ function since(iso: string, now: number, prefix: string): string | null {
 
 /** « Activité il y a 2 minutes », ou l'absence d'activité. */
 export function formatLastActivity(iso: string | null, now: number = Date.now()): string {
-  if (iso === null) return 'Aucune activité'
-  return since(iso, now, 'Activité') ?? 'Activité à une date inconnue'
+  if (iso === null) return t("Aucune activité")
+  return since(iso, now, t("Activité")) ?? t("Activité à une date inconnue")
 }
 
 /** « Lu il y a une minute » : quand ce travail a été consulté. null si jamais. */

@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { Fragment, useCallback, useEffect, useId, useMemo, useState } from 'react'
 import { applyNodeChanges, Background, Panel, ReactFlow, ReactFlowProvider } from '@xyflow/react'
 import type { NodeChange } from '@xyflow/react'
@@ -42,6 +44,7 @@ export function MpdView({
   onOverrideChange,
   isActive,
 }: MpdViewProps) {
+  useLanguage()
   const dialectSelectId = useId()
   const mappingPanelId = useId()
   const [mappingOpen, setMappingOpen] = useState(true)
@@ -62,16 +65,15 @@ export function MpdView({
   if (tables.length === 0) {
     return (
       <div className={visibilityClass}>
-        <EmptyGeneration viewName="MPD (modèle physique de données)" />
+        <EmptyGeneration viewName={t("MPD (modèle physique de données)")} />
       </div>
     )
   }
   return (
-    <section aria-label="Vue MPD" className={visibilityClass}>
+    <section aria-label={t("Vue MPD")} className={visibilityClass}>
       <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2">
         <label htmlFor={dialectSelectId} className="text-xs font-medium text-ink-soft">
-          Dialecte SQL
-        </label>
+          {t("Dialecte SQL")}</label>
         <select
           id={dialectSelectId}
           value={settings.dialect}
@@ -94,11 +96,9 @@ export function MpdView({
           <span aria-hidden="true" className="text-ink-soft">
             {mappingOpen ? '▸' : '◂'}
           </span>
-          Mappage des types
-        </Button>
+          {t("Mappage des types")}</Button>
         <p className="text-xs text-ink-soft">
-          Types éditables colonne par colonne, choix mémorisés.
-        </p>
+          {t("Types éditables colonne par colonne, choix mémorisés.")}</p>
       </div>
       <div className="flex min-h-0 flex-1">
         {revealed && <MpdDiagram tables={tables} hasErrors={hasErrors} />}
@@ -116,11 +116,14 @@ export function MpdView({
 }
 
 function MpdDiagram({ tables, hasErrors }: { tables: MpdTable[]; hasErrors: boolean }) {
+  const locale = useLanguage()
+  const ariaLabels = useMemo(() => { void locale; return { ...ARIA_LABELS } }, [locale])
   const [nodes, setNodes] = useState<TableFlowNode[]>(() => initialTableNodes(tables))
 
   // Le MPD suit le MCD : les tables connues gardent leur position,
   // les nouvelles prennent la grille par défaut.
   useEffect(() => {
+    void locale
     setNodes((current) => {
       const byId = new Map(current.map((node) => [node.id, node]))
       return initialTableNodes(tables).map((node) => {
@@ -128,7 +131,7 @@ function MpdDiagram({ tables, hasErrors }: { tables: MpdTable[]; hasErrors: bool
         return existing ? { ...node, position: existing.position } : node
       })
     })
-  }, [tables])
+  }, [tables, locale])
 
   const onNodesChange = useCallback((changes: NodeChange<TableFlowNode>[]) => {
     setNodes((current) => applyNodeChanges(changes, current))
@@ -146,7 +149,7 @@ function MpdDiagram({ tables, hasErrors }: { tables: MpdTable[]; hasErrors: bool
           nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
           nodesConnectable={false}
-          ariaLabelConfig={ARIA_LABELS}
+          ariaLabelConfig={ariaLabels}
           colorMode={theme.resolved}
           deleteKeyCode={null}
           proOptions={{ hideAttribution: true }}
@@ -180,16 +183,17 @@ function TypeMappingPanel({
   readOnly?: boolean
   onOverrideChange: (columnId: string, value: string) => void
 }) {
+  useLanguage()
   return (
     <section
       id={panelId}
-      aria-label="Mappage des types"
+      aria-label={t("Mappage des types")}
       className="w-1/2 shrink-0 overflow-auto border-l border-line bg-surface p-4"
     >
       <table className="w-full border-separate border-spacing-0 overflow-hidden rounded-card border border-line text-sm shadow-soft">
         <thead className="sticky top-0 z-10">
           <tr>
-            {['Colonne', 'Type conceptuel', 'Type SQL'].map((label) => (
+            {[t("Colonne"), t("Type conceptuel"), t("Type SQL")].map((label) => (
               <th
                 key={label}
                 scope="col"
@@ -218,18 +222,17 @@ function TypeMappingPanel({
                     {column.name}
                     {column.isPrimaryKey && (
                       <span className="ml-1.5 rounded-sm border border-line bg-accent-soft px-1 text-nano font-medium text-accent-ink">
-                        PK
-                      </span>
+                        {t("PK")}</span>
                     )}
                   </td>
                   <td className="border-b border-line px-3 py-1.5 font-mono text-code text-ink-soft">
-                    {column.conceptualType}
+                    {t(column.conceptualType)}
                   </td>
                   <td className="border-b border-line px-3 py-1.5">
                     <span className="flex items-center gap-1.5">
                       <input
                         type="text"
-                        aria-label={`Type SQL de ${table.name}.${column.name}`}
+                        aria-label={t("Type SQL de {0}.{1}", [table.name, column.name])}
                         value={column.overridden ? column.sqlType : ''}
                         disabled={readOnly}
                         placeholder={column.proposedType}
@@ -239,9 +242,9 @@ function TypeMappingPanel({
                       {column.overridden && (
                         <button
                           type="button"
-                          aria-label={`Revenir au type proposé pour ${column.name}`}
+                          aria-label={t("Revenir au type proposé pour {0}", [column.name])}
                           disabled={readOnly}
-                          title={`Revenir à ${column.proposedType}`}
+                          title={t("Revenir à {0}", [column.proposedType])}
                           onClick={() => onOverrideChange(column.id, '')}
                           className="shrink-0 rounded-control border border-line-strong px-1.5 py-0.5 text-xs hover:bg-surface-soft"
                         >

@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { CodeSchema, ManyToManyRelation, Relation, SchemaColumn, SchemaTable } from './codeSchema'
 import type { GeneratedFile } from './codegenTypes'
 import { phpString, phpStringBlock } from './php'
@@ -31,8 +32,8 @@ function compositeComment(relation: Relation, target: string): string[] {
   const columns = relation.key.map((pair) => pair.foreignColumn).join(', ')
   return [
     `    // ${relation.comment}`,
-    `    // Clé étrangère composée (${columns}) vers ${target} : Eloquent ne sait pas`,
-    '    // suivre une clé composée, cette relation est à écrire à la main.',
+    t("    // Clé étrangère composée ({0}) vers {1} : Eloquent ne sait pas", [columns, target]),
+    t("    // suivre une clé composée, cette relation est à écrire à la main."),
   ]
 }
 
@@ -65,8 +66,8 @@ function manyToManyMethod(relation: ManyToManyRelation, schema: CodeSchema): str
   if (relation.composite) {
     return [
       `    // ${relation.comment}`,
-      `    // Table pivot ${relation.pivotTableName} à clé composée : belongsToMany ne`,
-      `    // sait pas la suivre, passez par le modèle de jonction.`,
+      t("    // Table pivot {0} à clé composée : belongsToMany ne", [relation.pivotTableName]),
+      t("    // sait pas la suivre, passez par le modèle de jonction."),
     ]
   }
   const local = relation.localKey[0]
@@ -86,7 +87,7 @@ function manyToManyMethod(relation: ManyToManyRelation, schema: CodeSchema): str
       : ''
   return [
     `    /** ${relation.comment} */`,
-    `    public function ${relation.name}(): BelongsToMany`,
+    ("    public function " + String(relation.name) + "(): BelongsToMany"),
     '    {',
     '        return $this->belongsToMany(',
     ...pivot,
@@ -125,13 +126,13 @@ export function laravelModelFile(table: SchemaTable, schema: CodeSchema): Genera
   if (table.primaryKey.length > 1) {
     properties.push(
       '',
-      `    // Eloquent ne gère pas les clés primaires composées`,
+      t("    // Eloquent ne gère pas les clés primaires composées"),
       `    // (${table.primaryKey.map((column) => column.columnName).join(', ')}) :`,
-      '    // les écritures par clé demandent une requête explicite.',
+      t("    // les écritures par clé demandent une requête explicite."),
     )
   }
   if (table.primaryKey.length === 0) {
-    properties.push('', `    // ${table.sourceName} n'a pas d'identifiant dans le MCD.`)
+    properties.push('', t("    // {0} n'a pas d'identifiant dans le MCD.", [table.sourceName]))
   }
 
   const fillable = fillableColumns(table).map((column) => column.columnName)
@@ -144,8 +145,8 @@ export function laravelModelFile(table: SchemaTable, schema: CodeSchema): Genera
 
   const origin =
     table.origin === 'entity'
-      ? `Entité ${table.sourceName} du MCD.`
-      : `Jonction ${table.sourceName} du MCD.`
+      ? t("Entité {0} du MCD.", [table.sourceName])
+      : t("Jonction {0} du MCD.", [table.sourceName])
 
   const content = `<?php
 

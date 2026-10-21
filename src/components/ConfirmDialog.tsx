@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useEffect, useId, useRef } from 'react'
 import { buttonClass } from './ui/buttonClass'
 import { dialogClass } from './ui/dialogClass'
@@ -30,6 +32,7 @@ export function ConfirmDialog({
   secondaryLabel,
   onSecondary,
 }: ConfirmDialogProps) {
+  useLanguage()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = useId()
 
@@ -67,8 +70,7 @@ export function ConfirmDialog({
             onClick={onCancel}
             className={buttonClass({ variant: 'secondary' })}
           >
-            Annuler
-          </button>
+            {t("Annuler")}</button>
           {secondaryLabel && onSecondary && (
             <button
               type="button"

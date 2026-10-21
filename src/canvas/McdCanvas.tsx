@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { selectionBoxInFlow } from './selectionBox'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
@@ -120,12 +122,19 @@ export function McdCanvas({
   hideInk,
   readOnly = false,
 }: McdCanvasProps) {
+  const locale = useLanguage()
   const canvasOthers = useMemo(() => (others ?? []).filter((other) => !other.view || other.view === 'mcd'), [others])
   const selectionBoxReporter = useRef(onSelectionBox)
   selectionBoxReporter.current = onSelectionBox
+  const store = useStoreApi<McdFlowNode, LegFlowEdge>()
+  const annotationTool = placing || ink?.active === true
+  useEffect(() => {
+    store.setState({ userSelectionActive: false, userSelectionRect: null, nodesSelectionActive: false })
+    selectionBoxReporter.current?.(null)
+  }, [annotationTool, store])
+  const ariaLabels = useMemo(() => { void locale; return { ...ARIA_LABELS } }, [locale])
   const theme = useTheme()
   const { screenToFlowPosition } = useReactFlow()
-  const store = useStoreApi<McdFlowNode, LegFlowEdge>()
   // Réutilise le rectangle réel de React Flow, y compris son zoom et son auto-pan.
   useEffect(() => {
     const clear = () => selectionBoxReporter.current?.(null)
@@ -169,6 +178,7 @@ export function McdCanvas({
    * autres, la pose d'une bulle, et le trait du crayon.
    */
   const strokeRef = useRef<InkPoint[] | null>(null)
+  const capturedPointer = useRef<number | null>(null)
   /*
    * Les écouteurs se posent une fois pour toutes, et lisent l'état du
    * moment dans une ref. Les relier aux props les ferait reposer à chaque
@@ -177,6 +187,18 @@ export function McdCanvas({
    */
   const gestureRef = useRef({ onPointerFlow, placing, onPlacePin, ink })
   gestureRef.current = { onPointerFlow, placing, onPlacePin, ink }
+  useEffect(() => {
+    if (isActive && ink?.active) return
+    const pointer = capturedPointer.current
+    capturedPointer.current = null
+    const pane = paneRef.current
+    if (pointer !== null && pane?.hasPointerCapture(pointer)) pane.releasePointerCapture(pointer)
+    if (strokeRef.current !== null) {
+      strokeRef.current = null
+      gestureRef.current.ink?.onStroke(null)
+    }
+  }, [isActive, ink?.active])
+
 
   /*
    * Une seule porte pour les gestes d'outil. Posée sur la section, en
@@ -206,6 +228,7 @@ export function McdCanvas({
       if (inkNow?.active === true && event.button === 0 && event.isPrimary) {
         event.stopPropagation()
         event.preventDefault()
+        capturedPointer.current = event.pointerId
         pane.setPointerCapture(event.pointerId)
         strokeRef.current = appendInkPoint([], flowAt(event))
         inkNow.onStroke(strokeRef.current)
@@ -213,6 +236,9 @@ export function McdCanvas({
     }
 
     const endStroke = () => {
+      const pointer = capturedPointer.current
+      capturedPointer.current = null
+      if (pointer !== null && pane.hasPointerCapture(pointer)) pane.releasePointerCapture(pointer)
       if (strokeRef.current !== null) {
         strokeRef.current = null
         gestureRef.current.ink?.onStroke(null)
@@ -240,6 +266,8 @@ export function McdCanvas({
       }
     }
 
+    pane.addEventListener('lostpointercapture', endStroke, true)
+    window.addEventListener('blur', endStroke)
     pane.addEventListener('pointerdown', onDown, true)
     pane.addEventListener('pointermove', onMove, true)
     pane.addEventListener('pointerleave', onLeave, true)
@@ -248,6 +276,8 @@ export function McdCanvas({
     pane.addEventListener('pointercancel', endStroke, true)
     pane.addEventListener('click', onClickCapture, true)
     return () => {
+      pane.removeEventListener('lostpointercapture', endStroke, true)
+      window.removeEventListener('blur', endStroke)
       pane.removeEventListener('pointerdown', onDown, true)
       pane.removeEventListener('pointermove', onMove, true)
       pane.removeEventListener('pointerleave', onLeave, true)
@@ -270,6 +300,7 @@ export function McdCanvas({
    * milieu d'un glisser ne serait plus déplaçable pour React Flow.
    */
   useEffect(() => {
+    void locale // Les noms accessibles suivent la langue, sans changer les identifiants.
     const derived = mcdToFlow(state.mcd, state.layout)
     setNodes((current) => {
       const byId = new Map(current.map((node) => [node.id, node]))
@@ -289,7 +320,7 @@ export function McdCanvas({
       })
     })
     setEdges(derived.edges.map((edge) => ({ ...edge, selected: selection.edgeIds.has(edge.id) })))
-  }, [state.mcd, state.layout, selection])
+  }, [state.mcd, state.layout, selection, locale])
 
   /*
    * Le côté d'accroche de chaque patte, recalculé à chaque image depuis les
@@ -514,7 +545,7 @@ export function McdCanvas({
   )
 
   return (
-    <section ref={paneRef} aria-label="Zone de dessin du MCD" className="min-h-0 min-w-0 flex-1 bg-canvas">
+    <section ref={paneRef} aria-label={t("Zone de dessin du MCD")} className="relative min-h-0 min-w-0 flex-1 bg-canvas">
       <McdDispatchContext.Provider value={dispatch}>
       <RemoteSelectionContext.Provider value={canvasOthers}>
       <ReactFlow<McdFlowNode, LegFlowEdge>
@@ -534,23 +565,26 @@ export function McdCanvas({
         onNodesDelete={onNodesDelete}
         onEdgesDelete={onEdgesDelete}
         onBeforeDelete={onBeforeDelete}
-        nodesDraggable={!readOnly}
-        nodesConnectable={!readOnly}
-        deleteKeyCode={isActive && !readOnly ? ['Backspace', 'Delete'] : null}
+        nodesDraggable={!readOnly && !annotationTool}
+        nodesConnectable={!readOnly && !annotationTool}
+        deleteKeyCode={isActive && !readOnly && !annotationTool ? ['Backspace', 'Delete'] : null}
         edgesFocusable
         fitView
+        minZoom={0.1}
         fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
         // Sélection multiple : glisser gauche = zone de sélection
         // (toucher un élément suffit), Shift/Ctrl+clic = ajout.
         // Le déplacement de la vue passe au bouton du milieu ou droit,
         // et à la molette.
         connectionLineStyle={{ stroke: 'var(--c-mark)', strokeWidth: 1.5 }}
-        ariaLabelConfig={ARIA_LABELS}
+        ariaLabelConfig={ariaLabels}
         colorMode={theme.resolved}
-        selectionOnDrag
+        elementsSelectable={!annotationTool}
+        selectionKeyCode={annotationTool ? null : 'Shift'}
+        selectionOnDrag={!annotationTool}
         selectionMode={SelectionMode.Partial}
         multiSelectionKeyCode={['Shift', 'Control', 'Meta']}
-        panOnDrag={[1, 2]}
+        panOnDrag={annotationTool ? false : [1, 2]}
         panOnScroll
         proOptions={{ hideAttribution: true }}
       >
@@ -568,13 +602,14 @@ export function McdCanvas({
           />
         )}
       </ReactFlow>
+      {annotationTool && <div className="absolute inset-0 z-20 touch-none cursor-crosshair" data-annotation-surface="true" aria-hidden="true" />}
       </RemoteSelectionContext.Provider>
       </McdDispatchContext.Provider>
       <ConfirmDialog
         open={pendingDelete !== null}
-        title="Suppression groupée"
-        message={`Supprimer ${pendingDelete?.count ?? 0} éléments d'un coup ? Vous pourrez annuler avec Ctrl+Z.`}
-        confirmLabel="Oui, supprimer"
+        title={t("Suppression groupée")}
+        message={t("Supprimer {0} éléments d'un coup ? Vous pourrez annuler avec Ctrl+Z.", [pendingDelete?.count ?? 0])}
+        confirmLabel={t("Oui, supprimer")}
         onConfirm={() => closePendingDelete(true)}
         onCancel={() => closePendingDelete(false)}
       />

@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useCallback, useMemo, useState } from 'react'
 import type { ApiClient } from '../lib/apiClient'
 import type { ApiUser } from '../lib/authApi'
@@ -69,6 +71,7 @@ export function ClassesPage({
   onOpenReadOnlyModel,
   onStartLiveCoedition,
 }: ClassesPageProps) {
+  useLanguage()
   const classrooms = useClassrooms(client)
   const { reload } = classrooms
   const [selected, setSelected] = useState<ClassroomOpening | null>(opening)
@@ -106,7 +109,7 @@ export function ClassesPage({
 
   if (selected) {
     return (
-      <PageShell title="Classe" focusKey={selected.id} onBack={() => backToList(null)} backLabel="Retour à mes classes">
+      <PageShell title={t("Classe")} focusKey={selected.id} onBack={() => backToList(null)} backLabel={t("Retour à mes classes")}>
         <ClassroomView
           key={selected.id}
           client={client}
@@ -129,11 +132,11 @@ export function ClassesPage({
 
   return (
     <PageShell
-      title="Mes classes"
+      title={t("Mes classes")}
       description={
         canCreate
-          ? 'Créez une classe et partagez son code, ou rejoignez celle d’un collègue.'
-          : 'Rejoignez une classe avec le code donné par votre prof.'
+          ? t("Créez une classe et partagez son code, ou rejoignez celle d’un collègue.")
+          : t("Rejoignez une classe avec le code donné par votre prof.")
       }
     >
       <p role="status" aria-live="polite" className="min-h-5 text-sm">
@@ -150,13 +153,12 @@ export function ClassesPage({
       <div className={`mt-3 grid gap-4 ${canCreate ? 'md:grid-cols-2' : 'md:max-w-md'}`}>
         <Card as="section" aria-labelledby="rejoindre-titre">
           <h2 id="rejoindre-titre" className="text-base font-semibold text-ink">
-            Rejoindre une classe
-          </h2>
+            {t("Rejoindre une classe")}</h2>
           <div className="mt-3">
             <JoinClassForm
               client={client}
               onJoined={(classroom) =>
-                open({ id: classroom.id, initial: classroom, message: `Vous avez rejoint la classe « ${classroom.name} ».` })
+                open({ id: classroom.id, initial: classroom, message: t("Vous avez rejoint la classe « {0} ».", [classroom.name]) })
               }
             />
           </div>
@@ -165,8 +167,7 @@ export function ClassesPage({
         {canCreate && (
           <Card as="section" aria-labelledby="creer-titre">
             <h2 id="creer-titre" className="text-base font-semibold text-ink">
-              Créer une classe
-            </h2>
+              {t("Créer une classe")}</h2>
             <div className="mt-3">
               <CreateClassForm
                 client={client}
@@ -174,7 +175,7 @@ export function ClassesPage({
                   open({
                     id: classroom.id,
                     initial: classroom,
-                    message: `Classe « ${classroom.name} » créée. Partagez son code à vos élèves.`,
+                    message: t("Classe « {0} » créée. Partagez son code à vos élèves.", [classroom.name]),
                     // À la création seulement : le prof voit son code tout
                     // de suite. Les visites suivantes ouvrent les membres.
                     tab: 'reglages',
@@ -188,16 +189,15 @@ export function ClassesPage({
 
       <section aria-labelledby="liste-titre" className="mt-8">
         <h2 id="liste-titre" className="text-lg font-semibold tracking-tight text-ink">
-          Vos classes
-          {total > 0 && <span className="font-normal text-ink-soft"> ({total})</span>}
+          {t("Vos classes")}{total > 0 && <span className="font-normal text-ink-soft"> ({total})</span>}
         </h2>
         {searchable && (
           <div className="mt-3 max-w-md">
             <SearchField
-              label="Rechercher une classe"
+              label={t("Rechercher une classe")}
               value={query}
               onChange={setQuery}
-              placeholder="Nom de la classe"
+              placeholder={t("Nom de la classe")}
               count={searchCountLabel(shown.length, total, 'classe', 'classes')}
             />
           </div>
@@ -208,10 +208,10 @@ export function ClassesPage({
             onOpen={(classroom) => setSelected({ id: classroom.id, initial: null, message: null })}
             emptyText={
               searching
-                ? 'Aucune classe ne porte ce nom. Essayez un autre mot, ou effacez la recherche.'
+                ? t("Aucune classe ne porte ce nom. Essayez un autre mot, ou effacez la recherche.")
                 : canCreate
-                  ? 'Aucune classe pour l’instant : créez-en une, ou rejoignez celle d’un collègue.'
-                  : 'Aucune classe pour l’instant : saisissez le code donné par votre prof.'
+                  ? t("Aucune classe pour l’instant : créez-en une, ou rejoignez celle d’un collègue.")
+                  : t("Aucune classe pour l’instant : saisissez le code donné par votre prof.")
             }
           />
         </div>

@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { DocumentMeta, OpenedDocument } from '../model/document'
 import { emptyEditorState } from '../model/document'
 import type { McdEditorState } from '../model/mcdReducer'
@@ -131,7 +132,7 @@ export function createDocumentStore(storage: StorageLike, options: StoreOptions 
       if (parsed?.ok) {
         documents.push({
           id: key.slice(ENTRY_PREFIX.length),
-          name: parsed.name ?? UNNAMED_DOCUMENT_NAME,
+          name: parsed.name ?? t(UNNAMED_DOCUMENT_NAME),
           createdAt: timestamp,
           updatedAt: timestamp,
         })
@@ -254,14 +255,14 @@ export function createDocumentStore(storage: StorageLike, options: StoreOptions 
 
     nextNewDocumentName: () => {
       const used = new Set(metas().map((m) => m.name.toLowerCase()))
-      if (!used.has(NEW_DOCUMENT_NAME.toLowerCase())) {
-        return NEW_DOCUMENT_NAME
+      if (!used.has(t(NEW_DOCUMENT_NAME).toLowerCase())) {
+        return t(NEW_DOCUMENT_NAME)
       }
       let n = 2
-      while (used.has(`${NEW_DOCUMENT_NAME} ${n}`.toLowerCase())) {
+      while (used.has(`${t(NEW_DOCUMENT_NAME)} ${n}`.toLowerCase())) {
         n += 1
       }
-      return `${NEW_DOCUMENT_NAME} ${n}`
+      return `${t(NEW_DOCUMENT_NAME)} ${n}`
     },
 
     /**
@@ -291,7 +292,7 @@ export function createDocumentStore(storage: StorageLike, options: StoreOptions 
         legacySettings = null
       }
       const meta = createDocument(
-        MIGRATED_DOCUMENT_NAME,
+        t(MIGRATED_DOCUMENT_NAME),
         parsed.state,
         parsed.mpdSettings ?? legacySettings ?? DEFAULT_MPD_SETTINGS,
       )

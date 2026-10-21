@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useState } from 'react'
 import type { ApiClient, ApiError } from '../lib/apiClient'
 import type { ApiUser } from '../lib/authApi'
@@ -25,13 +27,13 @@ import { Stat } from './ui/Stat'
 const TEACHER_SHORTCUTS: readonly ClassShortcut[] = [
   {
     tab: 'exercices',
-    label: 'Devoirs',
-    description: 'Les sujets donnés à la classe, leurs rendus, et la création d’un nouveau devoir.',
+    get label() { return t("Devoirs") },
+    get description() { return t("Les sujets donnés à la classe, leurs rendus, et la création d’un nouveau devoir.") },
   },
   {
     tab: 'cours',
-    label: 'Cours',
-    description: 'Vos supports publiés pour la classe, et la composition d’un nouveau cours.',
+    get label() { return t("Cours") },
+    get description() { return t("Vos supports publiés pour la classe, et la composition d’un nouveau cours.") },
   },
 ]
 
@@ -77,6 +79,7 @@ export function TeacherHome({
   onOpenGroup,
   announcement,
 }: TeacherHomeProps) {
+  useLanguage()
   const classrooms = useClassrooms(client)
   const groups = useGroups(client)
   const toGrade = useToGrade(client)
@@ -96,15 +99,14 @@ export function TeacherHome({
 
   return (
     <PageShell
-      eyebrow="Espace prof"
-      title={`Bonjour ${user.firstName ?? user.name}`}
+      eyebrow={t("Espace prof")}
+      title={t("Bonjour {0}", [user.firstName ?? user.name])}
       leading={<Avatar person={user} size="lg" />}
-      description="Ce qui attend une correction, vos documents, et vos classes à portée de clic."
+      description={t("Ce qui attend une correction, vos documents, et vos classes à portée de clic.")}
       actions={
         <Button variant="secondary" onClick={() => void createDocument()}>
           <span aria-hidden="true">+</span>
-          Nouveau document
-        </Button>
+          {t("Nouveau document")}</Button>
       }
     >
       <LiveAnnouncement message={announcement} />
@@ -114,18 +116,18 @@ export function TeacherHome({
         </Notice>
       )}
 
-      <section aria-label="Vos chiffres" className="grid gap-3 sm:grid-cols-3">
+      <section aria-label={t("Vos chiffres")} className="grid gap-3 sm:grid-cols-3">
         <Stat
           value={list === null ? '…' : String(mine.length)}
-          label={plural(mine.length, 'classe dont vous êtes le prof', 'classes dont vous êtes le prof')}
+          label={plural(mine.length, t("classe dont vous êtes le prof"), t("classes dont vous êtes le prof"))}
         />
         <Stat
           value={list === null ? '…' : String(studentCount)}
-          label={plural(studentCount, 'élève inscrit', 'élèves inscrits')}
+          label={plural(studentCount, t("élève inscrit"), t("élèves inscrits"))}
         />
         <Stat
           value={toGrade.rows === null ? '…' : String(toGrade.total)}
-          label={plural(toGrade.total, 'rendu à corriger', 'rendus à corriger')}
+          label={plural(toGrade.total, t("rendu à corriger"), t("rendus à corriger"))}
         />
       </section>
 
@@ -146,7 +148,7 @@ export function TeacherHome({
 
           {mine.length > 0 && (
             <ClassShortcuts
-              title="Pour vos classes"
+              title={t("Pour vos classes")}
               classrooms={mine}
               shortcuts={TEACHER_SHORTCUTS}
               onOpen={onOpenClassroom}
@@ -154,22 +156,18 @@ export function TeacherHome({
           )}
         </div>
 
-        <aside aria-label="Actions et accès rapide" className="flex flex-col gap-4">
+        <aside aria-label={t("Actions et accès rapide")} className="flex flex-col gap-4">
           <Card as="section" aria-labelledby="actions-titre">
             <h2 id="actions-titre" className="text-base font-semibold text-ink">
-              Actions
-            </h2>
+              {t("Actions")}</h2>
             <div className="mt-3 flex flex-col gap-2">
               <Button variant="primary" block onClick={() => void createDocument()}>
                 <span aria-hidden="true">+</span>
-                Nouveau document
-              </Button>
+                {t("Nouveau document")}</Button>
               <Button variant="secondary" block onClick={onShowClasses}>
-                Créer une classe
-              </Button>
+                {t("Créer une classe")}</Button>
               <Button variant="secondary" block onClick={onShowCorrections}>
-                Voir les rendus à corriger
-              </Button>
+                {t("Voir les rendus à corriger")}</Button>
             </div>
           </Card>
 
@@ -180,7 +178,7 @@ export function TeacherHome({
             onOpenGroup={onOpenGroup}
             onShowClasses={onShowClasses}
             onShowGroups={onShowGroups}
-            emptyClassesText="Aucune classe pour l’instant. Créez-en une et partagez son code à vos élèves."
+            emptyClassesText={t("Aucune classe pour l’instant. Créez-en une et partagez son code à vos élèves.")}
           />
         </aside>
       </div>

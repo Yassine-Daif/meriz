@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { CodeSchema, Relation, SchemaColumn, SchemaTable } from './codeSchema'
 import type { GeneratedFile } from './codegenTypes'
 import { phpString } from './php'
@@ -92,7 +93,7 @@ export function symfonyEntityFile(table: SchemaTable, schema: CodeSchema): Gener
       if (column.autoIncrement) lines.push('    #[ORM\\GeneratedValue]')
     }
     if (column.overridden) {
-      lines.push(`    // Type imposé au MPD : ${column.sqlType}`)
+      lines.push(t("    // Type imposé au MPD : {0}", [column.sqlType]))
     }
     lines.push(`    #[ORM\\Column(${parts.join(', ')})]`)
     lines.push(`    private ?${format.phpType} $${column.propertyName} = null;`)
@@ -137,7 +138,7 @@ export function symfonyEntityFile(table: SchemaTable, schema: CodeSchema): Gener
         lines.push('    #[ORM\\Id]')
       }
       lines.push(
-        `    #[ORM\\${attribute}(targetEntity: ${target}::class, inversedBy: ${phpString(relation.inverseName)})]`,
+        ("    #[ORM\\" + String(attribute) + "(targetEntity: " + String(target) + "::class, inversedBy: " + String(phpString(relation.inverseName)) + ")]"),
       )
       lines.push(...joinColumns(relation, relation.nullable))
       lines.push(`    private ?${targetType} $${relation.name} = null;`)
@@ -221,7 +222,7 @@ export function symfonyEntityFile(table: SchemaTable, schema: CodeSchema): Gener
     methods.push(
       [
         `    /** @return Collection<int, ${targetType}> */`,
-        `    public function get${name}(): Collection`,
+        ("    public function get" + String(name) + "(): Collection"),
         '    {',
         `        return $this->${relation.name};`,
         '    }',
@@ -245,7 +246,7 @@ export function symfonyEntityFile(table: SchemaTable, schema: CodeSchema): Gener
         `    public function remove${item}(${targetType} $${argument}): static`,
         '    {',
         `        if ($this->${relation.name}->removeElement($${argument})`,
-        `            && $${argument}->get${studly(relation.inverseName)}() === $this) {`,
+        ("            && $" + String(argument) + "->get" + String(studly(relation.inverseName)) + "() === $this) {"),
         `            $${argument}->set${studly(relation.inverseName)}(null);`,
         '        }',
         '',
@@ -302,7 +303,7 @@ export function symfonyEntityFile(table: SchemaTable, schema: CodeSchema): Gener
     methods.push(
       [
         `    /** @return Collection<int, ${target}> */`,
-        `    public function get${name}(): Collection`,
+        ("    public function get" + String(name) + "(): Collection"),
         '    {',
         `        return $this->${relation.name};`,
         '    }',
@@ -339,13 +340,13 @@ export function symfonyEntityFile(table: SchemaTable, schema: CodeSchema): Gener
 
   const warning =
     table.primaryKey.length === 0 && table.origin === 'entity'
-      ? [`    // Attention : ${table.sourceName} n'a pas d'identifiant dans le MCD.`, '']
+      ? [t("    // Attention : {0} n'a pas d'identifiant dans le MCD.", [table.sourceName]), '']
       : []
 
   const origin =
     table.origin === 'entity'
-      ? `Entité ${table.sourceName} du MCD.`
-      : `Jonction ${table.sourceName} du MCD, née d'une association.`
+      ? t("Entité {0} du MCD.", [table.sourceName])
+      : t("Jonction {0} du MCD, née d'une association.", [table.sourceName])
 
   const content = `<?php
 

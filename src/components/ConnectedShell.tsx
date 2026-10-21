@@ -1,14 +1,14 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import type { ReactNode } from 'react'
 import type { ApiUser } from '../lib/authApi'
 import { AccountStatus } from './AccountStatus'
-import { UiScaleControl } from './UiScaleControl'
+import { PreferencesControl } from './ui/PreferencesControl'
 import { Button } from './ui/Button'
 import { Lockup } from './ui/Lockup'
 import { BackToTop } from './ui/BackToTop'
 import { Notice } from './ui/Notice'
 import { SkipLink } from './ui/SkipLink'
-import { EffectsControl } from './ui/EffectsControl'
-import { ThemeToggle } from './ui/ThemeToggle'
 
 export type ConnectedPage = 'home' | 'classes' | 'groups' | 'corrections' | 'work' | 'profile'
 
@@ -58,12 +58,12 @@ const ICONS: Record<ConnectedPage, ReactNode> = {
 }
 
 const ITEMS: { page: ConnectedPage; label: string; teacherOnly?: boolean }[] = [
-  { page: 'home', label: 'Accueil' },
-  { page: 'classes', label: 'Mes classes' },
-  { page: 'groups', label: 'Mes groupes' },
-  { page: 'corrections', label: 'À corriger', teacherOnly: true },
-  { page: 'work', label: 'Mon travail' },
-  { page: 'profile', label: 'Profil' },
+  { page: 'home', get label() { return t("Accueil") } },
+  { page: 'classes', get label() { return t("Mes classes") } },
+  { page: 'groups', get label() { return t("Mes groupes") } },
+  { page: 'corrections', get label() { return t("À corriger") }, teacherOnly: true },
+  { page: 'work', get label() { return t("Mon travail") } },
+  { page: 'profile', get label() { return t("Profil") } },
 ]
 
 /**
@@ -73,6 +73,7 @@ const ITEMS: { page: ConnectedPage; label: string; teacherOnly?: boolean }[] = [
  * aria-current, par le fond et par un trait, jamais par la couleur seule.
  */
 export function ConnectedShell({ user, page, onNavigate, notice, onClearNotice, children }: ConnectedShellProps) {
+  useLanguage()
   // Corriger des rendus n'a de sens que pour un prof : l'entrée ne
   // s'affiche pas ailleurs, plutôt que de mener à une page toujours vide.
   const items = ITEMS.filter((item) => !item.teacherOnly || user.role === 'teacher')
@@ -82,21 +83,19 @@ export function ConnectedShell({ user, page, onNavigate, notice, onClearNotice, 
       <SkipLink />
 
       <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line bg-surface px-4 py-2.5 sm:px-6">
-        <Lockup size={30} label="Meriz" />
+        <Lockup size={30} label={t("Meriz")} />
         <span className="hidden text-sm font-medium text-ink-soft sm:inline">
-          {user.role === 'teacher' ? 'Espace prof' : 'Espace élève'}
+          {user.role === 'teacher' ? t("Espace prof") : t("Espace élève")}
         </span>
         <div className="ml-auto flex flex-wrap items-center gap-3">
-          <ThemeToggle />
-          <EffectsControl />
-          <UiScaleControl />
+          <PreferencesControl />
           <AccountStatus compact />
         </div>
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <nav
-          aria-label="Navigation principale"
+          aria-label={t("Navigation principale")}
           className="shrink-0 overflow-x-auto border-b border-line bg-surface lg:w-60 lg:overflow-x-visible lg:border-r lg:border-b-0"
         >
           <ul className="flex gap-1 px-3 py-2 lg:flex-col lg:px-3 lg:py-5">
@@ -150,8 +149,7 @@ export function ConnectedShell({ user, page, onNavigate, notice, onClearNotice, 
                 className="mb-6"
                 action={
                   <Button size="sm" onClick={onClearNotice}>
-                    Compris
-                  </Button>
+                    {t("Compris")}</Button>
                 }
               >
                 {notice}

@@ -1,3 +1,4 @@
+import { useLanguage } from "../lib/useLanguage"
 import { useRef } from 'react'
 import type { ChangeEvent, ReactNode } from 'react'
 
@@ -15,6 +16,7 @@ interface ImportFileButtonProps {
  * focalisable, et le même fichier peut être rouvert.
  */
 export function ImportFileButton({ children, className, accept = '.json,application/json', onFile }: ImportFileButtonProps) {
+  useLanguage()
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {

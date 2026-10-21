@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { PasswordResetLink } from '../lib/passwordResetLanding'
@@ -31,6 +33,7 @@ const DIFFERENT = 'Les deux mots de passe ne sont pas identiques.'
  * une fois.
  */
 export function NewPasswordPage({ link, onSignIn, onAskNewLink, onContinue }: NewPasswordPageProps) {
+  useLanguage()
   const { resetPassword } = useSession()
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
@@ -50,13 +53,13 @@ export function NewPasswordPage({ link, onSignIn, onAskNewLink, onContinue }: Ne
     // la confirmation ne part jamais sur le réseau.
     if (password.length < 8) {
       setFieldError(undefined)
-      setFormError(TROP_COURT)
+      setFormError(t(TROP_COURT))
       setAttempt((count) => count + 1)
       return
     }
     if (password !== confirmation) {
       setFormError(null)
-      setFieldError(DIFFERENT)
+      setFieldError(t(DIFFERENT))
       return
     }
     setPending(true)
@@ -79,18 +82,15 @@ export function NewPasswordPage({ link, onSignIn, onAskNewLink, onContinue }: Ne
 
   if (done !== null) {
     return (
-      <PublicShell title="Mot de passe changé" focusKey="done">
+      <PublicShell title={t("Mot de passe changé")} focusKey="done">
         <div className="flex flex-col gap-4">
           <Notice tone="success" announce={false}>
             {done}
           </Notice>
           <p className="text-sm leading-6 text-ink-soft">
-            Toutes vos sessions ont été fermées, y compris sur vos autres appareils. Connectez-vous
-            avec votre nouveau mot de passe.
-          </p>
+            {t("Toutes vos sessions ont été fermées, y compris sur vos autres appareils. Connectez-vous avec votre nouveau mot de passe.")}</p>
           <Button type="button" variant="primary" block onClick={() => onSignIn(link.email)}>
-            Se connecter
-          </Button>
+            {t("Se connecter")}</Button>
         </div>
       </PublicShell>
     )
@@ -98,21 +98,17 @@ export function NewPasswordPage({ link, onSignIn, onAskNewLink, onContinue }: Ne
 
   if (linkError !== null) {
     return (
-      <PublicShell title="Lien inutilisable" focusKey="refus">
+      <PublicShell title={t("Lien inutilisable")} focusKey="refus">
         <div className="flex flex-col gap-4">
           <Notice tone="warning" announce={false}>
             {linkError}
           </Notice>
           <p className="text-sm leading-6 text-ink-soft">
-            Un lien de réinitialisation ne sert qu'une fois, et il expire au bout d'une heure. Il
-            suffit d'en demander un nouveau.
-          </p>
+            {t("Un lien de réinitialisation ne sert qu'une fois, et il expire au bout d'une heure. Il suffit d'en demander un nouveau.")}</p>
           <Button type="button" variant="primary" block onClick={onAskNewLink}>
-            Demander un nouveau lien
-          </Button>
+            {t("Demander un nouveau lien")}</Button>
           <Button type="button" block onClick={onContinue}>
-            Continuer sans compte
-          </Button>
+            {t("Continuer sans compte")}</Button>
         </div>
       </PublicShell>
     )
@@ -120,24 +116,24 @@ export function NewPasswordPage({ link, onSignIn, onAskNewLink, onContinue }: Ne
 
   return (
     <PublicShell
-      title="Nouveau mot de passe"
-      lede={`Pour le compte ${link.email}.`}
+      title={t("Nouveau mot de passe")}
+      lede={t("Pour le compte {0}.", [link.email])}
       focusKey="form"
     >
       <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-4">
         <FormAlert message={formError} attempt={attempt} />
         <FormField
-          label="Nouveau mot de passe"
+          label={t("Nouveau mot de passe")}
           type="password"
           value={password}
           onChange={setPassword}
           autoComplete="new-password"
-          hint={TROP_COURT}
+          hint={t(TROP_COURT)}
           minLength={8}
           maxLength={72}
         />
         <FormField
-          label="Confirmer le mot de passe"
+          label={t("Confirmer le mot de passe")}
           type="password"
           value={confirmation}
           onChange={(value) => {
@@ -148,9 +144,8 @@ export function NewPasswordPage({ link, onSignIn, onAskNewLink, onContinue }: Ne
           error={fieldError}
           maxLength={72}
         />
-        <Button type="submit" variant="primary" block loading={pending} loadingLabel="Enregistrement…">
-          Changer mon mot de passe
-        </Button>
+        <Button type="submit" variant="primary" block loading={pending} loadingLabel={t("Enregistrement…")}>
+          {t("Changer mon mot de passe")}</Button>
       </form>
     </PublicShell>
   )

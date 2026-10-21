@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useContext, useState } from 'react'
 import type { Dispatch, PointerEvent } from 'react'
 import { BaseEdge, EdgeLabelRenderer, useReactFlow } from '@xyflow/react'
@@ -11,7 +13,8 @@ import type { McdAction } from '../model/mcdReducer'
 import type { Position } from '../model/layout'
 
 /** Hors contexte de dispatch : rien à écrire, et une identité stable. */
-const IGNORE_ACTION: Dispatch<McdAction> = () => {}
+const IGNORE_ACTION: Dispatch<McdAction> = () => {
+  useLanguage()}
 
 /**
  * Lien patte : trait entre une association et une entité, avec une
@@ -20,6 +23,7 @@ const IGNORE_ACTION: Dispatch<McdAction> = () => {}
  * enregistrée dans le layout (donc annulable et sauvegardée).
  */
 export function LegEdge({ id, sourceX, sourceY, targetX, targetY, data, selected }: EdgeProps<LegFlowEdge>) {
+  useLanguage()
   const remoteSelections = useContext(RemoteSelectionContext).filter((other) => other.selection.includes(id))
   const dispatch = useContext(McdDispatchContext)
   const { screenToFlowPosition } = useReactFlow()
@@ -81,8 +85,8 @@ export function LegEdge({ id, sourceX, sourceY, targetX, targetY, data, selected
   return (
     <>
       {remoteSelections.map((other, index) => (
-        <g key={other.clientId} data-remote-selection={id} data-participant={other.user.id} role="img" aria-label={'Sélection de '+displayName(other.user)}>
-          <title>{'Sélection de '+displayName(other.user)}</title>
+        <g key={other.clientId} data-remote-selection={id} data-participant={other.user.id} role="img" aria-label={t("Sélection de ")+displayName(other.user)}>
+          <title>{t("Sélection de ")+displayName(other.user)}</title>
           <path d={path} fill="none" stroke={other.user.avatarBg} strokeWidth={7+index*4} pointerEvents="none" />
           <path d={path} fill="none" stroke={other.user.avatarFg} strokeWidth={1} pointerEvents="none" />
         </g>
@@ -106,7 +110,7 @@ export function LegEdge({ id, sourceX, sourceY, targetX, targetY, data, selected
             className={`nodrag nopan absolute cursor-move touch-none rounded-control border bg-surface px-2 py-0.5 font-mono text-micro font-medium shadow-soft ${
               selected ? 'border-mark font-semibold text-accent-ink' : 'border-line-strong text-ink'
             }`}
-            title="Glisser pour déplacer l'étiquette"
+            title={t("Glisser pour déplacer l'étiquette")}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}

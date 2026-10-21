@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import { assignmentTypeLabel, formatDueDate, getAssignment } from '../../lib/assignmentsApi'
@@ -44,6 +46,7 @@ export function ClassWorkPanel({
   onOpenWorkDocument,
   onOpenReadOnlyModel,
 }: ClassWorkPanelProps) {
+  useLanguage()
   const { session } = useSession()
   const userId = session.status === 'signed-in' ? String(session.user.id) : ''
   // Le lien devoir vers document de travail vit dans ce navigateur, sous
@@ -127,12 +130,10 @@ export function ClassWorkPanel({
   return (
     <section aria-labelledby="travail-classe-titre">
       <h2 id="travail-classe-titre" className="text-base font-semibold text-ink">
-        Travail de classe
-        {rows && rows.length > 0 && <span className="font-normal text-ink-soft"> ({rows.length})</span>}
+        {t("Travail de classe")}{rows && rows.length > 0 && <span className="font-normal text-ink-soft"> ({rows.length})</span>}
       </h2>
       <p className="mt-1 text-sm text-ink-soft">
-        Les devoirs de toutes vos classes, du plus proche au plus lointain.
-      </p>
+        {t("Les devoirs de toutes vos classes, du plus proche au plus lointain.")}</p>
 
       <p role="status" aria-live="polite" className="mt-2 min-h-5 text-sm text-ink-soft">
         {status}
@@ -144,20 +145,17 @@ export function ClassWorkPanel({
           announce={false}
           action={
             <Button size="sm" onClick={() => void load()}>
-              Réessayer
-            </Button>
+              {t("Réessayer")}</Button>
           }
         >
           {loadError}
         </Notice>
       ) : rows === null ? (
         <p role="status" className="text-sm text-ink-soft">
-          Chargement de vos devoirs…
-        </p>
+          {t("Chargement de vos devoirs…")}</p>
       ) : rows.length === 0 ? (
         <p className="rounded-card border border-dashed border-line-strong bg-surface-soft p-6 text-center text-sm text-ink-soft">
-          Aucun devoir pour l’instant. Ceux que vos profs publieront apparaîtront ici, avec leur échéance.
-        </p>
+          {t("Aucun devoir pour l’instant. Ceux que vos profs publieront apparaîtront ici, avec leur échéance.")}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {rows.map((row) => (
@@ -166,7 +164,7 @@ export function ClassWorkPanel({
                 type="button"
                 onClick={() => void open(row.id, row.classroom.id)}
                 disabled={opening !== null}
-                aria-label={`Ouvrir le devoir ${row.title} de la classe ${row.classroom.name}`}
+                aria-label={t("Ouvrir le devoir {0} de la classe {1}", [row.title, row.classroom.name])}
                 className="flex w-full flex-col items-start gap-1.5 rounded-card border border-line bg-surface p-4 text-left shadow-soft transition duration-150 hover:shadow-lift disabled:cursor-wait motion-safe:hover:-translate-y-0.5"
               >
                 <span className="flex w-full flex-wrap items-center justify-between gap-2">
@@ -175,11 +173,11 @@ export function ClassWorkPanel({
                     <Badge tone="sky">{assignmentTypeLabel(row.type)}</Badge>
                     <Badge tone={STATE_TONE[row.state]}>
                       {row.state === 'graded' && row.submission?.grade
-                        ? `Noté : ${row.submission.grade}`
+                        ? t("Noté : {0}", [row.submission.grade])
                         : workStateLabel(row.state)}
                     </Badge>
-                    {row.submission?.isLate && <Badge tone="apricot">En retard</Badge>}
-                    {row.submission === null && row.isOverdue && <Badge tone="apricot">Échéance passée</Badge>}
+                    {row.submission?.isLate && <Badge tone="apricot">{t("En retard")}</Badge>}
+                    {row.submission === null && row.isOverdue && <Badge tone="apricot">{t("Échéance passée")}</Badge>}
                   </span>
                 </span>
                 <span className="text-xs text-ink-soft">

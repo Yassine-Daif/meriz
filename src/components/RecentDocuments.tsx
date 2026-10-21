@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useEffect, useRef, useState } from 'react'
 import type { DocumentMeta } from '../model/document'
 import type { ApiError } from '../lib/apiClient'
@@ -38,6 +40,7 @@ export function RecentDocuments({
   assignments,
   limit = 4,
 }: RecentDocumentsProps) {
+  useLanguage()
   const [documents, setDocuments] = useState<DocumentMeta[]>(() => mostRecent(repository.cachedList(), limit))
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -78,10 +81,9 @@ export function RecentDocuments({
       <section aria-labelledby="recents-titre">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 id="recents-titre" className="text-lg font-semibold tracking-tight text-ink">
-            Documents récents
-          </h2>
+            {t("Documents récents")}</h2>
           <Button variant="ghost" size="sm" onClick={onShowAll}>
-            Tout voir dans Mon travail <span aria-hidden="true">→</span>
+            {t("Tout voir dans Mon travail ")}<span aria-hidden="true">→</span>
           </Button>
         </div>
 
@@ -92,12 +94,11 @@ export function RecentDocuments({
         {documents.length === 0 ? (
           <div className="mt-3 rounded-card border border-dashed border-line-strong bg-surface p-6 text-center">
             <p className="text-sm text-ink-soft">
-              {loaded ? 'Aucun document pour l’instant.' : 'Chargement de vos documents…'}
+              {loaded ? t("Aucun document pour l’instant.") : t("Chargement de vos documents…")}
             </p>
             {loaded && (
               <Button variant="primary" className="mt-3" onClick={() => void run(onNewDocument)} disabled={busy}>
-                Créer mon premier document
-              </Button>
+                {t("Créer mon premier document")}</Button>
             )}
           </div>
         ) : (
@@ -110,18 +111,17 @@ export function RecentDocuments({
                   type="button"
                   onClick={() => void run(() => onOpenDocument(meta.id))}
                   disabled={busy}
-                  aria-label={`Ouvrir ${meta.name}${provenance ? `, ${provenance.spoken}` : ''}`}
+                  aria-label={t("Ouvrir {0}{1}", [meta.name, provenance ? `, ${provenance.spoken}` : ''])}
                   className="flex w-full items-center gap-3 rounded-card border border-line bg-surface p-4 text-left shadow-soft transition duration-150 hover:shadow-lift disabled:cursor-wait motion-safe:hover:-translate-y-0.5"
                 >
                   <span
                     aria-hidden="true"
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-accent-soft font-mono text-xs font-semibold text-accent-ink"
                   >
-                    MCD
-                  </span>
+                    {t("MCD")}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-ink">{meta.name}</span>
-                    <span className="block text-xs text-ink-soft">Modifié le {formatDate(meta.updatedAt)}</span>
+                    <span className="block text-xs text-ink-soft">{t("Modifié le ")}{formatDate(meta.updatedAt)}</span>
                   </span>
                   {provenance && <Badge tone={provenance.tone}>{provenance.label}</Badge>}
                 </button>

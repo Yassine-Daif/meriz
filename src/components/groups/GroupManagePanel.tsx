@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useId } from 'react'
 import { formatJoinCode } from '../../lib/classroomsApi'
 import type { GroupDetail } from '../../lib/groupsApi'
@@ -34,19 +36,18 @@ export function GroupManagePanel({
   onDelete,
   onStatus,
 }: GroupManagePanelProps) {
+  useLanguage()
   const titleId = useId()
 
   return (
     <section aria-labelledby={titleId} className="rounded-card bg-accent-soft p-5 sm:p-6">
       <h3 id={titleId} className="text-base font-semibold text-ink">
-        Gérer le groupe
-      </h3>
+        {t("Gérer le groupe")}</h3>
       <p className="mt-1 text-sm text-ink">
-        Partagez ce code pour que d’autres rejoignent le groupe. Un nouveau code annule l’ancien.
-      </p>
+        {t("Partagez ce code pour que d’autres rejoignent le groupe. Un nouveau code annule l’ancien.")}</p>
 
       {group.joinCode === null ? (
-        <p className="mt-3 text-sm text-ink-soft">Le code de ce groupe n'est pas disponible.</p>
+        <p className="mt-3 text-sm text-ink-soft">{t("Le code de ce groupe n'est pas disponible.")}</p>
       ) : (
         <>
           <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -56,20 +57,17 @@ export function GroupManagePanel({
               * lit en texte, et le code doit rester lisible seul.
               */}
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-semibold tracking-wide text-ink uppercase">Code du groupe</span>
+              <span className="text-xs font-semibold tracking-wide text-ink uppercase">{t("Code du groupe")}</span>
               <p className="rounded-control border border-line-strong bg-surface px-4 py-2 font-mono text-2xl font-semibold tracking-widest text-ink">
                 {formatJoinCode(group.joinCode)}
               </p>
             </div>
             <Button variant="primary" onClick={onCopyCode}>
-              Copier le code
-            </Button>
+              {t("Copier le code")}</Button>
             <Button onClick={onRegenerate} disabled={busy}>
-              Nouveau code
-            </Button>
+              {t("Nouveau code")}</Button>
             <Button onClick={onRename} disabled={busy}>
-              Renommer le groupe
-            </Button>
+              {t("Renommer le groupe")}</Button>
           </div>
 
           <GroupInvite groupName={group.name} joinCode={group.joinCode} onStatus={onStatus} />
@@ -78,11 +76,9 @@ export function GroupManagePanel({
 
       <div className="mt-5 border-t border-line pt-4">
         <Button size="sm" variant="danger" onClick={onDelete} disabled={busy}>
-          Supprimer le groupe
-        </Button>
+          {t("Supprimer le groupe")}</Button>
         <p className="mt-1.5 text-xs text-ink">
-          Supprimer le groupe efface ses documents partagés. Les documents personnels de chacun restent intacts.
-        </p>
+          {t("Supprimer le groupe efface ses documents partagés. Les documents personnels de chacun restent intacts.")}</p>
       </div>
     </section>
   )

@@ -1,3 +1,4 @@
+import { t } from '../i18n/runtime'
 import { plural } from './plural'
 
 /**
@@ -43,5 +44,5 @@ export function searchCountLabel(shown: number, total: number, one: string, many
   if (shown >= total) {
     return `${total} ${plural(total, one, many)}`
   }
-  return `${shown} ${plural(shown, one, many)} sur ${total}`
+  return t("{0} {1} sur {2}", [shown, plural(shown, one, many), total])
 }

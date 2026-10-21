@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useEffect, useRef } from 'react'
 import type { ApiClient } from '../lib/apiClient'
 import { fetchCurrentUser } from '../lib/authApi'
@@ -18,24 +20,24 @@ interface EmailVerifiedPageProps {
 
 const MESSAGES: Record<VerificationResult, { title: string; tone: 'success' | 'warning'; text: string }> = {
   success: {
-    title: 'Adresse confirmée',
+    get title() { return t("Adresse confirmée") },
     tone: 'success',
-    text: 'Votre adresse email est confirmée. Votre compte est au complet, vous pouvez continuer.',
+    get text() { return t("Votre adresse email est confirmée. Votre compte est au complet, vous pouvez continuer.") },
   },
   already: {
-    title: 'Adresse déjà confirmée',
+    get title() { return t("Adresse déjà confirmée") },
     tone: 'success',
-    text: 'Cette adresse était déjà confirmée. Il n’y a rien de plus à faire.',
+    get text() { return t("Cette adresse était déjà confirmée. Il n’y a rien de plus à faire.") },
   },
   expired: {
-    title: 'Lien expiré',
+    get title() { return t("Lien expiré") },
     tone: 'warning',
-    text: 'Ce lien avait une durée de vie, et elle est passée. Demandez-en un nouveau, il arrive tout de suite.',
+    get text() { return t("Ce lien avait une durée de vie, et elle est passée. Demandez-en un nouveau, il arrive tout de suite.") },
   },
   invalid: {
-    title: 'Lien inutilisable',
+    get title() { return t("Lien inutilisable") },
     tone: 'warning',
-    text: 'Ce lien n’a pas pu être lu. Il a souvent été coupé en chemin par le logiciel de messagerie. Demandez-en un nouveau.',
+    get text() { return t("Ce lien n’a pas pu être lu. Il a souvent été coupé en chemin par le logiciel de messagerie. Demandez-en un nouveau.") },
   },
 }
 
@@ -48,6 +50,7 @@ const MESSAGES: Record<VerificationResult, { title: string; tone: 'success' | 'w
  * il demande une session ouverte.
  */
 export function EmailVerifiedPage({ result, onContinue, onSignIn }: EmailVerifiedPageProps) {
+  useLanguage()
   const { session, account, updateUser } = useSession()
   const message = MESSAGES[result]
   const confirmed = result === 'success' || result === 'already'
@@ -82,34 +85,27 @@ export function EmailVerifiedPage({ result, onContinue, onSignIn }: EmailVerifie
         {confirmed ? (
           <div>
             <Button type="button" variant="primary" onClick={onContinue}>
-              Continuer vers Meriz
-            </Button>
+              {t("Continuer vers Meriz")}</Button>
           </div>
         ) : client !== null ? (
           <div className="flex flex-col gap-3">
             <p className="text-sm leading-6 text-ink-soft">
-              Vous êtes connecté : demandez un nouveau lien, il partira vers votre adresse.
-            </p>
-            <ResendVerification client={client} variant="primary" label="Recevoir un nouveau lien" />
+              {t("Vous êtes connecté : demandez un nouveau lien, il partira vers votre adresse.")}</p>
+            <ResendVerification client={client} variant="primary" label={t("Recevoir un nouveau lien")} />
             <div>
               <Button type="button" onClick={onContinue}>
-                Continuer vers Meriz
-              </Button>
+                {t("Continuer vers Meriz")}</Button>
             </div>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
             <p className="text-sm leading-6 text-ink-soft">
-              Pour recevoir un nouveau lien, connectez-vous, puis relancez l'envoi depuis votre
-              profil, section Adresse email.
-            </p>
+              {t("Pour recevoir un nouveau lien, connectez-vous, puis relancez l'envoi depuis votre profil, section Adresse email.")}</p>
             <div className="flex flex-wrap gap-3">
               <Button type="button" variant="primary" onClick={onSignIn}>
-                Se connecter
-              </Button>
+                {t("Se connecter")}</Button>
               <Button type="button" onClick={onContinue}>
-                Continuer sans compte
-              </Button>
+                {t("Continuer sans compte")}</Button>
             </div>
           </div>
         )}

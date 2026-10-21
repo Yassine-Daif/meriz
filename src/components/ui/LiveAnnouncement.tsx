@@ -1,3 +1,4 @@
+import { useLanguage } from "../../lib/useLanguage"
 import { useEffect, useState } from 'react'
 
 /**
@@ -5,6 +6,7 @@ import { useEffect, useState } from 'react'
  * après le montage : une zone live n'annonce que ce qui change.
  */
 export function LiveAnnouncement({ message }: { message: string | null }) {
+  useLanguage()
   const [text, setText] = useState('')
   useEffect(() => {
     setText(message ?? '')

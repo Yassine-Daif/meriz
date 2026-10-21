@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 /**
  * L'aide d'accessibilité de React Flow, en français.
  *
@@ -7,10 +8,8 @@
  * accepte qu'on les remplace depuis la version 12.
  */
 export const ARIA_LABELS = {
-  'node.a11yDescription.default':
-    'Entrée ou Espace pour sélectionner un bloc. Suppr pour le retirer, Échap pour annuler.',
-  'node.a11yDescription.keyboardDisabled':
-    'Entrée ou Espace pour sélectionner un bloc. Les flèches le déplacent ensuite. Suppr pour le retirer, Échap pour annuler.',
+  get 'node.a11yDescription.default'() { return t("Entrée ou Espace pour sélectionner un bloc. Suppr pour le retirer, Échap pour annuler.") },
+  get 'node.a11yDescription.keyboardDisabled'() { return t("Entrée ou Espace pour sélectionner un bloc. Les flèches le déplacent ensuite. Suppr pour le retirer, Échap pour annuler.") },
   'node.a11yDescription.ariaLiveMessage': ({
     direction,
     x,
@@ -19,14 +18,13 @@ export const ARIA_LABELS = {
     direction: string
     x: number
     y: number
-  }) => `Bloc déplacé vers ${direction}. Nouvelle position, x : ${x}, y : ${y}`,
-  'edge.a11yDescription.default':
-    'Entrée ou Espace pour sélectionner une patte. Suppr pour la retirer, Échap pour annuler.',
-  'controls.ariaLabel': 'Commandes de la zone de dessin',
-  'controls.zoomIn.ariaLabel': 'Agrandir',
-  'controls.zoomOut.ariaLabel': 'Réduire',
-  'controls.fitView.ariaLabel': 'Ajuster à la fenêtre',
-  'controls.interactive.ariaLabel': "Verrouiller ou déverrouiller l'interaction",
-  'minimap.ariaLabel': 'Vue d’ensemble',
-  'handle.ariaLabel': 'Point de liaison',
+  }) => t("Bloc déplacé vers {0}. Nouvelle position, x : {1}, y : {2}", [direction, x, y]),
+  get 'edge.a11yDescription.default'() { return t("Entrée ou Espace pour sélectionner une patte. Suppr pour la retirer, Échap pour annuler.") },
+  get 'controls.ariaLabel'() { return t("Commandes de la zone de dessin") },
+  get 'controls.zoomIn.ariaLabel'() { return t("Agrandir") },
+  get 'controls.zoomOut.ariaLabel'() { return t("Réduire") },
+  get 'controls.fitView.ariaLabel'() { return t("Ajuster à la fenêtre") },
+  get 'controls.interactive.ariaLabel'() { return t("Verrouiller ou déverrouiller l'interaction") },
+  get 'minimap.ariaLabel'() { return t("Vue d’ensemble") },
+  get 'handle.ariaLabel'() { return t("Point de liaison") },
 }

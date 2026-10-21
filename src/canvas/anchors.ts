@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 /**
  * Le côté par lequel une patte quitte un bloc.
  *
@@ -40,7 +41,7 @@ function size(value: number | undefined, fallback: number): number {
 }
 
 export function anchorBox(node: MeasurableNode): AnchorBox {
-  const fallback = node.type === 'association' ? ASSOCIATION_FALLBACK : ENTITY_FALLBACK
+  const fallback = node.type === t("association") ? ASSOCIATION_FALLBACK : ENTITY_FALLBACK
   return {
     x: node.position.x,
     y: node.position.y,

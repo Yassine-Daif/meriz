@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import { deleteLessonMedium, uploadLessonMedium } from '../../lib/lessonsApi'
@@ -24,8 +26,8 @@ const ACCEPT: Record<MediumKind, string> = {
 }
 
 const HINT: Record<MediumKind, string> = {
-  image: 'JPEG, PNG ou WebP, 2 Mo au plus.',
-  audio: 'MP3, OGG, WAV, M4A ou WebM, 16 Mo au plus.',
+  get image() { return t("JPEG, PNG ou WebP, 2 Mo au plus.") },
+  get audio() { return t("MP3, OGG, WAV, M4A ou WebM, 16 Mo au plus.") },
 }
 
 /** « 1,4 Mo » */
@@ -42,6 +44,7 @@ function formatSize(bytes: number): string {
  * ne pas laisser de pièce jointe orpheline dans le cours.
  */
 export function MediaField({ client, lessonId, kind, medium, onUploaded, onReplaced }: MediaFieldProps) {
+  useLanguage()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -74,13 +77,13 @@ export function MediaField({ client, lessonId, kind, medium, onUploaded, onRepla
           accept={ACCEPT[kind]}
           onFile={(file) => void upload(file)}
         >
-          {medium ? 'Remplacer le fichier' : kind === 'image' ? 'Choisir une image' : 'Envoyer un fichier audio'}
+          {medium ? t("Remplacer le fichier") : kind === 'image' ? t("Choisir une image") : t("Envoyer un fichier audio")}
         </ImportFileButton>
 
         {kind === 'audio' && <VoiceRecorder onRecorded={(file) => void upload(file)} disabled={busy} />}
 
         <p role="status" aria-live="polite" className="text-sm text-ink-soft empty:hidden">
-          {busy ? 'Envoi…' : ''}
+          {busy ? t("Envoi…") : ''}
         </p>
       </div>
 

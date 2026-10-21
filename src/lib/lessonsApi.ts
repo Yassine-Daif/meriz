@@ -1,3 +1,6 @@
+import { counted } from "./plural"
+import { localeTag } from "../i18n/runtime"
+import { t } from "../i18n/runtime"
 import type { ApiClient, Outcome } from './apiClient'
 import { unexpectedResponse } from './apiClient'
 import { optionalText } from './authApi'
@@ -245,22 +248,22 @@ export function fetchLessonMedium(
 /* ------------------------------------------------------------------ */
 /* Affichage                                                          */
 
-const dateFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' })
+const dateFormat = () => new Intl.DateTimeFormat(localeTag(), { dateStyle: 'long' })
 
 /** « Publié le 24 septembre 2026 », ou l'état de brouillon. */
 export function lessonStateLabel(lesson: LessonSummary): string {
   if (lesson.status !== 'published') {
-    return 'Brouillon'
+    return t("Brouillon")
   }
   if (lesson.publishedAt === null) {
-    return 'Publié'
+    return t("Publié")
   }
   const date = new Date(lesson.publishedAt)
-  return Number.isNaN(date.getTime()) ? 'Publié' : `Publié le ${dateFormat.format(date)}`
+  return Number.isNaN(date.getTime()) ? t("Publié") : t("Publié le {0}", [dateFormat().format(date)])
 }
 
 /** « 3 fichiers », au singulier ou au pluriel, ou une chaîne vide. */
 export function mediaCountLabel(count: number): string {
   if (count <= 0) return ''
-  return count === 1 ? '1 fichier' : `${count} fichiers`
+  return counted(count, 'fichier', 'fichiers')
 }

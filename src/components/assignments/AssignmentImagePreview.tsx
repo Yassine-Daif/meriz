@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useEffect, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import { fetchAssignmentImage } from '../../lib/assignmentsApi'
@@ -15,6 +17,7 @@ interface AssignmentImagePreviewProps {
  * navigateur, et son adresse est libérée au démontage.
  */
 export function AssignmentImagePreview({ client, assignmentId, title }: AssignmentImagePreviewProps) {
+  useLanguage()
   const [preview, setPreview] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -48,11 +51,10 @@ export function AssignmentImagePreview({ client, assignmentId, title }: Assignme
   return (
     <div className="max-w-md overflow-hidden rounded-card border border-line bg-surface-soft">
       {preview ? (
-        <img src={preview} alt={`Image du devoir ${title}`} className="block h-auto w-full" />
+        <img src={preview} alt={t("Image du devoir {0}", [title])} className="block h-auto w-full" />
       ) : (
         <p role="status" className="p-4 text-sm text-ink-soft">
-          Chargement de l'image…
-        </p>
+          {t("Chargement de l'image…")}</p>
       )}
     </div>
   )

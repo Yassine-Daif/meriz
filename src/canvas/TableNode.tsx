@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { Handle, Position } from '@xyflow/react'
 import type { Node, NodeProps } from '@xyflow/react'
 import type { MpdTable } from '../model/mpd'
@@ -15,6 +17,7 @@ const handleStyle = { opacity: 0, width: 6, height: 6, pointerEvents: 'none' as 
  * convention AnalyseSI.
  */
 export function TableNode({ data, selected }: NodeProps<TableFlowNode>) {
+  useLanguage()
   const { table } = data
   return (
     // Même bague que dans le MCD : une table sélectionnée se signalait
@@ -48,7 +51,7 @@ export function TableNode({ data, selected }: NodeProps<TableFlowNode>) {
                       aux lecteurs d'écran, donc une colonne étrangère ne
                       se distinguait pour eux que par sa couleur. */}
                   <span aria-hidden="true">#</span>
-                  <span className="sr-only">clé étrangère, </span>
+                  <span className="sr-only">{t("clé étrangère, ")}</span>
                 </>
               )}
               {column.name}
@@ -56,8 +59,7 @@ export function TableNode({ data, selected }: NodeProps<TableFlowNode>) {
             <span className="ml-auto text-ink-soft">{column.sqlType}</span>
             {column.isPrimaryKey && (
               <span className="self-center rounded-full bg-accent-soft px-1.5 text-nano font-medium text-accent-ink">
-                PK
-              </span>
+                {t("PK")}</span>
             )}
           </li>
         ))}

@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useEffect, useId, useRef, useState } from 'react'
 import type { DocumentMeta } from '../model/document'
 import { Badge } from './ui/Badge'
@@ -23,6 +25,7 @@ const actionClass = buttonClass({ variant: 'secondary', size: 'sm' })
  * place, dupliquer, supprimer (la confirmation est gérée par la liste).
  */
 export function DocumentRow({ meta, onOpen, onRename, onDuplicate, onRequestDelete, provenance }: DocumentRowProps) {
+  useLanguage()
   const inputId = useId()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(meta.name)
@@ -69,7 +72,7 @@ export function DocumentRow({ meta, onOpen, onRename, onDuplicate, onRequestDele
       {editing ? (
         <div className="min-w-0 flex-1 px-2 py-1">
           <label htmlFor={inputId} className="block text-xs font-medium text-ink-soft">
-            Nouveau nom de « {meta.name} »
+            {t("Nouveau nom de « ")}{meta.name} »
           </label>
           <input
             id={inputId}
@@ -94,49 +97,45 @@ export function DocumentRow({ meta, onOpen, onRename, onDuplicate, onRequestDele
         <button
           type="button"
           onClick={onOpen}
-          aria-label={`Ouvrir ${meta.name}${provenance ? `, ${provenance.spoken}` : ''}`}
+          aria-label={t("Ouvrir {0}{1}", [meta.name, provenance ? `, ${provenance.spoken}` : ''])}
           className="flex min-w-0 flex-1 items-center gap-3 rounded-control px-3 py-2 text-left transition-colors duration-150 hover:bg-accent-soft"
         >
           <span
             aria-hidden="true"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-accent-soft font-mono text-xs font-semibold text-accent-ink"
           >
-            MCD
-          </span>
+            {t("MCD")}</span>
           <span className="min-w-0">
             <span className="flex flex-wrap items-center gap-2">
               <span className="truncate text-sm font-semibold text-ink">{meta.name}</span>
               {provenance && <Badge tone={provenance.tone}>{provenance.label}</Badge>}
             </span>
-            <span className="block text-xs text-ink-soft">Modifié le {formatDate(meta.updatedAt)}</span>
+            <span className="block text-xs text-ink-soft">{t("Modifié le ")}{formatDate(meta.updatedAt)}</span>
           </span>
         </button>
       )}
 
-      <div role="group" aria-label={`Actions pour ${meta.name}`} className="flex shrink-0 gap-1.5 pr-1">
+      <div role="group" aria-label={t("Actions pour {0}", [meta.name])} className="flex shrink-0 gap-1.5 pr-1">
         <button
           ref={renameButtonRef}
           type="button"
           onClick={startEditing}
           disabled={editing}
-          aria-label={`Renommer ${meta.name}`}
+          aria-label={t("Renommer {0}", [meta.name])}
           className={actionClass}
         >
-          Renommer
-        </button>
+          {t("Renommer")}</button>
         {onDuplicate && (
-          <button type="button" onClick={onDuplicate} aria-label={`Dupliquer ${meta.name}`} className={actionClass}>
-            Dupliquer
-          </button>
+          <button type="button" onClick={onDuplicate} aria-label={t("Dupliquer {0}", [meta.name])} className={actionClass}>
+            {t("Dupliquer")}</button>
         )}
         <button
           type="button"
           onClick={onRequestDelete}
-          aria-label={`Supprimer ${meta.name}`}
+          aria-label={t("Supprimer {0}", [meta.name])}
           className="inline-flex min-h-8 items-center rounded-control border border-danger bg-surface px-3 py-1 text-xs font-medium text-danger transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
         >
-          Supprimer
-        </button>
+          {t("Supprimer")}</button>
       </div>
     </li>
   )

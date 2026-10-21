@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { DocumentMeta, DocumentOrigin, OpenedDocument } from '../model/document'
 import { documentOrigin, emptyEditorState } from '../model/document'
 import type { McdEditorState } from '../model/mcdReducer'
@@ -92,14 +93,14 @@ const NEW_DOCUMENT_NAME = 'Nouveau document'
 /** « Nouveau document », puis « Nouveau document 2 », etc. */
 export function nextNewName(existingNames: string[]): string {
   const used = new Set(existingNames.map((name) => name.toLowerCase()))
-  if (!used.has(NEW_DOCUMENT_NAME.toLowerCase())) {
-    return NEW_DOCUMENT_NAME
+  if (!used.has(t(NEW_DOCUMENT_NAME).toLowerCase())) {
+    return t(NEW_DOCUMENT_NAME)
   }
   let n = 2
-  while (used.has(`${NEW_DOCUMENT_NAME} ${n}`.toLowerCase())) {
+  while (used.has(`${t(NEW_DOCUMENT_NAME)} ${n}`.toLowerCase())) {
     n += 1
   }
-  return `${NEW_DOCUMENT_NAME} ${n}`
+  return `${t(NEW_DOCUMENT_NAME)} ${n}`
 }
 
 function byMostRecent(a: DocumentMeta, b: DocumentMeta): number {
@@ -155,15 +156,15 @@ export function createInertSaver(): DocumentSaver {
 /* ------------------------------------------------------------------ */
 /* Espace local, sans compte                                           */
 
-const LOCAL_STORAGE_ERROR = apiError(
+const LOCAL_STORAGE_ERROR = () => apiError(
   'storage',
   null,
-  "Le document n'a pas pu être enregistré dans ce navigateur (stockage plein ou indisponible).",
+  t("Le document n'a pas pu être enregistré dans ce navigateur (stockage plein ou indisponible)."),
 )
-const LOCAL_UNREADABLE = apiError(
+const LOCAL_UNREADABLE = () => apiError(
   'storage',
   null,
-  "Ce document est illisible et n'a pas pu être ouvert. Il reste conservé dans le navigateur.",
+  t("Ce document est illisible et n'a pas pu être ouvert. Il reste conservé dans le navigateur."),
 )
 const LOCAL_SAVE_FAILED = 'Sauvegarde locale impossible (stockage plein ?). Enregistrez le document en fichier.'
 
@@ -176,21 +177,21 @@ export function createLocalRepository(store: DocumentStore): DocumentRepository 
       const document = store.loadDocument(id)
       return document
         ? ok({ document, fromCache: false, pending: false, shared: false })
-        : fail(LOCAL_UNREADABLE)
+        : fail(LOCAL_UNREADABLE())
     },
     create: async (name, state, mpdSettings) => {
       const meta = store.createDocument(name, state, mpdSettings)
-      return meta ? ok(meta) : fail(LOCAL_STORAGE_ERROR)
+      return meta ? ok(meta) : fail(LOCAL_STORAGE_ERROR())
     },
     rename: async (id, name) => {
       const meta = store.renameDocument(id, name)
-      return meta ? ok(meta) : fail(LOCAL_STORAGE_ERROR)
+      return meta ? ok(meta) : fail(LOCAL_STORAGE_ERROR())
     },
     duplicate: async (id) => {
       const meta = store.duplicateDocument(id)
-      return meta ? ok(meta) : fail(LOCAL_STORAGE_ERROR)
+      return meta ? ok(meta) : fail(LOCAL_STORAGE_ERROR())
     },
-    remove: async (id) => (store.deleteDocument(id) ? ok(undefined) : fail(LOCAL_STORAGE_ERROR)),
+    remove: async (id) => (store.deleteDocument(id) ? ok(undefined) : fail(LOCAL_STORAGE_ERROR())),
 
     // Même règle qu'avant les comptes : on n'écrit que si le contenu a
     // réellement changé, pour ne pas modifier la date d'un document ouvert.
@@ -210,7 +211,7 @@ export function createLocalRepository(store: DocumentStore): DocumentRepository 
           lastSaved = content
           box.set({ kind: 'saved' })
         } else {
-          box.set({ kind: 'error', message: LOCAL_SAVE_FAILED })
+          box.set({ kind: 'error', message: t(LOCAL_SAVE_FAILED) })
         }
       }
       return {
@@ -245,13 +246,13 @@ export const MAX_WAIT_MS = 10_000
 /** Nouvelles tentatives quand le serveur est injoignable. */
 export const RETRY_DELAYS_MS = [2000, 5000, 15_000, 30_000]
 
-const STALE_ACCOUNT = apiError('unauthorized', null, 'Le compte a changé : action annulée.')
-const CLOUD_UNREADABLE = apiError(
+const STALE_ACCOUNT = () => apiError('unauthorized', null, t("Le compte a changé : action annulée."))
+const CLOUD_UNREADABLE = () => apiError(
   'unexpected',
   null,
-  "Le contenu de ce document est illisible. Il n'a pas été modifié sur le serveur.",
+  t("Le contenu de ce document est illisible. Il n'a pas été modifié sur le serveur."),
 )
-const EMPTY_NAME = apiError('validation', null, 'Le nom ne peut pas être vide.')
+const EMPTY_NAME = () => apiError('validation', null, t("Le nom ne peut pas être vide."))
 /** Supprimé à la demande : on ne promet aucun retour, on propose le fichier. */
 const DELETED_MESSAGE =
   "Ce document vient d'être supprimé. Il n'est plus enregistré. Enregistrez votre modèle en fichier si vous voulez le garder."
@@ -361,7 +362,7 @@ export function createCloudRepository({
         return 'sent'
       }
       if (updated.error.kind === 'not_found') {
-        const name = `${entry.name} (récupéré)`
+        const name = t("{0} (récupéré)", [entry.name])
         const created = await createCloudDocument(client, { name, content: withName(entry.content, name) })
         if (!isCurrent()) return 'transient'
         if (created.ok) {
@@ -406,7 +407,7 @@ export function createCloudRepository({
       // Document du groupe : le serveur est la seule source, et rien n'en
       // reste dans le cache personnel de ce compte.
       const fetched = await getCloudDocument(client, id)
-      if (!isCurrent()) return fail(STALE_ACCOUNT)
+      if (!isCurrent()) return fail(STALE_ACCOUNT())
       if (!fetched.ok) return fail(fetched.error)
       return ok({ meta: toMeta(fetched.value), content: fetched.value.content, source: 'server' })
     }
@@ -415,7 +416,7 @@ export function createCloudRepository({
       return ok({ meta: toMeta(cached), content: cached.content, source: 'pending' })
     }
     const fetched = await getCloudDocument(client, id)
-    if (!isCurrent()) return fail(STALE_ACCOUNT)
+    if (!isCurrent()) return fail(STALE_ACCOUNT())
     if (fetched.ok) {
       cache.putFromServer(fetched.value)
       return ok({ meta: toMeta(fetched.value), content: fetched.value.content, source: 'server' })
@@ -487,7 +488,7 @@ export function createCloudRepository({
       if (isTransient(result.error)) {
         box.set(
           storageRefused
-            ? { kind: 'error', message: `${result.error.message} Stockage local plein : enregistrez le document en fichier.` }
+            ? { kind: 'error', message: t("{0} Stockage local plein : enregistrez le document en fichier.", [result.error.message]) }
             : { kind: 'offline' },
         )
         const delay = RETRY_DELAYS_MS[Math.min(retryIndex, RETRY_DELAYS_MS.length - 1)] ?? 30_000
@@ -506,7 +507,7 @@ export function createCloudRepository({
           box.set({
             kind: 'error',
             message:
-              "Ce document du groupe n'existe plus : un membre l'a supprimé, ou le groupe a été supprimé. Enregistrez votre modèle en fichier si vous voulez le garder.",
+              t("Ce document du groupe n'existe plus : un membre l'a supprimé, ou le groupe a été supprimé. Enregistrez votre modèle en fichier si vous voulez le garder."),
           })
           return false
         }
@@ -515,11 +516,11 @@ export function createCloudRepository({
         detached.add(id)
         box.set({
           kind: 'error',
-          message: `Ce document n'existe plus sur le serveur. Vos modifications sont gardées : elles seront enregistrées sous « ${name} (récupéré) » en revenant à vos documents.`,
+          message: t("Ce document n'existe plus sur le serveur. Vos modifications sont gardées : elles seront enregistrées sous « {0} (récupéré) » en revenant à vos documents.", [name]),
         })
         return false
       }
-      box.set({ kind: 'error', message: `Échec de l'envoi : ${result.error.message}` })
+      box.set({ kind: 'error', message: t("Échec de l'envoi : {0}", [result.error.message]) })
       return false
     }
 
@@ -579,7 +580,7 @@ export function createCloudRepository({
       discard: () => {
         clearTimer()
         unsent = null
-        box.set({ kind: 'error', message: DELETED_MESSAGE })
+        box.set({ kind: 'error', message: t(DELETED_MESSAGE) })
       },
       getStatus: box.get,
       subscribe: box.subscribe,
@@ -604,10 +605,10 @@ export function createCloudRepository({
     cachedList,
 
     list: async () => {
-      if (!isCurrent()) return fail(STALE_ACCOUNT)
+      if (!isCurrent()) return fail(STALE_ACCOUNT())
       await syncPending()
       const listed = await listAllDocuments(client)
-      if (!isCurrent()) return fail(STALE_ACCOUNT)
+      if (!isCurrent()) return fail(STALE_ACCOUNT())
       if (listed.ok) {
         // Le serveur exclut déjà les documents de groupe de la liste
         // personnelle. Si l'un passait, il n'entrerait pas pour autant
@@ -622,14 +623,14 @@ export function createCloudRepository({
     },
 
     open: async (id, shared = false) => {
-      if (!isCurrent()) return fail(STALE_ACCOUNT)
+      if (!isCurrent()) return fail(STALE_ACCOUNT())
       const loaded = await loadContent(id, shared)
       if (!loaded.ok) {
         if (loaded.error.kind === 'not_found' && !shared) cache.remove(id)
         return loaded
       }
       const document = fromContent(loaded.value.meta, loaded.value.content)
-      if (!document) return fail(CLOUD_UNREADABLE)
+      if (!document) return fail(CLOUD_UNREADABLE())
       return ok({
         document,
         fromCache: loaded.value.source !== 'server',
@@ -639,24 +640,24 @@ export function createCloudRepository({
     },
 
     create: async (name, state = emptyEditorState(), mpdSettings = DEFAULT_MPD_SETTINGS) => {
-      if (!isCurrent()) return fail(STALE_ACCOUNT)
+      if (!isCurrent()) return fail(STALE_ACCOUNT())
       const created = await createCloudDocument(client, {
         name,
         content: serializeModel(state, mpdSettings, name),
       })
       if (!created.ok) return created
-      if (!isCurrent()) return fail(STALE_ACCOUNT)
+      if (!isCurrent()) return fail(STALE_ACCOUNT())
       cache.putFromServer(created.value)
       return ok(toMeta(created.value))
     },
 
     rename: async (id, name) => {
       const trimmed = name.trim()
-      if (trimmed === '') return fail(EMPTY_NAME)
-      if (!isCurrent()) return fail(STALE_ACCOUNT)
+      if (trimmed === '') return fail(EMPTY_NAME())
+      if (!isCurrent()) return fail(STALE_ACCOUNT())
       const updated = await updateCloudDocument(client, id, { name: trimmed })
       if (!updated.ok) return updated
-      if (!isCurrent()) return fail(STALE_ACCOUNT)
+      if (!isCurrent()) return fail(STALE_ACCOUNT())
       cache.setMeta(id, { name: updated.value.name, updatedAt: updated.value.updatedAt })
       for (const saver of savers) {
         if (saver.id === id) saver.rename(updated.value.name)
@@ -665,20 +666,20 @@ export function createCloudRepository({
     },
 
     duplicate: async (id) => {
-      if (!isCurrent()) return fail(STALE_ACCOUNT)
+      if (!isCurrent()) return fail(STALE_ACCOUNT())
       // Dupliquer ne concerne que les documents personnels.
       const loaded = await loadContent(id, false)
       if (!loaded.ok) return loaded
       const name = `${loaded.value.meta.name} (copie)`
       const created = await createCloudDocument(client, { name, content: withName(loaded.value.content, name) })
       if (!created.ok) return created
-      if (!isCurrent()) return fail(STALE_ACCOUNT)
+      if (!isCurrent()) return fail(STALE_ACCOUNT())
       cache.putFromServer(created.value)
       return ok(toMeta(created.value))
     },
 
     remove: async (id) => {
-      if (!isCurrent()) return fail(STALE_ACCOUNT)
+      if (!isCurrent()) return fail(STALE_ACCOUNT())
       // Lu avant le DELETE : après, le cache ne dira plus de quel devoir
       // ce document portait le travail.
       const assignmentId = cache.get(id)?.assignmentId ?? null

@@ -1,3 +1,4 @@
+import { useLanguage } from "../lib/useLanguage"
 import { ViewportPortal } from '@xyflow/react'
 import type { RemotePresence } from '../model/collabProvider'
 
@@ -16,6 +17,7 @@ import type { RemotePresence } from '../model/collabProvider'
  * autres, et réapparaître dès qu'il revient.
  */
 export function RemoteDraftLinks({ others }: { others: RemotePresence[] }) {
+  useLanguage()
   const drafts = others.flatMap((other) =>
     other.draft === null || other.cursor === null
       ? []

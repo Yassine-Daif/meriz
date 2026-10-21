@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Meriz, free online Merise modelling software, from MCD to SQL</title>
+    <meta
+      name="description"
+      content="Design your conceptual data model online with Merise. Meriz validates it and generates the logical model, physical model and SQL. Free, with no installation or account required."
+    />
+    <link rel="canonical" href="https://meriz.fr/en/" />
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
+    <!-- La police est demandée tout de suite : sans cela, le premier rendu
+         attend la feuille de style pour la découvrir. -->
+    <link rel="preload" href="../polices/outfit-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="../style.css" />
+    <script>
+      /* Deux choses avant le premier rendu : le thème retenu, sinon un
+         visiteur en sombre verrait un éclair blanc à chaque page, et la
+         marque qui dit que les scripts tournent, pour que le menu des
+         petits écrans parte fermé plutôt que de se fermer sous les yeux. */
+      document.documentElement.classList.add('js')
+      try {
+        if (localStorage.getItem('meriz-theme') === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark')
+        }
+      } catch (e) {}
+    </script>
+    <meta name="theme-color" content="#f7f3ec" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#171428" media="(prefers-color-scheme: dark)" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_GB" />
+    <meta property="og:site_name" content="Meriz" />
+    <meta property="og:title" content="Meriz, free online Merise modelling software, from MCD to SQL" />
+    <meta
+      property="og:description"
+      content="Design your conceptual data model online with Merise. Meriz validates it and generates the logical model, physical model and SQL. Free, with no installation or account required."
+    />
+    <meta property="og:url" content="https://meriz.fr/en/" />
+    <meta property="og:image" content="https://meriz.fr/partage.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Meriz",
+  "applicationCategory": "DeveloperApplication",
+  "applicationSubCategory": "Database modelling",
+  "operatingSystem": "Windows, macOS, Linux, web browser",
+  "inLanguage": [
+    "fr",
+    "en"
+  ],
+  "url": "https://meriz.fr/en/",
+  "description": "Free, open-source Merise database modelling: design and validate a conceptual model, then generate the logical model, physical model and SQL.",
+  "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "EUR"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "Yassine Daif"
+  },
+  "featureList": [
+    "Data dictionary",
+    "Conceptual data model editor",
+    "Model validation",
+    "Logical model, physical model and SQL generation",
+    "Laravel and Symfony code generation",
+    "Classes, assignments and submissions",
+    "Real-time shared editing"
+  ]
+}
+</script>
+
+    <link rel="alternate" hreflang="fr" href="https://meriz.fr/" />
+    <link rel="alternate" hreflang="en" href="https://meriz.fr/en/" />
+    <link rel="alternate" hreflang="x-default" href="https://meriz.fr/" />
+  </head>
+  <body class="mz p-accueil">
+    <a class="lien-evitement" href="#contenu">Skip to content</a>
+
+<header class="mz-nav">
+  <div class="mz-wrap" style="display: flex; align-items: center; gap: 16px; height: 72px">
+    <a href="/en/" class="mz-logo" aria-label="Meriz home"><svg viewBox="0 0 191 64" height="28" width="83.6" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--logo)" /><path d="M24.3 32 32 15.2 39.7 32" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" /><circle cx="24.3" cy="40.4" r="10.5" fill="#fff" /><circle cx="39.7" cy="40.4" r="10.5" fill="#fff" stroke="var(--logo)" stroke-width="3.36" /><path fill="currentColor" d="M86.19 48L80 48L80 16L84.37 16L96.07 34.75L107.77 16L112.14 16L112.14 48L105.99 48L105.99 28.88L98.16 41.45L93.97 41.45L86.19 28.93L86.19 48M128.57 48.46Q125.11 48.46 122.42 46.98Q119.74 45.50 118.17 42.90Q116.60 40.31 116.60 36.98Q116.60 33.71 118.12 31.14Q119.65 28.56 122.29 27.04Q124.93 25.51 128.16 25.51Q131.35 25.51 133.78 26.95Q136.22 28.38 137.60 30.86Q138.99 33.34 138.99 36.48Q138.99 37.08 138.92 37.69Q138.86 38.30 138.67 39.08L122.61 39.12Q122.79 39.81 123.11 40.35Q123.83 41.85 125.25 42.65Q126.66 43.45 128.52 43.45Q130.21 43.45 131.57 42.88Q132.94 42.31 133.94 41.17L137.45 44.68Q135.85 46.54 133.55 47.50Q131.25 48.46 128.57 48.46M122.61 34.66L133.26 34.62Q133.08 33.84 132.80 33.21Q132.17 31.89 131 31.18Q129.84 30.48 128.16 30.48Q126.38 30.48 125.06 31.27Q123.74 32.07 123.06 33.48Q122.79 34.03 122.61 34.66M148.64 48L142.68 48L142.68 26.01L148.64 26.01L148.64 27.97Q148.64 27.93 148.69 27.88Q150.65 25.56 154.33 25.56Q155.93 25.56 157.20 26.08Q158.48 26.61 159.52 27.79L155.79 32.07Q155.29 31.52 154.58 31.25Q153.88 30.98 152.97 30.98Q151.06 30.98 149.85 32.18Q148.64 33.39 148.64 35.85L148.64 48M167.62 48L161.62 48L161.62 26.01L167.62 26.01L167.62 48M164.62 22.46Q163.16 22.46 162.21 21.49Q161.25 20.51 161.25 19.05Q161.25 17.64 162.21 16.64Q163.16 15.64 164.62 15.64Q166.12 15.64 167.06 16.64Q167.99 17.64 167.99 19.05Q167.99 20.51 167.06 21.49Q166.12 22.46 164.62 22.46M189.93 48L171.36 48L171.36 44.59L181.64 31.20L172.18 31.20L172.18 26.01L190.20 26.01L190.20 29.43L179.91 42.81L189.93 42.81" /></svg></a>
+    <span class="mz-ver mz-hide-sm" data-version-courte>v1.0.1</span>
+    <nav class="mz-navlinks" aria-label="Main navigation" style="display: flex; gap: 2px; margin-left: 12px">
+      <a class="mz-nl is-on" href="/en/" aria-current="page">Home</a>
+      <a class="mz-nl" href="features.html">Features</a>
+      <a class="mz-nl" href="merise.html">The Merise method</a>
+      <a class="mz-nl" href="download.html">Download</a>
+    </nav>
+    <div style="flex: 1"></div>
+    <div class="mz-language" role="group" aria-label="Language"><a href="/" lang="fr" hreflang="fr" data-language="fr" aria-label="Français">FR</a><a href="/en/" lang="en" hreflang="en" data-language="en" aria-label="English" aria-current="true">EN</a></div>
+    <div class="mz-tg" role="group" aria-label="Website theme">
+        <button type="button" data-theme-choix="light" aria-pressed="true" class="is-on"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>Light</button>
+        <button type="button" data-theme-choix="dark" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"></path></svg>Dark</button>
+      </div>
+    <a class="mz-iconbtn mz-hide-sm" href="https://github.com/Yassine-Daif/meriz" rel="noopener" aria-label="Source code on GitHub"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6"></path></svg></a>
+    <a class="mz-btn mz-btn-p mz-btn-sm mz-hide-sm" href="https://app.meriz.fr/?lang=en">Try it online</a>
+    <button type="button" class="mz-burger" data-menu-bouton aria-expanded="false" aria-controls="menu-mobile" aria-label="Open menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"></path></svg></button>
+  </div>
+  <div class="mz-menu" id="menu-mobile" data-menu hidden>
+    <div class="mz-wrap">
+        <a class="mz-nl is-on" href="/en/" aria-current="page">Home</a>
+        <a class="mz-nl" href="features.html">Features</a>
+        <a class="mz-nl" href="merise.html">The Merise method</a>
+        <a class="mz-nl" href="download.html">Download</a>
+      <div class="mz-menu-bas">
+        <div class="mz-tg" role="group" aria-label="Website theme">
+        <button type="button" data-theme-choix="light" aria-pressed="true" class="is-on"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>Light</button>
+        <button type="button" data-theme-choix="dark" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"></path></svg>Dark</button>
+      </div>
+        <a class="mz-btn mz-btn-p mz-btn-sm" href="https://app.meriz.fr/?lang=en">Try it online</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="contenu">
+
+<section class="mz-dots" style="padding: 64px 0 72px">
+  <div class="mz-wrap" style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 22px">
+    <a href="download.html" style="display: inline-flex; align-items: center; gap: 10px; padding: 5px 6px 5px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); text-decoration: none; color: var(--ink); font-size: 14px">Free, open-source software, online and for Windows, macOS and Linux<span style="padding: 2px 10px; border-radius: 999px; background: var(--soft); font-weight: 600; font-size: 13px">Download →</span></a>
+    <h1 class="mz-h1" style="max-width: 860px">Model with Merise, <span style="color: var(--atext)">from MCD to SQL</span></h1>
+    <p class="mz-lead" style="max-width: 700px">Meriz is an online database design tool based on the Merise method. Draw your conceptual model, validate it, then generate the logical model, physical model and SQL script. You can also use it to learn and teach database modelling.</p>
+    <div style="display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 4px">
+      <a class="mz-btn mz-btn-p" href="https://app.meriz.fr/?lang=en">Try it online <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+      <a class="mz-btn mz-btn-g" href="download.html">Download for my computer</a>
+    </div>
+    <p class="mz-small">Free and open source, with no account required. Your models stay on your device unless you create an account.</p>
+
+    <figure style="width: 100%; margin-top: 30px; text-align: left">
+      <div class="mz-win">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1.5px solid var(--line); background: var(--raise)">
+          <svg width="22" height="22" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" style="fill: var(--logo)"></rect><path d="M13.3 7.2 L9.6 16.2 M13.3 7.2 L16.8 16.2" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" fill="none"></path><circle cx="9.4" cy="20" r="4.1" fill="#ffffff"></circle><circle cx="16.9" cy="20" r="4.1" fill="#ffffff" style="stroke: var(--logo)" stroke-width="1.6"></circle></svg>
+          <span style="font-size: 14px; font-weight: 600">Library</span>
+          <span class="mz-small mz-hide-sm" style="font-size: 12.5px">.meriz.json</span>
+          <div style="flex: 1"></div>
+          <span class="mz-hide-sm" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: var(--ok-bg); color: var(--ok)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Validate</span>
+          <span style="font-size: 13px; font-weight: 600; padding: 5px 14px; border-radius: 999px; background: var(--accent); color: #ffffff">Generate</span>
+        </div>
+        <div style="display: flex">
+          <div class="mz-hide-sm" role="tablist" aria-label="Model views" style="flex: 0 0 176px; padding: 12px 10px; border-right: 1.5px solid var(--line); background: var(--raise); display: flex; flex-direction: column; gap: 4px">
+            <a class="mz-side-i" href="#vue-dico" id="onglet-vue-dico" data-onglet="dico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h10M4 20h7"></path></svg>Dictionary</a>
+            <a class="mz-side-i is-on" href="#vue-mcd" id="onglet-vue-mcd" data-onglet="mcd"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="2" y="4" width="8" height="6" rx="1.5"></rect><rect x="14" y="14" width="8" height="6" rx="3"></rect><path d="M10 7h3a2 2 0 0 1 2 2v5"></path></svg>MCD</a>
+            <a class="mz-side-i" href="#vue-mld" id="onglet-vue-mld" data-onglet="mld"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 10h18M9 10v10"></path></svg>MLD</a>
+            <a class="mz-side-i" href="#vue-mpd" id="onglet-vue-mpd" data-onglet="mpd"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><ellipse cx="12" cy="6" rx="8" ry="3"></ellipse><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"></path></svg>MPD</a>
+            <a class="mz-side-i" href="#vue-sql" id="onglet-vue-sql" data-onglet="sql"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6"></path></svg>SQL</a>
+          </div>
+
+          <div style="flex: 1 1 auto; min-width: 0; position: relative; height: 410px; overflow: hidden">
+            <div class="mz-panneau" id="vue-dico" data-panneau="dico" aria-labelledby="onglet-vue-dico">
+              <div style="padding: 24px 28px; height: 100%; overflow: auto">
+                <table style="width: 100%; border-collapse: collapse; font-size: 14.5px">
+                  <caption class="mz-small" style="text-align: left; padding-bottom: 12px">Define each property once, then place it in at most one entity or relationship.</caption>
+                  <thead><tr style="text-align: left; color: var(--muted); font-size: 13px"><th scope="col" style="padding: 8px 0; font-weight: 600">Property</th><th scope="col" style="padding: 8px 0; font-weight: 600">Type</th><th scope="col" style="padding: 8px 0; font-weight: 600">Placed in</th></tr></thead>
+                  <tbody>
+                    <tr style="border-top: 1px solid var(--line)"><td class="mz-mono" style="padding: 10px 0; font-size: 13.5px">memberNumber</td><td class="mz-muted">integer</td><td><span class="mz-card" style="font-family: inherit">Member</span></td></tr>
+                    <tr style="border-top: 1px solid var(--line)"><td class="mz-mono" style="padding: 10px 0; font-size: 13.5px">memberName</td><td class="mz-muted">text</td><td><span class="mz-card" style="font-family: inherit">Member</span></td></tr>
+                    <tr style="border-top: 1px solid var(--line)"><td class="mz-mono" style="padding: 10px 0; font-size: 13.5px">isbn</td><td class="mz-muted">text</td><td><span class="mz-card" style="font-family: inherit">Book</span></td></tr>
+                    <tr style="border-top: 1px solid var(--line)"><td class="mz-mono" style="padding: 10px 0; font-size: 13.5px">title</td><td class="mz-muted">text</td><td><span class="mz-card" style="font-family: inherit">Book</span></td></tr>
+                    <tr style="border-top: 1px solid var(--line)"><td class="mz-mono" style="padding: 10px 0; font-size: 13.5px">borrowedOn</td><td class="mz-muted">date</td><td><span class="mz-card" style="font-family: inherit; border-radius: 999px; background: var(--soft)">Borrow</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="mz-panneau" id="vue-mcd" data-panneau="mcd" aria-labelledby="onglet-vue-mcd">
+              <div class="mz-dots" style="position: absolute; inset: 0; background-color: var(--raise)">
+                <svg viewBox="0 0 700 410" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%">
+                  <path class="mz-a-draw" style="animation-delay: .8s; stroke: var(--accent)" d="M238 100 C 330 100, 340 200, 434 200" fill="none" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+                  <path class="mz-a-draw" style="animation-delay: .95s; stroke: var(--accent)" d="M238 296 C 330 296, 340 200, 434 200" fill="none" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+                </svg>
+                <div class="mz-ent mz-a-snap" style="position: absolute; left: 8%; top: 12%; width: 26%; border-radius: 12px; animation-delay: .1s">
+                  <div class="mz-ent-h" style="padding: 7px 12px; font-size: 14px; border-radius: 10.5px 10.5px 0 0; justify-content: center">Member</div>
+                  <div style="padding: 8px 12px"><div class="mz-attr"><span class="mz-id">memberNumber</span><span>integer</span></div><div class="mz-attr"><span>memberName</span><span>text</span></div></div>
+                  <span class="mz-hd mz-hd-r"></span>
+                </div>
+                <div class="mz-a-snap" style="position: absolute; left: 8%; top: 60%; width: 26%; animation-delay: .25s">
+                  <div class="mz-ent mz-a-grab" style="border-radius: 12px; animation-delay: 2s">
+                    <div class="mz-ent-h" style="padding: 7px 12px; font-size: 14px; border-radius: 10.5px 10.5px 0 0; justify-content: center">Book</div>
+                    <div style="padding: 8px 12px"><div class="mz-attr"><span class="mz-id">isbn</span><span>text</span></div><div class="mz-attr"><span>title</span><span>text</span></div></div>
+                    <span class="mz-hd mz-hd-r"></span>
+                  </div>
+                </div>
+                <div class="mz-ent mz-a-snap" style="position: absolute; left: 62%; top: 40%; width: 22%; border-radius: 999px; border-color: var(--soft-edge); text-align: center; padding: 10px 14px 12px; animation-delay: .45s">
+                  <div style="font-weight: 600; font-size: 14px">Borrow</div>
+                  <div class="mz-attr" style="justify-content: center"><span>borrowedOn</span><span>date</span></div>
+                  <span class="mz-hd mz-hd-l"></span>
+                </div>
+                <span class="mz-card mz-a-pop" style="position: absolute; left: 42%; top: 27%; transform: translate(-50%,-50%); animation-delay: 1.5s">0,n</span>
+                <span class="mz-card mz-a-pop" style="position: absolute; left: 42%; top: 70%; transform: translate(-50%,-50%); animation-delay: 1.6s">1,1</span>
+                <div class="mz-a-cur" style="position: absolute; left: 0; top: 0; display: flex; align-items: flex-start; gap: 2px; animation-delay: 2s" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 20 20"><path d="M3 2l14 6.5-6 1.6L8.2 16z" style="fill: var(--accent)" stroke="#ffffff" stroke-width="1.2"></path></svg>
+                  <span style="margin-top: 12px; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--accent); color: #ffffff">Teacher</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mz-panneau" id="vue-mld" data-panneau="mld" aria-labelledby="onglet-vue-mld">
+              <div class="mz-dots" style="position: absolute; inset: 0; background-color: var(--raise); display: flex; align-items: center; justify-content: center; gap: 0; padding: 24px">
+                <div class="mz-tbl mz-a-snap">
+                  <div class="mz-tbl-h">Member</div>
+                  <div class="mz-tbl-r"><span class="mz-id">memberNumber</span><span class="mz-muted">primary key</span></div>
+                  <div class="mz-tbl-r"><span>memberName</span><span></span></div>
+                </div>
+                <div style="flex: 0 1 120px; display: flex; align-items: center"><span style="width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--accent); background: var(--surface)"></span><span class="mz-solid mz-a-leg" style="flex: 1; animation-delay: .35s"></span><svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true"><path d="M0 0l10 6-10 6z" style="fill: var(--accent)"></path></svg></div>
+                <div class="mz-tbl mz-a-snap" style="animation-delay: .15s">
+                  <div class="mz-tbl-h">Book</div>
+                  <div class="mz-tbl-r"><span class="mz-id">isbn</span><span class="mz-muted">primary key</span></div>
+                  <div class="mz-tbl-r"><span>title</span><span></span></div>
+                  <div class="mz-tbl-r mz-a-write" style="background: var(--soft); animation-delay: .7s"><span>#memberNumber</span><span class="mz-muted">foreign key</span></div>
+                  <div class="mz-tbl-r mz-a-write" style="background: var(--soft); animation-delay: .95s"><span>borrowedOn</span><span class="mz-muted">from Borrow</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mz-panneau" id="vue-mpd" data-panneau="mpd" aria-labelledby="onglet-vue-mpd">
+              <div class="mz-dots" style="position: absolute; inset: 0; background-color: var(--raise); display: flex; align-items: center; justify-content: center; gap: 48px; padding: 24px; flex-wrap: wrap">
+                <div class="mz-tbl mz-a-snap">
+                  <div class="mz-tbl-h" style="display: flex; justify-content: space-between">Member<span class="mz-mono mz-muted" style="font-size: 11px">MySQL</span></div>
+                  <div class="mz-tbl-r"><span class="mz-id">memberNumber</span><span class="mz-kw">INT</span></div>
+                  <div class="mz-tbl-r"><span>memberName</span><span class="mz-kw">VARCHAR(255)</span></div>
+                </div>
+                <div class="mz-tbl mz-a-snap" style="animation-delay: .15s">
+                  <div class="mz-tbl-h" style="display: flex; justify-content: space-between">Book<span class="mz-mono mz-muted" style="font-size: 11px">MySQL</span></div>
+                  <div class="mz-tbl-r"><span class="mz-id">isbn</span><span class="mz-kw">VARCHAR(255)</span></div>
+                  <div class="mz-tbl-r"><span>title</span><span class="mz-kw">VARCHAR(255)</span></div>
+                  <div class="mz-tbl-r"><span>memberNumber</span><span class="mz-kw">INT</span></div>
+                  <div class="mz-tbl-r"><span>borrowedOn</span><span class="mz-kw">DATE</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mz-panneau" id="vue-sql" data-panneau="sql" aria-labelledby="onglet-vue-sql">
+<pre class="mz-mono mz-a-write" style="animation-duration: 1.1s; position: absolute; inset: 0; padding: 20px 26px; font-size: 13px; line-height: 1.62; overflow: auto; background: var(--surface)"><span class="mz-kw">CREATE TABLE</span> Member (
+  memberNumber <span class="mz-kw">INT NOT NULL AUTO_INCREMENT</span>,
+  memberName <span class="mz-kw">VARCHAR</span>(255) <span class="mz-kw">NOT NULL</span>,
+  <span class="mz-kw">PRIMARY KEY</span> (memberNumber)
+);
+
+<span class="mz-kw">CREATE TABLE</span> Book (
+  isbn <span class="mz-kw">VARCHAR</span>(255) <span class="mz-kw">NOT NULL</span>,
+  title <span class="mz-kw">VARCHAR</span>(255) <span class="mz-kw">NOT NULL</span>,
+  memberNumber <span class="mz-kw">INT NOT NULL</span>,
+  borrowedOn <span class="mz-kw">DATE NOT NULL</span>,
+  <span class="mz-kw">PRIMARY KEY</span> (isbn)
+);
+
+<span class="mz-kw">ALTER TABLE</span> Book
+  <span class="mz-kw">ADD CONSTRAINT</span> fk_livre_adherent
+  <span class="mz-kw">FOREIGN KEY</span> (memberNumber) <span class="mz-kw">REFERENCES</span> Member (memberNumber);</pre>
+            </div>
+          </div>
+
+          <div class="mz-hide-sm" style="flex: 0 0 232px; padding: 18px; border-left: 1.5px solid var(--line); background: var(--surface); display: flex; flex-direction: column; gap: 16px">
+            <p class="mz-small" style="font-size: 13px">Select an entity, relationship or connection to edit it.</p>
+            <div style="border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 8px">
+              <p style="font-size: 13.5px; font-weight: 600">Validation</p>
+              <p style="display: flex; gap: 8px; align-items: flex-start; font-size: 13px; padding: 10px 12px; border-radius: 10px; background: var(--ok-bg); color: var(--ok)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>No issues. The model is ready to transform.</p>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 9px 16px; border-top: 1.5px solid var(--line); background: var(--raise); font-family: var(--mono); font-size: 12.5px; overflow: hidden; white-space: nowrap">
+          <span class="mz-card" style="font-size: 11px">MLD</span>
+          <span class="mz-a-type" style="animation-delay: 2.2s">Book (<span class="mz-id">isbn</span>, title, #memberNumber, borrowedOn)</span>
+        </div>
+      </div>
+      <figcaption class="mz-small" style="margin-top: 14px; text-align: center">A conceptual model in Meriz: entities, their relationship and cardinalities read from each entity.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="mz-alt" style="padding: 80px 0">
+  <div class="mz-wrap">
+    <div style="display: flex; flex-wrap: wrap; gap: 20px 64px; align-items: flex-end; margin-bottom: 40px">
+      <div style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 16px">
+        <div class="mz-eb"><span class="mz-eb-d"></span><span class="mz-eb-l"></span><span class="mz-eb-t">The workflow</span></div>
+        <h2 class="mz-h2">Four stages, two to build</h2>
+      </div>
+      <p class="mz-muted" style="flex: 1 1 380px; max-width: 460px; font-size: 17.5px">You create the dictionary and conceptual model. Merise transformation rules generate the rest and keep it up to date automatically.</p>
+    </div>
+    <div class="mz-hide-sm" aria-hidden="true" style="display: flex; margin-bottom: 14px; font-size: 12.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted)">
+      <div style="flex: 1; display: flex; align-items: center; gap: 12px"><span>You define</span><span class="mz-rv-leg" style="flex: 1; height: 1.5px; background: var(--accent)"></span></div>
+      <div style="width: 56px"></div>
+      <div style="flex: 1; display: flex; align-items: center; gap: 12px"><span>Meriz generates</span><span class="mz-flow mz-rv-leg mz-rv-3" style="flex: 1"></span></div>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; align-items: stretch; gap: 16px 0">
+      <article class="mz-ent mz-lift mz-rv-snap" style="flex: 1 1 220px; min-width: 0; padding: 20px 20px 22px; display: flex; flex-direction: column; gap: 8px">
+        <span class="mz-mono" style="font-size: 12px; font-weight: 700; color: var(--atext)">01</span>
+        <h3 class="mz-h3">Dictionary</h3>
+        <p class="mz-muted" style="font-size: 15px">Define each data item once, with its type, then place it in at most one entity or relationship.</p>
+        <span class="mz-hd mz-hd-r"></span>
+      </article>
+      <div class="mz-hide-sm" aria-hidden="true" style="flex: 0 0 56px; position: relative; display: flex; align-items: center"><div class="mz-solid mz-rv-leg mz-rv-2" style="width: 100%"></div><span class="mz-card mz-rv-pop" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%)">1,n</span></div>
+      <article class="mz-ent mz-lift mz-rv-snap mz-rv-2" style="flex: 1 1 220px; min-width: 0; padding: 20px 20px 22px; display: flex; flex-direction: column; gap: 8px">
+        <span class="mz-mono" style="font-size: 12px; font-weight: 700; color: var(--atext)">02</span>
+        <h3 class="mz-h3">MCD</h3>
+        <p class="mz-muted" style="font-size: 15px">Entities, relationships and cardinalities. Validation highlights issues as you work.</p>
+        <span class="mz-hd mz-hd-r"></span>
+      </article>
+      <div class="mz-hide-sm" aria-hidden="true" style="flex: 0 0 56px; position: relative; display: flex; align-items: center"><div class="mz-flow mz-rv-leg mz-rv-3" style="width: 100%"></div><span class="mz-card mz-rv-pop" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%)">0,n</span></div>
+      <article class="mz-ent mz-lift mz-rv-snap mz-rv-3" style="flex: 1 1 220px; min-width: 0; padding: 20px 20px 22px; display: flex; flex-direction: column; gap: 8px; border-style: dashed; background: var(--raise)">
+        <span class="mz-mono mz-muted" style="font-size: 12px; font-weight: 700">03</span>
+        <h3 class="mz-h3">Logical and physical models</h3>
+        <p class="mz-muted" style="font-size: 15px">Tables, foreign keys and junction tables, followed by database-specific SQL types that you can edit column by column.</p>
+      </article>
+      <div class="mz-hide-sm" aria-hidden="true" style="flex: 0 0 56px; position: relative; display: flex; align-items: center"><div class="mz-flow mz-rv-leg mz-rv-3" style="width: 100%"></div><span class="mz-card mz-rv-pop" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%)">1,1</span></div>
+      <article class="mz-ent mz-lift mz-rv-snap mz-rv-4" style="flex: 1 1 220px; min-width: 0; padding: 20px 20px 22px; display: flex; flex-direction: column; gap: 8px; border-style: dashed; background: var(--raise)">
+        <span class="mz-mono mz-muted" style="font-size: 12px; font-weight: 700">04</span>
+        <h3 class="mz-h3">SQL and code</h3>
+        <p class="mz-muted" style="font-size: 15px">The <span class="mz-mono" style="font-size: 13.5px; color: var(--ink)">CREATE TABLE</span>script, plus Laravel migrations or Symfony entities.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section style="padding: 88px 0">
+  <div class="mz-wrap" style="display: flex; flex-wrap: wrap; gap: 56px 64px">
+    <div style="flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 22px">
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <div class="mz-eb"><span class="mz-eb-d"></span><span class="mz-eb-l"></span><span class="mz-eb-t">Who is it for?</span></div>
+        <p class="mz-muted" style="font-size: 17px">One tool for three uses. Choose the parts you need.</p>
+      </div>
+      <div style="display: flex; flex-direction: column">
+        <div class="mz-rv-snap" style="display: flex; gap: 16px; padding: 18px 0; border-top: 1.5px solid var(--line)">
+          <span class="mz-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H2zM22 5h-7a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h8z"></path></svg></span>
+          <div style="display: flex; flex-direction: column; gap: 4px"><h3 class="mz-h3">Learn</h3><p class="mz-muted" style="font-size: 15px">Follow the method through one worked example. Validation explains Merise rules rather than error codes, and generated SQL shows the effect of each cardinality.</p></div>
+        </div>
+        <div class="mz-rv-snap mz-rv-2" style="display: flex; gap: 16px; padding: 18px 0; border-top: 1.5px solid var(--line)">
+          <span class="mz-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"></rect><path d="M8 20l4-4 4 4M7 9h6M7 12h9"></path></svg></span>
+          <div style="display: flex; flex-direction: column; gap: 4px"><h3 class="mz-h3">Teach</h3><p class="mz-muted" style="font-size: 15px">Classes with invitation codes, assignment briefs and reference solutions, automatic submission comparisons, comments pinned to models and live lesson monitoring.</p></div>
+        </div>
+        <div class="mz-rv-snap mz-rv-3" style="display: flex; gap: 16px; padding: 18px 0; border-top: 1.5px solid var(--line); border-bottom: 1.5px solid var(--line)">
+          <span class="mz-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5"></path></svg></span>
+          <div style="display: flex; flex-direction: column; gap: 4px"><h3 class="mz-h3">Work</h3><p class="mz-muted" style="font-size: 15px">Build and validate a model, then generate SQL and Laravel or Symfony database code. Work together on the same model when needed, with a cursor for each participant.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex: 1.3 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 22px">
+      <h2 class="mz-h2">What makes Meriz different?</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 16px">
+        <article class="mz-panel mz-rv-snap" style="flex: 1 1 100%; padding: 26px 28px; display: flex; flex-wrap: wrap; gap: 18px 32px; align-items: center">
+          <div style="display: flex; align-items: baseline; gap: 10px"><span style="font-size: 76px; line-height: .9; font-weight: 600; letter-spacing: -.04em; color: var(--atext)">17</span><span class="mz-muted" style="font-size: 14.5px; line-height: 1.3">rules<br>checked</span></div>
+          <div style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 6px"><h3 class="mz-h3">Validation that explains the rules</h3><p class="mz-muted" style="font-size: 15px">Seventeen rules are checked continuously. Select an issue to find the affected element. A model that passes validation can be transformed.</p></div>
+        </article>
+        <article class="mz-ent mz-lift mz-rv-snap mz-rv-2" style="flex: 1 1 200px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+          <span class="mz-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="19" height="13" rx="2"></rect><path d="M8 21h8M12 17v4"></path></svg></span>
+          <h3 class="mz-h3">Works across platforms</h3><p class="mz-muted" style="font-size: 14.5px">Use it in your browser with no installation, or on Windows, macOS and Linux. The model and file format are the same.</p>
+        </article>
+        <article class="mz-ent mz-lift mz-rv-snap mz-rv-3" style="flex: 1 1 200px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+          <span class="mz-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"></rect><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"></path></svg></span>
+          <h3 class="mz-h3">Keyboard accessible</h3><p class="mz-muted" style="font-size: 14.5px">Designed for use without a mouse, with AA contrast checks and information that never relies on colour alone.</p>
+        </article>
+        <article class="mz-ent mz-lift mz-rv-snap mz-rv-4" style="flex: 1 1 200px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+          <span class="mz-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 7.5-2"></path></svg></span>
+          <h3 class="mz-h3">Free and open source</h3><p class="mz-muted" style="font-size: 14.5px">Open source under the AGPL 3.0 licence. Your files belong to you, and you can use, study and adapt the software.</p>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding: 0 0 88px">
+  <div class="mz-wrap">
+    <div class="mz-panel mz-dots mz-rv-snap" style="padding: 48px; display: flex; flex-wrap: wrap; gap: 36px 56px; align-items: center; justify-content: space-between">
+      <div style="flex: 1 1 440px; max-width: 580px; display: flex; flex-direction: column; gap: 16px">
+        <h2 class="mz-h2">Start now</h2>
+        <p class="mz-muted" style="font-size: 17.5px">Nothing to install: open the editor in your browser and keep your work on your device. Desktop versions are also available for all three operating systems.</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 14px; margin-top: 6px">
+          <a class="mz-btn mz-btn-p" href="https://app.meriz.fr/?lang=en">Try it online</a>
+          <a class="mz-btn mz-btn-g" href="merise.html">Understand the Merise method</a>
+        </div>
+      </div>
+      <div class="mz-hide-sm" aria-hidden="true" style="flex: 0 1 420px; display: flex; align-items: center; font-weight: 600; font-size: 15px">
+        <span class="mz-ent" style="padding: 12px 16px; border-radius: 12px">You</span>
+        <span style="flex: 1; min-width: 28px; height: 2px; background: var(--accent); position: relative"><span class="mz-card" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-size: 11px">0,n</span></span>
+        <span class="mz-ent" style="padding: 12px 18px; border-radius: 999px; border-color: var(--soft-edge)">Model</span>
+        <span style="flex: 1; min-width: 28px; height: 2px; background: var(--accent); position: relative"><span class="mz-card" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-size: 11px">1,1</span></span>
+        <span class="mz-rv-snap mz-rv-4" style="padding: 12px 16px; border-radius: 12px; background: var(--accent); color: #ffffff">Meriz</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer style="padding: 56px 0 40px; background: var(--surface); border-top: 1px solid var(--line)">
+  <div class="mz-wrap" style="display: flex; flex-direction: column; gap: 36px">
+    <div style="display: flex; flex-wrap: wrap; gap: 32px 56px">
+      <div style="flex: 2 1 280px; display: flex; flex-direction: column; gap: 12px">
+        <a href="/en/" class="mz-logo" aria-label="Meriz home" style="font-size: 19px"><svg viewBox="0 0 191 64" height="26" width="77.6" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--logo)" /><path d="M24.3 32 32 15.2 39.7 32" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" /><circle cx="24.3" cy="40.4" r="10.5" fill="#fff" /><circle cx="39.7" cy="40.4" r="10.5" fill="#fff" stroke="var(--logo)" stroke-width="3.36" /><path fill="currentColor" d="M86.19 48L80 48L80 16L84.37 16L96.07 34.75L107.77 16L112.14 16L112.14 48L105.99 48L105.99 28.88L98.16 41.45L93.97 41.45L86.19 28.93L86.19 48M128.57 48.46Q125.11 48.46 122.42 46.98Q119.74 45.50 118.17 42.90Q116.60 40.31 116.60 36.98Q116.60 33.71 118.12 31.14Q119.65 28.56 122.29 27.04Q124.93 25.51 128.16 25.51Q131.35 25.51 133.78 26.95Q136.22 28.38 137.60 30.86Q138.99 33.34 138.99 36.48Q138.99 37.08 138.92 37.69Q138.86 38.30 138.67 39.08L122.61 39.12Q122.79 39.81 123.11 40.35Q123.83 41.85 125.25 42.65Q126.66 43.45 128.52 43.45Q130.21 43.45 131.57 42.88Q132.94 42.31 133.94 41.17L137.45 44.68Q135.85 46.54 133.55 47.50Q131.25 48.46 128.57 48.46M122.61 34.66L133.26 34.62Q133.08 33.84 132.80 33.21Q132.17 31.89 131 31.18Q129.84 30.48 128.16 30.48Q126.38 30.48 125.06 31.27Q123.74 32.07 123.06 33.48Q122.79 34.03 122.61 34.66M148.64 48L142.68 48L142.68 26.01L148.64 26.01L148.64 27.97Q148.64 27.93 148.69 27.88Q150.65 25.56 154.33 25.56Q155.93 25.56 157.20 26.08Q158.48 26.61 159.52 27.79L155.79 32.07Q155.29 31.52 154.58 31.25Q153.88 30.98 152.97 30.98Q151.06 30.98 149.85 32.18Q148.64 33.39 148.64 35.85L148.64 48M167.62 48L161.62 48L161.62 26.01L167.62 26.01L167.62 48M164.62 22.46Q163.16 22.46 162.21 21.49Q161.25 20.51 161.25 19.05Q161.25 17.64 162.21 16.64Q163.16 15.64 164.62 15.64Q166.12 15.64 167.06 16.64Q167.99 17.64 167.99 19.05Q167.99 20.51 167.06 21.49Q166.12 22.46 164.62 22.46M189.93 48L171.36 48L171.36 44.59L181.64 31.20L172.18 31.20L172.18 26.01L190.20 26.01L190.20 29.43L179.91 42.81L189.93 42.81" /></svg></a>
+        <p class="mz-small" style="max-width: 320px">Meriz is free software under the AGPL 3.0 licence. Developed by Yassine Daif.</p>
+      </div>
+      <nav class="mz-fl" aria-label="Product" style="flex: 1 1 140px"><p class="mz-fh">Product</p><a href="https://app.meriz.fr/?lang=en">Try it online</a><a href="features.html">Features</a><a href="download.html">Download</a></nav>
+      <nav class="mz-fl" aria-label="Learn" style="flex: 1 1 140px"><p class="mz-fh">Learn</p><a href="merise.html">The Merise method</a></nav>
+      <nav class="mz-fl" aria-label="Project" style="flex: 1 1 140px"><p class="mz-fh">Project</p><a href="legal.html">Legal notice</a><a href="https://github.com/Yassine-Daif/meriz" rel="noopener">Source code</a><a href="https://github.com/Yassine-Daif/meriz/releases" rel="noopener">Releases</a></nav>
+    </div>
+    <p class="mz-small" style="padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px" data-version hidden>Latest release: v1.0.1, published on 18 October 2026.</p>
+  </div>
+</footer>
+
+    <script src="../site.js" defer></script>
+  </body>
+</html>

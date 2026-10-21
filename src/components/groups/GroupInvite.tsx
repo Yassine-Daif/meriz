@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useId, useMemo } from 'react'
 import { copyText } from '../../lib/clipboard'
 import { discordMessage, invitationMailto, invitationMessage } from '../../lib/groupInvite'
@@ -25,6 +27,7 @@ function appUrl(): string {
  * publié dans Discord à notre place, et c'est écrit noir sur blanc.
  */
 export function GroupInvite({ groupName, joinCode, onStatus }: GroupInviteProps) {
+  useLanguage()
   const titleId = useId()
   const messageId = useId()
   const params = useMemo(() => ({ groupName, joinCode, appUrl: appUrl() }), [groupName, joinCode])
@@ -32,17 +35,15 @@ export function GroupInvite({ groupName, joinCode, onStatus }: GroupInviteProps)
 
   const copy = async (text: string, succes: string) => {
     const copied = await copyText(text)
-    onStatus(copied ? succes : 'Copie impossible dans ce navigateur : sélectionnez le message affiché.')
+    onStatus(copied ? succes : t("Copie impossible dans ce navigateur : sélectionnez le message affiché."))
   }
 
   return (
     <section aria-labelledby={titleId} className="mt-4 border-t border-line pt-4">
       <h4 id={titleId} className="text-sm font-semibold text-ink">
-        Partager l’invitation
-      </h4>
+        {t("Partager l’invitation")}</h4>
       <label htmlFor={messageId} className="mt-2 block text-xs font-medium text-ink-soft">
-        Message d’invitation, prêt à coller
-      </label>
+        {t("Message d’invitation, prêt à coller")}</label>
       <textarea
         id={messageId}
         readOnly
@@ -51,23 +52,18 @@ export function GroupInvite({ groupName, joinCode, onStatus }: GroupInviteProps)
         className="mt-1 w-full rounded-control border border-line-strong bg-surface px-3 py-2 font-mono text-xs leading-5 text-ink"
       />
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <Button size="sm" variant="primary" onClick={() => void copy(message, 'Invitation copiée.')}>
-          Copier l’invitation
-        </Button>
+        <Button size="sm" variant="primary" onClick={() => void copy(message, t("Invitation copiée."))}>
+          {t("Copier l’invitation")}</Button>
         <a href={invitationMailto(params)} className={buttonClass({ variant: 'secondary', size: 'sm' })}>
-          Ouvrir un mail prérempli
-        </a>
+          {t("Ouvrir un mail prérempli")}</a>
         <Button
           size="sm"
-          onClick={() => void copy(discordMessage(params), 'Invitation Discord copiée : collez-la dans votre salon.')}
+          onClick={() => void copy(discordMessage(params), t("Invitation Discord copiée : collez-la dans votre salon."))}
         >
-          Copier pour Discord
-        </Button>
+          {t("Copier pour Discord")}</Button>
       </div>
       <p className="mt-2 text-xs text-ink-soft">
-        Discord ne peut pas recevoir de message depuis un site web. Le bouton copie l’invitation, vous la collez
-        dans votre salon.
-      </p>
+        {t("Discord ne peut pas recevoir de message depuis un site web. Le bouton copie l’invitation, vous la collez dans votre salon.")}</p>
     </section>
   )
 }

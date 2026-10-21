@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useCallback, useEffect, useState } from 'react'
 import type { ApiClient } from '../lib/apiClient'
 import { assignmentTypeLabel, getAssignment } from '../lib/assignmentsApi'
@@ -52,6 +54,7 @@ type View =
  * soit le nombre de classes. Noter un rendu le fait quitter la file.
  */
 export function CorrectionsPage({ client, opening, onOpenReadOnlyModel }: CorrectionsPageProps) {
+  useLanguage()
   const [rows, setRows] = useState<ToGradeRow[] | null>(null)
   const [total, setTotal] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
@@ -135,8 +138,7 @@ export function CorrectionsPage({ client, opening, onOpenReadOnlyModel }: Correc
       <div>
         {view.solutionMissing && (
           <Notice tone="info" className="mb-4">
-            Le corrigé de ce devoir n’a pas pu être chargé : la comparaison automatique n’est pas proposée.
-          </Notice>
+            {t("Le corrigé de ce devoir n’a pas pu être chargé : la comparaison automatique n’est pas proposée.")}</Notice>
         )}
         <SubmissionReview
           client={client}
@@ -145,7 +147,7 @@ export function CorrectionsPage({ client, opening, onOpenReadOnlyModel }: Correc
           assignmentTitle={view.assignmentTitle}
           solutionContent={view.solutionContent}
           submissionId={view.submissionId}
-          backLabel="Retour à la liste"
+          backLabel={t("Retour à la liste")}
           onBack={(message) => {
             setView({ kind: 'list' })
             setStatus(message)
@@ -159,8 +161,8 @@ export function CorrectionsPage({ client, opening, onOpenReadOnlyModel }: Correc
 
   return (
     <PageShell
-      title="À corriger"
-      description="Les rendus de toutes vos classes qui attendent une note, les plus anciens d’abord."
+      title={t("À corriger")}
+      description={t("Les rendus de toutes vos classes qui attendent une note, les plus anciens d’abord.")}
     >
       <p role="status" aria-live="polite" className="min-h-5 text-sm text-ink-soft">
         {status}
@@ -172,20 +174,17 @@ export function CorrectionsPage({ client, opening, onOpenReadOnlyModel }: Correc
           announce={false}
           action={
             <Button size="sm" onClick={() => void load()}>
-              Réessayer
-            </Button>
+              {t("Réessayer")}</Button>
           }
         >
           {loadError}
         </Notice>
       ) : rows === null ? (
         <p role="status" className="text-sm text-ink-soft">
-          Chargement des rendus à corriger…
-        </p>
+          {t("Chargement des rendus à corriger…")}</p>
       ) : rows.length === 0 ? (
         <p className="rounded-card border border-dashed border-line-strong bg-surface-soft p-6 text-center text-sm text-ink-soft">
-          Rien à corriger pour l’instant. Les travaux remis par vos élèves arriveront ici.
-        </p>
+          {t("Rien à corriger pour l’instant. Les travaux remis par vos élèves arriveront ici.")}</p>
       ) : (
         <>
           <ul className="flex flex-col gap-2">
@@ -202,7 +201,7 @@ export function CorrectionsPage({ client, opening, onOpenReadOnlyModel }: Correc
                     })
                   }
                   disabled={busy}
-                  aria-label={`Corriger le rendu de ${displayName(row.student)} pour ${row.assignment.title}`}
+                  aria-label={t("Corriger le rendu de {0} pour {1}", [displayName(row.student), row.assignment.title])}
                   className="flex w-full items-center gap-3 rounded-card border border-line bg-surface p-4 text-left shadow-soft transition duration-150 hover:shadow-lift disabled:cursor-wait motion-safe:hover:-translate-y-0.5"
                 >
                   <Avatar person={row.student} size="md" />
@@ -215,7 +214,7 @@ export function CorrectionsPage({ client, opening, onOpenReadOnlyModel }: Correc
                   </span>
                   <span className="flex flex-wrap items-center justify-end gap-1.5">
                     <Badge tone="sky">{assignmentTypeLabel(row.assignment.type)}</Badge>
-                    {row.isLate && <Badge tone="apricot">En retard</Badge>}
+                    {row.isLate && <Badge tone="apricot">{t("En retard")}</Badge>}
                   </span>
                 </button>
               </li>
@@ -227,9 +226,8 @@ export function CorrectionsPage({ client, opening, onOpenReadOnlyModel }: Correc
               {pageCountLabel(rows.length, total)}
             </p>
             {currentPage < lastPage && (
-              <Button size="sm" onClick={() => void loadMore()} loading={more} loadingLabel="Chargement…">
-                Voir les suivants
-              </Button>
+              <Button size="sm" onClick={() => void loadMore()} loading={more} loadingLabel={t("Chargement…")}>
+                {t("Voir les suivants")}</Button>
             )}
           </div>
         </>

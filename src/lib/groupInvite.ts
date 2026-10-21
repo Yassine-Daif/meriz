@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import { formatJoinCode } from './classroomsApi'
 
 /**
@@ -17,17 +18,17 @@ export interface InviteParams {
 }
 
 export function invitationSubject(groupName: string): string {
-  return `Rejoins mon groupe « ${groupName} » sur Meriz`
+  return t("Rejoins mon groupe « {0} » sur Meriz", [groupName])
 }
 
 export function invitationMessage({ groupName, joinCode, appUrl }: InviteParams): string {
   return [
-    `Rejoins mon groupe « ${groupName} » sur Meriz, pour modéliser à plusieurs.`,
+    t("Rejoins mon groupe « {0} » sur Meriz, pour modéliser à plusieurs.", [groupName]),
     '',
-    `Code du groupe : ${formatJoinCode(joinCode)}`,
+    t("Code du groupe : {0}", [formatJoinCode(joinCode)]),
     '',
-    'Ouvre « Mes groupes », puis « Rejoindre un groupe », et saisis ce code.',
-    'Les minuscules, les espaces et les tirets sont acceptés.',
+    t("Ouvre « Mes groupes », puis « Rejoindre un groupe », et saisis ce code."),
+    t("Les minuscules, les espaces et les tirets sont acceptés."),
     appUrl,
   ].join('\n')
 }
@@ -38,11 +39,11 @@ export function invitationMessage({ groupName, joinCode, appUrl }: InviteParams)
  */
 export function discordMessage({ groupName, joinCode, appUrl }: InviteParams): string {
   return [
-    `Rejoins mon groupe **${groupName}** sur Meriz, pour modéliser à plusieurs.`,
+    t("Rejoins mon groupe **{0}** sur Meriz, pour modéliser à plusieurs.", [groupName]),
     '',
-    `Code du groupe : \`${formatJoinCode(joinCode)}\``,
+    t("Code du groupe : `{0}`", [formatJoinCode(joinCode)]),
     '',
-    'Ouvre « Mes groupes », puis « Rejoindre un groupe », et saisis ce code.',
+    t("Ouvre « Mes groupes », puis « Rejoindre un groupe », et saisis ce code."),
     appUrl,
   ].join('\n')
 }

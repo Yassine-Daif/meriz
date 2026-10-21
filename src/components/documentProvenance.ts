@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { DocumentMeta } from '../model/document'
 import type { AssignmentIndex } from '../lib/workAssignments'
 import type { BadgeTone } from './ui/Badge'
@@ -17,8 +18,8 @@ export interface Provenance {
   spoken: string
 }
 
-export const PERSONAL_PROVENANCE: Provenance = { label: 'Perso', tone: 'apricot', spoken: 'Perso' }
-export const GROUP_PROVENANCE: Provenance = { label: 'Groupe', tone: 'sky', spoken: 'Groupe' }
+export const PERSONAL_PROVENANCE: Provenance = { get label() { return t("Perso") }, tone: 'apricot', spoken: 'Perso' }
+export const GROUP_PROVENANCE: Provenance = { get label() { return t("Groupe") }, tone: 'sky', spoken: 'Groupe' }
 
 /**
  * Aucune pastille quand la provenance n'est pas connue : un document de
@@ -40,8 +41,8 @@ export function provenanceFor(meta: DocumentMeta, assignments?: AssignmentIndex 
   // dépend que de la provenance, seul le texte lu s'enrichit.
   const title = assignments?.get(origin.assignmentId)?.title
   return {
-    label: 'Devoir',
+    label: t("Devoir"),
     tone: 'sky',
-    spoken: title === undefined ? 'Devoir' : `Devoir « ${title} »`,
+    spoken: title === undefined ? t("Devoir") : t("Devoir « {0} »", [title]),
   }
 }

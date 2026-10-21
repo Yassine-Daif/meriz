@@ -33,7 +33,7 @@ function readStoredPreference(): ThemePreference {
 }
 
 function systemPrefersDark(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches === true
+  return typeof window !== 'undefined' && window.matchMedia?.("(prefers-color-scheme: dark)").matches === true
 }
 
 function applyTheme(theme: ResolvedTheme): void {
@@ -67,7 +67,7 @@ function createThemeStore() {
   }
 
   if (typeof window !== 'undefined' && window.matchMedia) {
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener('change', () => {
       update(state.preference)
     })
   }

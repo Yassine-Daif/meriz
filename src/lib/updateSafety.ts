@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 type Guard = () => Promise<boolean>
 const guards = new Set<Guard>()
 
@@ -9,6 +10,6 @@ export function registerUpdateGuard(guard: Guard): () => void {
 
 export async function prepareDesktopUpdate(): Promise<void> {
   for (const guard of guards) {
-    if (!await guard()) throw new Error('La sauvegarde du document n’est pas terminée. Réessayez avant de mettre à jour.')
+    if (!await guard()) throw new Error(t("La sauvegarde du document n’est pas terminée. Réessayez avant de mettre à jour."))
   }
 }

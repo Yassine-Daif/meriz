@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { ApiClient } from './apiClient'
 import type { SaveStatus } from './documentRepository'
 import { createStatusBox, MAX_WAIT_MS, RETRY_DELAYS_MS, SEND_DELAY_MS } from './documentRepository'
@@ -91,7 +92,7 @@ export function createLessonSaver(options: LessonSaverOptions): LessonSaver {
     if (error.kind === 'not_found') {
       gone = true
       clearTimer()
-      box.set({ kind: 'error', message: GONE_MESSAGE })
+      box.set({ kind: 'error', message: t(GONE_MESSAGE) })
       return false
     }
     if (error.kind === 'network' || error.kind === 'server' || error.kind === 'rate_limited') {
@@ -100,7 +101,7 @@ export function createLessonSaver(options: LessonSaverOptions): LessonSaver {
       retryIndex += 1
       return false
     }
-    box.set({ kind: 'error', message: `Échec de l'envoi : ${error.message}` })
+    box.set({ kind: 'error', message: t("Échec de l'envoi : {0}", [error.message]) })
     return false
   }
 

@@ -1,3 +1,5 @@
+import { counted } from './plural'
+import { t } from "../i18n/runtime"
 import type { ApiClient, Outcome } from './apiClient'
 import { unexpectedResponse } from './apiClient'
 import { optionalText } from './authApi'
@@ -257,8 +259,8 @@ export async function listMyAssignments(client: ApiClient): Promise<Outcome<Stud
 /** « 12 rendus affichés sur 30 », ou le compte seul quand tout est là. */
 export function pageCountLabel(shown: number, total: number): string {
   if (shown >= total) {
-    return total > 1 ? `${total} rendus` : `${total} rendu`
+    return counted(total, 'rendu', 'rendus')
   }
   const plural = shown > 1 ? 's' : ''
-  return `${shown} rendu${plural} affiché${plural} sur ${total}`
+  return t("{0} rendu{1} affiché{2} sur {3}", [shown, plural, plural, total])
 }

@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import type { ClassroomsState } from '../lib/useClassrooms'
 import type { ClassroomSummary } from '../lib/classroomsApi'
 import { ClassroomCard } from './ClassroomCard'
@@ -13,6 +15,7 @@ interface ClassroomGridProps {
 
 /** Classes en cartes, avec les états chargement, erreur et vide. */
 export function ClassroomGrid({ state, onOpen, onCopyCode, emptyText }: ClassroomGridProps) {
+  useLanguage()
   const { classrooms, error, reload } = state
   if (error) {
     return (
@@ -21,8 +24,7 @@ export function ClassroomGrid({ state, onOpen, onCopyCode, emptyText }: Classroo
         announce={false}
         action={
           <Button size="sm" onClick={() => void reload()}>
-            Réessayer
-          </Button>
+            {t("Réessayer")}</Button>
         }
       >
         {error}
@@ -32,8 +34,7 @@ export function ClassroomGrid({ state, onOpen, onCopyCode, emptyText }: Classroo
   if (classrooms === null) {
     return (
       <p role="status" className="text-sm text-ink-soft">
-        Chargement de vos classes…
-      </p>
+        {t("Chargement de vos classes…")}</p>
     )
   }
   if (classrooms.length === 0) {

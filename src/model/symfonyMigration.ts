@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { CodeSchema } from './codeSchema'
 import type { GeneratedFile } from './codegenTypes'
 import { mpdToSql, sortForCreation } from './mpd'
@@ -29,40 +30,13 @@ function statements(sql: string): string[] {
 export function symfonyMigrationFile(schema: CodeSchema, dialect: SqlDialect): GeneratedFile {
   const up = statements(mpdToSql(schema.physicalTables, dialect, { includeDrops: false }))
   const down = sortForCreation(schema.physicalTables)
-    .map((table) => `DROP TABLE IF EXISTS ${table.name}`)
+    .map((table) => ("DROP TABLE IF EXISTS " + String(table.name) + ""))
     .reverse()
 
   const toSql = (lines: string[]): string =>
     lines.map((line) => `        $this->addSql(${phpString(line)});`).join('\n')
 
-  const content = `<?php
-
-declare(strict_types=1);
-
-namespace DoctrineMigrations;
-
-use Doctrine\\DBAL\\Schema\\Schema;
-use Doctrine\\Migrations\\AbstractMigration;
-
-/** Schéma initial, dérivé du MCD par Meriz. */
-final class Version${DOCTRINE_MIGRATION_VERSION} extends AbstractMigration
-{
-    public function getDescription(): string
-    {
-        return 'Schéma initial généré depuis le MCD par Meriz.';
-    }
-
-    public function up(Schema $schema): void
-    {
-${toSql(up)}
-    }
-
-    public function down(Schema $schema): void
-    {
-${toSql(down)}
-    }
-}
-`
+  const content = t("<?php\n\ndeclare(strict_types=1);\n\nnamespace DoctrineMigrations;\n\nuse Doctrine\\DBAL\\Schema\\Schema;\nuse Doctrine\\Migrations\\AbstractMigration;\n\n/** Schéma initial, dérivé du MCD par Meriz. */\nfinal class Version{0} extends AbstractMigration\n{\n    public function getDescription(): string\n    {\n        return 'Schéma initial généré depuis le MCD par Meriz.';\n    }\n\n    public function up(Schema $schema): void\n    {\n{1}\n    }\n\n    public function down(Schema $schema): void\n    {\n{2}\n    }\n}\n", [DOCTRINE_MIGRATION_VERSION, toSql(up), toSql(down)])
 
   return { path: `migrations/Version${DOCTRINE_MIGRATION_VERSION}.php`, content }
 }

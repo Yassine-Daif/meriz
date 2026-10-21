@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import { MarkerType } from '@xyflow/react'
 import type { Edge } from '@xyflow/react'
 import type { MpdTable } from '../model/mpd'
@@ -17,7 +18,7 @@ export function initialTableNodes(tables: MpdTable[]): TableFlowNode[] {
     type: 'table',
     position: { x: (index % 3) * 340, y: Math.floor(index / 3) * 280 },
     data: { table },
-    ariaLabel: `Table ${table.name}`,
+    ariaLabel: t("Table {0}", [table.name]),
   }))
 }
 
@@ -67,7 +68,7 @@ export function buildFkEdges(tables: MpdTable[], nodes: TableFlowNode[]): Edge[]
         targetHandle,
         style: { stroke: 'var(--c-mark)', strokeWidth: 1.5 },
         markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--c-mark)', width: 18, height: 18 },
-        ariaLabel: `Clé étrangère de ${table.name} vers ${ref.tableName}`,
+        ariaLabel: t("Clé étrangère de {0} vers {1}", [table.name, ref.tableName]),
       })
     }
   }

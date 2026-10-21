@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { ApiClient, Outcome } from './apiClient'
 import { unexpectedResponse } from './apiClient'
 import type { PasswordResetLink } from './passwordResetLanding'
@@ -34,7 +35,7 @@ export async function requestPasswordReset(client: ApiClient, email: string): Pr
   if (!result.ok) {
     return result
   }
-  return { ok: true, value: message(result.data, GENERIC) }
+  return { ok: true, value: message(result.data, t(GENERIC)) }
 }
 
 export interface NewPassword extends PasswordResetLink {
@@ -61,5 +62,5 @@ export async function resetPassword(client: ApiClient, data: NewPassword): Promi
   if (result.status !== 200) {
     return { ok: false, error: unexpectedResponse(result.status) }
   }
-  return { ok: true, value: message(result.data, DONE) }
+  return { ok: true, value: message(result.data, t(DONE)) }
 }

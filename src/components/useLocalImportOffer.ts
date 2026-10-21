@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useCallback, useEffect, useState } from 'react'
 import type { AccountSpace } from '../lib/accountController'
 import { apiError } from '../lib/apiClient'
@@ -39,6 +41,7 @@ export function useLocalImportOffer({
   storage,
   repository,
 }: LocalImportOfferOptions) {
+  useLanguage()
   const [proposal, setProposal] = useState<ImportProposal | null>(null)
 
   useEffect(() => {
@@ -62,7 +65,7 @@ export function useLocalImportOffer({
       const local = localStore.loadDocument(meta.id)
       const created = local
         ? await repository.create(meta.name, local.state, local.mpdSettings)
-        : { ok: false as const, error: apiError('storage', null, 'Document local illisible.') }
+        : { ok: false as const, error: apiError('storage', null, t("Document local illisible.")) }
       if (created.ok) {
         importedIds.push(meta.id)
       } else {

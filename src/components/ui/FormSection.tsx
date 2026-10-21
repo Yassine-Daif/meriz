@@ -1,3 +1,4 @@
+import { useLanguage } from "../../lib/useLanguage"
 import { useId } from 'react'
 import type { ReactNode } from 'react'
 import { Card } from './Card'
@@ -37,6 +38,7 @@ export function FormSection({
   className,
   children,
 }: FormSectionProps) {
+  useLanguage()
   const titleId = useId()
   const Heading = level
 

@@ -1,3 +1,5 @@
+import { localeTag } from "../i18n/runtime"
+import { t } from "../i18n/runtime"
 import type { ApiClient, Outcome } from './apiClient'
 import { unexpectedResponse } from './apiClient'
 import { optionalText } from './authApi'
@@ -184,23 +186,23 @@ export function removeGrade(client: ApiClient, id: string): Promise<Outcome<Subm
 /* ------------------------------------------------------------------ */
 /* Affichage                                                          */
 
-const submittedFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
+const submittedFormat = () => new Intl.DateTimeFormat(localeTag(), { dateStyle: 'long', timeStyle: 'short' })
 
 /** « Rendu le 1 octobre 2026 à 18:00 », ou un repli si la date est illisible. */
 export function formatSubmittedAt(iso: string | null): string {
-  if (iso === null) return 'Date de dépôt inconnue'
+  if (iso === null) return t("Date de dépôt inconnue")
   const date = new Date(iso)
-  return Number.isNaN(date.getTime()) ? 'Date de dépôt inconnue' : `Rendu le ${submittedFormat.format(date)}`
+  return Number.isNaN(date.getTime()) ? t("Date de dépôt inconnue") : t("Rendu le {0}", [submittedFormat().format(date)])
 }
 
 /** Avancement d'un élève sur un devoir, écrit en toutes lettres. */
 export type WorkState = 'todo' | 'started' | 'submitted' | 'graded'
 
 export function workStateLabel(state: WorkState): string {
-  if (state === 'graded') return 'Noté'
-  if (state === 'submitted') return 'Rendu'
-  if (state === 'started') return 'En cours'
-  return 'À faire'
+  if (state === 'graded') return t("Noté")
+  if (state === 'submitted') return t("Rendu")
+  if (state === 'started') return t("En cours")
+  return t("À faire")
 }
 
 /**

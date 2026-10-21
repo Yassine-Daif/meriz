@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { createContext, useContext } from 'react'
 import type { Outcome } from '../lib/apiClient'
 import type { AccountSpace } from '../lib/accountController'
@@ -54,9 +56,10 @@ export const SessionContext = createContext<SessionContextValue | null>(null)
 
 /** Session de compte courante, disponible partout sous SessionProvider. */
 export function useSession(): SessionContextValue {
+  useLanguage()
   const value = useContext(SessionContext)
   if (!value) {
-    throw new Error("useSession doit être utilisé à l'intérieur de <SessionProvider>.")
+    throw new Error(t("useSession doit être utilisé à l'intérieur de <SessionProvider>."))
   }
   return value
 }

@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { registerUpdateGuard } from '../lib/updateSafety'
 import { useEffect, useId, useRef, useState } from 'react'
 import {
@@ -58,6 +60,7 @@ export function CommentsPanel({
   onClearPosition,
   onReveal,
 }: CommentsPanelProps) {
+  useLanguage()
   const titleId = useId()
   const listId = useId()
   const fieldId = useId()
@@ -114,7 +117,7 @@ export function CommentsPanel({
     event.preventDefault()
     const trimmed = body.trim()
     if (trimmed === '') {
-      setFormError('Écrivez un commentaire avant de l’envoyer.')
+      setFormError(t("Écrivez un commentaire avant de l’envoyer."))
       setAttempt((count) => count + 1)
       return
     }
@@ -127,14 +130,14 @@ export function CommentsPanel({
         onClearPosition()
       }
       return failure?.message ?? null
-    }, pendingPosition === null ? 'Commentaire ajouté.' : 'Commentaire ajouté, avec sa bulle.')
+    }, pendingPosition === null ? t("Commentaire ajouté.") : t("Commentaire ajouté, avec sa bulle."))
   }
 
   const confirmDelete = () => {
     const comment = pendingDelete
     setPendingDelete(null)
     if (!comment) return
-    void run(async () => (await thread.remove(comment.id))?.message ?? null, 'Commentaire supprimé.').then(() => {
+    void run(async () => (await thread.remove(comment.id))?.message ?? null, t("Commentaire supprimé.")).then(() => {
       // Le bouton déclencheur a disparu : le focus revient au titre.
       window.setTimeout(() => headingRef.current?.focus(), 0)
     })
@@ -144,10 +147,9 @@ export function CommentsPanel({
     <section aria-labelledby={titleId} className="border-t border-line p-3">
       <div className="flex flex-wrap items-center gap-2">
         <h2 id={titleId} ref={headingRef} tabIndex={-1} className="text-sm font-semibold text-ink">
-          Commentaires
-        </h2>
+          {t("Commentaires")}</h2>
         {total > 0 && <Badge tone="neutral">{total}</Badge>}
-        {unresolved > 0 && <Badge tone="warning">{unresolved} à traiter</Badge>}
+        {unresolved > 0 && <Badge tone="warning">{unresolved} {t(" à traiter")}</Badge>}
         <button
           type="button"
           onClick={onToggleOpen}
@@ -155,17 +157,17 @@ export function CommentsPanel({
           aria-controls={listId}
           className={`${actionClass} ml-auto`}
         >
-          {open ? 'Masquer le fil' : 'Afficher le fil'}
+          {open ? t("Masquer le fil") : t("Afficher le fil")}
         </button>
       </div>
 
       <p role="status" aria-live="polite" className="min-h-5 text-xs text-ink-soft">
-        {status || (comments === null ? '' : `${commentCountLabel(total)}${unresolved > 0 ? `, dont ${unresolved} à traiter.` : '.'}`)}
+        {status || (comments === null ? '' : `${commentCountLabel(total)}${unresolved > 0 ? t(", dont {0} à traiter.", [unresolved]) : '.'}`)}
       </p>
 
       <div id={listId} hidden={!open}>
         <Button variant="ghost" size="sm" aria-pressed={hideResolved} onClick={() => setHideResolved((value) => !value)}>
-          {hideResolved ? 'Afficher les discussions résolues' : 'Masquer les discussions résolues'}
+          {hideResolved ? t("Afficher les discussions résolues") : t("Masquer les discussions résolues")}
         </Button>
         {error !== null && (
           <Notice
@@ -173,8 +175,7 @@ export function CommentsPanel({
             announce={false}
             action={
               <Button size="sm" onClick={thread.refresh}>
-                Réessayer
-              </Button>
+                {t("Réessayer")}</Button>
             }
           >
             {error}
@@ -182,15 +183,14 @@ export function CommentsPanel({
         )}
 
         {comments === null ? (
-          <p className="mt-2 text-xs text-ink-soft">Chargement des commentaires…</p>
+          <p className="mt-2 text-xs text-ink-soft">{t("Chargement des commentaires…")}</p>
         ) : comments.length === 0 ? (
           <p className="mt-2 rounded-control border border-dashed border-line-strong p-3 text-xs text-ink-soft">
-            Aucun commentaire pour l’instant. Écrivez le premier.
-          </p>
+            {t("Aucun commentaire pour l’instant. Écrivez le premier.")}</p>
         ) : (
           <ul className="mt-2 flex max-h-[22rem] flex-col gap-2 overflow-y-auto">
             {ordered.map((comment) => {
-              const author = displayName(comment.author) || 'Participant'
+              const author = displayName(comment.author) || t("Participant")
               const mine = comment.author.id === me.id
               return (
                 <li key={comment.id} className={comment.parentId ? 'ml-4 border-l-2 border-mark pl-2' : undefined}>
@@ -208,8 +208,8 @@ export function CommentsPanel({
                         {author}
                         {mine && ' (vous)'}
                       </span>
-                      {comment.position !== null && <Badge tone="sky">Bulle {roots.findIndex((root) => root.id === comment.id) + 1}</Badge>}
-                      {comment.resolved && <Badge tone="sage">Résolu</Badge>}
+                      {comment.position !== null && <Badge tone="sky">{t("Bulle ")}{roots.findIndex((root) => root.id === comment.id) + 1}</Badge>}
+                      {comment.resolved && <Badge tone="sage">{t("Résolu")}</Badge>}
                     </div>
                     <p className="mt-1 text-xs text-ink-soft">
                       <time dateTime={comment.createdAt ?? undefined}>{formatCommentDate(comment.createdAt)}</time>
@@ -217,7 +217,7 @@ export function CommentsPanel({
                     <p className="mt-1 text-sm leading-6 whitespace-pre-wrap text-ink">{comment.body}</p>
                     {comment.resolved && (
                       <p className="mt-1 text-xs text-ink-soft">
-                        {comment.resolver ? `Résolu par ${displayName(comment.resolver)}` : 'Résolu'}
+                        {comment.resolver ? t("Résolu par {0}", [displayName(comment.resolver)]) : t("Résolu")}
                       </p>
                     )}
                     <div className="mt-2 flex flex-wrap gap-1.5">
@@ -225,45 +225,43 @@ export function CommentsPanel({
                         setReplyTo(comment.parentId ? roots.find((root) => root.id === comment.parentId) ?? comment : comment)
                         onClearPosition()
                         bodyRef.current?.focus()
-                      }}>Répondre</Button>
+                      }}>{t("Répondre")}</Button>
                       <button
                         type="button"
                         className={actionClass}
                         disabled={busy}
                         hidden={!!comment.parentId}
-                        aria-label={`${comment.resolved ? 'Rouvrir' : 'Marquer résolu'} le commentaire de ${author}`}
+                        aria-label={t("{0} le commentaire de {1}", [comment.resolved ? t("Rouvrir") : t("Marquer résolu"), author])}
                         onClick={() =>
                           void run(
                             async () =>
                               (comment.resolved
                                 ? await thread.reopen(comment.id)
                                 : await thread.resolve(comment.id))?.message ?? null,
-                            comment.resolved ? 'Commentaire rouvert.' : 'Commentaire marqué résolu.',
+                            comment.resolved ? t("Commentaire rouvert.") : t("Commentaire marqué résolu."),
                           )
                         }
                       >
-                        {comment.resolved ? 'Rouvrir' : 'Marquer résolu'}
+                        {comment.resolved ? t("Rouvrir") : t("Marquer résolu")}
                       </button>
                       {comment.position !== null && (
                         <button
                           type="button"
                           className={actionClass}
-                          aria-label={`Montrer sur le schéma le commentaire de ${author}`}
+                          aria-label={t("Montrer sur le schéma le commentaire de {0}", [author])}
                           onClick={() => onReveal(comment.id)}
                         >
-                          Montrer sur le schéma
-                        </button>
+                          {t("Montrer sur le schéma")}</button>
                       )}
                       {canDeleteComment(comment, me.id, canModerate) && (
                         <button
                           type="button"
                           className={actionClass}
                           disabled={busy}
-                          aria-label={`Supprimer le commentaire de ${author}`}
+                          aria-label={t("Supprimer le commentaire de {0}", [author])}
                           onClick={() => setPendingDelete(comment)}
                         >
-                          Supprimer
-                        </button>
+                          {t("Supprimer")}</button>
                       )}
                     </div>
                   </article>
@@ -276,9 +274,9 @@ export function CommentsPanel({
         <form onSubmit={(event) => void submit(event)} className="mt-3 flex flex-col gap-2">
           <FormAlert message={formError} attempt={attempt} />
           <label htmlFor={fieldId} className="text-xs font-medium text-ink">
-            {replyTo ? 'Répondre à '+displayName(replyTo.author) : 'Votre commentaire'}
+            {replyTo ? t("Répondre à ")+displayName(replyTo.author) : t("Votre commentaire")}
           </label>
-          {replyTo && <Button variant="ghost" size="sm" onClick={() => setReplyTo(null)}>Annuler la réponse</Button>}
+          {replyTo && <Button variant="ghost" size="sm" onClick={() => setReplyTo(null)}>{t("Annuler la réponse")}</Button>}
           <textarea
             id={fieldId}
             ref={bodyRef}
@@ -290,19 +288,16 @@ export function CommentsPanel({
           />
           {pendingPosition !== null && (
             <p className="flex flex-wrap items-center gap-2 text-xs text-ink-soft">
-              Bulle posée sur le schéma.
-              <button type="button" className={actionClass} onClick={onClearPosition}>
-                Retirer la bulle
-              </button>
+              {t("Bulle posée sur le schéma.")}<button type="button" className={actionClass} onClick={onClearPosition}>
+                {t("Retirer la bulle")}</button>
             </p>
           )}
           {placing && (
-            <p className="text-xs text-ink-soft">Cliquez sur le schéma pour poser la bulle. Échap pour annuler.</p>
+            <p className="text-xs text-ink-soft">{t("Cliquez sur le schéma pour poser la bulle. Échap pour annuler.")}</p>
           )}
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" variant="primary" size="sm" loading={busy} loadingLabel="Envoi…">
-              Commenter
-            </Button>
+            <Button type="submit" variant="primary" size="sm" loading={busy} loadingLabel={t("Envoi…")}>
+              {t("Commenter")}</Button>
             <button
               type="button"
               className={actionClass}
@@ -310,23 +305,21 @@ export function CommentsPanel({
               onClick={() => { setReplyTo(null); onTogglePlacing() }}
               disabled={pendingPosition !== null}
             >
-              {placing ? 'Annuler la bulle' : 'Poser une bulle'}
+              {placing ? t("Annuler la bulle") : t("Poser une bulle")}
             </button>
           </div>
-          <MoreInfo summary="À quoi sert une bulle ?">
+          <MoreInfo summary={t("À quoi sert une bulle ?")}>
             <p>
-              Une bulle marque un endroit précis du schéma. Elle reste à sa place quand vous zoomez ou déplacez la
-              vue. Un commentaire sans bulle parle du travail en général.
-            </p>
+              {t("Une bulle marque un endroit précis du schéma. Elle reste à sa place quand vous zoomez ou déplacez la vue. Un commentaire sans bulle parle du travail en général.")}</p>
           </MoreInfo>
         </form>
       </div>
 
       <ConfirmDialog
         open={pendingDelete !== null}
-        title="Supprimer le commentaire"
-        message="Ce commentaire et ses réponses seront supprimés pour tout le monde. Cette action est définitive."
-        confirmLabel="Oui, supprimer"
+        title={t("Supprimer le commentaire")}
+        message={t("Ce commentaire et ses réponses seront supprimés pour tout le monde. Cette action est définitive.")}
+        confirmLabel={t("Oui, supprimer")}
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}
       />

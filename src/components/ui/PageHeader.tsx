@@ -1,3 +1,4 @@
+import { useLanguage } from "../../lib/useLanguage"
 import type { ReactNode, Ref } from 'react'
 
 interface PageHeaderProps {
@@ -15,6 +16,7 @@ interface PageHeaderProps {
 
 /** En-tête de page : le seul h1 de la page. */
 export function PageHeader({ title, eyebrow, description, actions, headingRef, leading }: PageHeaderProps) {
+  useLanguage()
   return (
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div className="flex min-w-0 items-center gap-4">

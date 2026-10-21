@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AccountSpace } from '../lib/accountController'
 import type { ApiError } from '../lib/apiClient'
@@ -9,7 +11,7 @@ import { createInertSaver } from '../lib/documentRepository'
 import type { DocumentRepository } from '../lib/documentRepository'
 import { importModelFile } from '../lib/importFile'
 import { parseModelFile } from '../lib/persistence'
-import { EXAMPLE_NAME, exampleLayout, exampleMcd } from '../model/example'
+import { builtInExample } from '../i18n/builtInExample'
 import { DEFAULT_MPD_SETTINGS } from '../model/mpd'
 import type { MpdSettings } from '../model/mpd'
 import type { McdEditorState } from '../model/mcdReducer'
@@ -57,6 +59,7 @@ export function useDocumentOpening({
   clearAnnouncement,
   onSpaceChange,
 }: DocumentOpeningOptions) {
+  useLanguage()
   // Document ouvert, avec sa sauvegarde automatique, rattaché à l'espace
   // qui l'a ouvert.
   const [opened, setOpened] = useState<OpenedSession | null>(null)
@@ -82,7 +85,7 @@ export function useDocumentOpening({
         }
         if (!live && target.kind === 'coedit' && target.assignmentId === trackedAssignmentId) {
           return { ...previous, target: { kind: 'review', classroomId: target.classroomId,
-            assignmentId: target.assignmentId, submissionId: null, label: 'Suivi arrêté', origin: target.origin,
+            assignmentId: target.assignmentId, submissionId: null, label: t("Suivi arrêté"), labelMessage: { source: "Suivi arrêté", values: [] }, origin: target.origin,
             discussionDocumentId: target.documentId, live: null } }
         }
         if (!live && target.kind === 'review' && target.assignmentId === trackedAssignmentId && target.live) {
@@ -167,7 +170,7 @@ export function useDocumentOpening({
   )
 
   const openExample = useCallback(
-    () => createAndOpen(EXAMPLE_NAME, { mcd: exampleMcd, layout: exampleLayout }),
+    () => { const example = builtInExample(); return createAndOpen(example.name, example.state) },
     [createAndOpen],
   )
 
@@ -259,6 +262,7 @@ export function useDocumentOpening({
             assignmentId: model.assignmentId,
             submissionId: model.submissionId,
             label: model.label,
+            labelMessage: model.labelMessage,
             origin: editorOrigin,
             live: model.live ?? null,
           },
@@ -302,6 +306,7 @@ export function useDocumentOpening({
             studentId: model.studentId,
             documentId: model.documentId,
             label: model.label,
+            labelMessage: model.labelMessage,
             origin: editorOrigin,
           },
         }
@@ -316,7 +321,7 @@ export function useDocumentOpening({
       const target = previous.target
       return { ...previous, document: { ...previous.document, state }, target: {
         kind: 'review', classroomId: target.classroomId, assignmentId: target.assignmentId,
-        submissionId: null, label: target.label, origin: target.origin,
+        submissionId: null, label: target.label, labelMessage: target.labelMessage ? { ...target.labelMessage, source: "Travail de {0}, en direct" } : undefined, origin: target.origin,
         live: { studentId: target.studentId, documentId: target.documentId },
       } }
     })

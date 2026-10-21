@@ -1,3 +1,4 @@
+import { localeTag } from "../i18n/runtime"
 /**
  * Initiales d'une personne, pour sa pastille : première lettre du
  * prénom et première lettre du nom. Sans prénom, les deux premières
@@ -19,5 +20,5 @@ export function initials(person: { firstName: string | null; name: string }): st
   const first = letters(person.firstName, 1)
   const last = letters(person.name, first.length === 0 ? 2 : 1)
   const chosen = [...first, ...last].slice(0, 2)
-  return chosen.length === 0 ? '?' : chosen.join('').toLocaleUpperCase('fr-FR')
+  return chosen.length === 0 ? '?' : chosen.join('').toLocaleUpperCase(localeTag())
 }

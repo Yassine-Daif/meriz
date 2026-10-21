@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useId, useRef, useState } from 'react'
 import type { Dispatch } from 'react'
 import type { Association, Mcd } from '../model/mcd'
@@ -17,6 +19,7 @@ interface LegConnectorProps {
  * la validation exige alors un rôle par patte).
  */
 export function LegConnector({ mcd, association, dispatch }: LegConnectorProps) {
+  useLanguage()
   const selectId = useId()
   const selectRef = useRef<HTMLSelectElement>(null)
   const [entityId, setEntityId] = useState('')
@@ -30,7 +33,7 @@ export function LegConnector({ mcd, association, dispatch }: LegConnectorProps) 
     dispatch({ type: 'ADD_LEG', associationId: association.id, entityId: entity.id })
     setEntityId('')
     setAnnouncement(
-      `Patte créée de ${association.name} vers ${entity.name}, cardinalité 1,1 par défaut. Sélectionnez la patte pour la modifier.`,
+      t("Patte créée de {0} vers {1}, cardinalité 1,1 par défaut. Sélectionnez la patte pour la modifier.", [association.name, entity.name]),
     )
     // Le bouton se désactive : le focus revient sur la liste plutôt que
     // de se perdre dans la page.
@@ -39,13 +42,13 @@ export function LegConnector({ mcd, association, dispatch }: LegConnectorProps) 
 
   return (
     <fieldset className="flex min-w-0 flex-col gap-1.5">
-      <legend className="text-xs font-medium text-ink-soft">Relier à une entité</legend>
+      <legend className="text-xs font-medium text-ink-soft">{t("Relier à une entité")}</legend>
       {mcd.entities.length === 0 ? (
-        <p className="text-xs text-ink-soft">Aucune entité à relier : ajoutez d'abord une entité.</p>
+        <p className="text-xs text-ink-soft">{t("Aucune entité à relier : ajoutez d'abord une entité.")}</p>
       ) : (
         <div className="flex min-w-0 items-center gap-2">
           <label htmlFor={selectId} className="sr-only">
-            Entité à relier à l'association {association.name}
+            {t("Entité à relier à l'association ")}{association.name}
           </label>
           <select
             id={selectId}
@@ -54,7 +57,7 @@ export function LegConnector({ mcd, association, dispatch }: LegConnectorProps) 
             onChange={(event) => setEntityId(event.target.value)}
             className="min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-1.5 py-1 text-xs"
           >
-            <option value="">Choisir une entité</option>
+            <option value="">{t("Choisir une entité")}</option>
             {mcd.entities.map((entity) => (
               <option key={entity.id} value={entity.id}>
                 {entity.name}
@@ -67,8 +70,7 @@ export function LegConnector({ mcd, association, dispatch }: LegConnectorProps) 
             disabled={entityId === ''}
             className="shrink-0 rounded-lg border border-line-strong bg-surface px-2 py-1 text-xs hover:bg-shell disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Relier
-          </button>
+            {t("Relier")}</button>
         </div>
       )}
       <p role="status" aria-live="polite" className="text-xs text-ink-soft">

@@ -1,3 +1,4 @@
+import { useLanguage } from "../lib/useLanguage"
 import { useEffect, useState } from 'react'
 import { ViewportPortal } from '@xyflow/react'
 import type { CollabInk, RemotePresence } from '../model/collabProvider'
@@ -7,6 +8,7 @@ import type { Comment } from '../lib/commentsApi'
 export function RemoteInk({ others, localInk, saved = [], hidden = false }: {
   others: RemotePresence[]; localInk?: CollabInk | null; saved?: Comment[]; hidden?: boolean
 }) {
+  useLanguage()
   const [now, setNow] = useState(Date.now)
   const inks = [localInk, ...others.map((other) => other.ink)].filter((ink): ink is CollabInk => !!ink)
   const timed = inks.some((ink) => (ink.strokes?.length ?? 0) > 0)

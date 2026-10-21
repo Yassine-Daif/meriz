@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
@@ -14,6 +16,7 @@ interface CreateGroupFormProps {
 
 /** Créer un groupe. Celui qui le crée en devient le créateur. */
 export function CreateGroupForm({ client, onCreated }: CreateGroupFormProps) {
+  useLanguage()
   const [groupName, setGroupName] = useState('')
   const [nameError, setNameError] = useState<string | undefined>()
   const [creating, setCreating] = useState(false)
@@ -36,18 +39,17 @@ export function CreateGroupForm({ client, onCreated }: CreateGroupFormProps) {
   return (
     <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-3">
       <FormField
-        label="Nom du groupe"
+        label={t("Nom du groupe")}
         type="text"
         value={groupName}
         onChange={setGroupName}
         autoComplete="off"
         maxLength={100}
-        hint="Par exemple : Projet Merise, trinôme B."
+        hint={t("Par exemple : Projet Merise, trinôme B.")}
         error={nameError}
       />
-      <Button type="submit" variant="primary" loading={creating} loadingLabel="Création…" className="self-start">
-        Créer le groupe
-      </Button>
+      <Button type="submit" variant="primary" loading={creating} loadingLabel={t("Création…")} className="self-start">
+        {t("Créer le groupe")}</Button>
     </form>
   )
 }

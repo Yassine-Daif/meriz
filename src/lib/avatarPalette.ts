@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 /**
  * Paires de couleurs prêtes pour la pastille d'initiales. Elles suivent
  * la palette du serveur (config/profile.php), que l'API n'expose pas.
@@ -12,14 +13,14 @@ export interface AvatarPair {
 }
 
 export const AVATAR_PALETTE: readonly AvatarPair[] = [
-  { label: 'Parme', background: '#e0e7ff', text: '#1e1b4b' },
-  { label: 'Rose', background: '#fee2e2', text: '#7f1d1d' },
-  { label: 'Vert', background: '#dcfce7', text: '#14532d' },
-  { label: 'Ambre', background: '#fef3c7', text: '#78350f' },
-  { label: 'Ciel', background: '#e0f2fe', text: '#0c4a6e' },
-  { label: 'Violet', background: '#f3e8ff', text: '#4c1d95' },
-  { label: 'Framboise', background: '#ffe4e6', text: '#881337' },
-  { label: 'Turquoise', background: '#ccfbf1', text: '#134e4a' },
-  { label: 'Indigo', background: '#ede9fe', text: '#312e81' },
-  { label: 'Orchidée', background: '#fae8ff', text: '#701a75' },
+  { get label() { return t("Parme") }, background: '#e0e7ff', get text() { return "#1e1b4b" } },
+  { get label() { return t("Rose") }, background: '#fee2e2', get text() { return "#7f1d1d" } },
+  { get label() { return t("Vert") }, background: '#dcfce7', get text() { return "#14532d" } },
+  { get label() { return t("Ambre") }, background: '#fef3c7', get text() { return "#78350f" } },
+  { get label() { return t("Ciel") }, background: '#e0f2fe', get text() { return "#0c4a6e" } },
+  { get label() { return t("Violet") }, background: '#f3e8ff', get text() { return "#4c1d95" } },
+  { get label() { return t("Framboise") }, background: '#ffe4e6', get text() { return "#881337" } },
+  { get label() { return t("Turquoise") }, background: '#ccfbf1', get text() { return "#134e4a" } },
+  { get label() { return t("Indigo") }, background: '#ede9fe', get text() { return "#312e81" } },
+  { get label() { return t("Orchidée") }, background: '#fae8ff', get text() { return "#701a75" } },
 ]

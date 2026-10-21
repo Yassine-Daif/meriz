@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
@@ -15,6 +17,7 @@ interface JoinGroupFormProps {
 
 /** Rejoindre un groupe avec le code donné par un de ses membres. */
 export function JoinGroupForm({ client, onJoined }: JoinGroupFormProps) {
+  useLanguage()
   const [code, setCode] = useState('')
   const [codeError, setCodeError] = useState<string | undefined>()
   const [joining, setJoining] = useState(false)
@@ -24,7 +27,7 @@ export function JoinGroupForm({ client, onJoined }: JoinGroupFormProps) {
     event.preventDefault()
     if (joining) return
     if (normalizeJoinCode(code).length === 0) {
-      setCodeError('Saisissez le code du groupe.')
+      setCodeError(t("Saisissez le code du groupe."))
       codeRef.current?.focus()
       return
     }
@@ -44,20 +47,19 @@ export function JoinGroupForm({ client, onJoined }: JoinGroupFormProps) {
   return (
     <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-3">
       <FormField
-        label="Code du groupe"
+        label={t("Code du groupe")}
         type="text"
         value={code}
         onChange={setCode}
         autoComplete="off"
         maxLength={20}
         mono
-        hint="8 caractères donnés par un membre. Minuscules, espaces et tirets acceptés."
+        hint={t("8 caractères donnés par un membre. Minuscules, espaces et tirets acceptés.")}
         error={codeError}
         inputRef={codeRef}
       />
-      <Button type="submit" variant="primary" loading={joining} loadingLabel="Vérification…" className="self-start">
-        Rejoindre
-      </Button>
+      <Button type="submit" variant="primary" loading={joining} loadingLabel={t("Vérification…")} className="self-start">
+        {t("Rejoindre")}</Button>
     </form>
   )
 }

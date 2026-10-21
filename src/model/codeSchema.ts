@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import type { AttributeType, Mcd } from './mcd'
 import type { MldTable } from './mld'
 import { buildMpd } from './mpd'
@@ -278,7 +279,7 @@ export function buildCodeSchema(mcd: Mcd, tables: MldTable[], settings: MpdSetti
       const fromJunction = table.origin === 'junction'
       const card = `(${leg.cardinality.min},${leg.cardinality.max})`
       const comment = fromJunction
-        ? `Jonction ${table.sourceName} vers ${targetName} ${card}.`
+        ? t("Jonction {0} vers {1} {2}.", [table.sourceName, targetName, card])
         : merisePhrase(
             holderName,
             leg.cardinality,

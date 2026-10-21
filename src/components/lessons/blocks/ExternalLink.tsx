@@ -1,3 +1,5 @@
+import { t } from "../../../i18n/runtime"
+import { useLanguage } from "../../../lib/useLanguage"
 import { parseWebUrl } from '../../../lib/videoEmbed'
 
 interface ExternalLinkProps {
@@ -10,6 +12,7 @@ interface ExternalLinkProps {
  * s'affiche en texte, sans lien : on n'ouvre jamais un schéma inconnu.
  */
 export function ExternalLink({ url, label }: ExternalLinkProps) {
+  useLanguage()
   const safe = parseWebUrl(url)
   const text = label.trim() === '' ? url : label
 
@@ -25,7 +28,7 @@ export function ExternalLink({ url, label }: ExternalLinkProps) {
       className="font-medium text-accent-ink underline decoration-from-font underline-offset-2"
     >
       {text}
-      <span className="sr-only"> (nouvel onglet)</span>
+      <span className="sr-only"> {t(" (nouvel onglet)")}</span>
     </a>
   )
 }

@@ -1,3 +1,4 @@
+import { useLanguage } from "../../lib/useLanguage"
 import { useId, useRef } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
 import { panelId, tabId } from './tabIds'
@@ -32,6 +33,7 @@ interface TabsProps<T extends string> {
  * couleur.
  */
 export function Tabs<T extends string>({ label, items, value, onChange, idBase, size = 'md' }: TabsProps<T>) {
+  useLanguage()
   const generated = useId()
   const base = idBase ?? generated
   // Les boutons sont gardés par valeur : le focus suit le choix sans
@@ -102,6 +104,7 @@ interface TabPanelProps {
 }
 
 export function TabPanel({ idBase, value, children }: TabPanelProps) {
+  useLanguage()
   return (
     <div
       role="tabpanel"

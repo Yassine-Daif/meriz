@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useId } from 'react'
 import { displayName } from '../../lib/authApi'
 import { formatDay } from '../../lib/formatDate'
@@ -19,20 +21,19 @@ interface GroupMembersPanelProps {
  * quitte pas son groupe : il le supprime.
  */
 export function GroupMembersPanel({ group, busy, onRemove, onLeave }: GroupMembersPanelProps) {
+  useLanguage()
   const admin = group.myRole === 'admin'
   const titleId = useId()
 
   return (
     <section aria-labelledby={titleId}>
       <h3 id={titleId} className="text-base font-semibold text-ink">
-        Membres
-        {group.members.length > 0 && <span className="font-normal text-ink-soft"> ({group.members.length})</span>}
+        {t("Membres")}{group.members.length > 0 && <span className="font-normal text-ink-soft"> ({group.members.length})</span>}
       </h3>
 
       {group.members.length === 0 ? (
         <p className="mt-3 rounded-card border border-dashed border-line-strong bg-surface p-6 text-center text-sm text-ink-soft">
-          Personne pour l’instant. Partagez le code du groupe.
-        </p>
+          {t("Personne pour l’instant. Partagez le code du groupe.")}</p>
       ) : (
         <ul className="mt-3 grid gap-3 sm:grid-cols-2">
           {group.members.map((member) => (
@@ -40,19 +41,18 @@ export function GroupMembersPanel({ group, busy, onRemove, onLeave }: GroupMembe
               key={member.id}
               person={member}
               joined={formatDay(member.joinedAt)}
-              joinedLabel="Dans le groupe depuis le"
-              badge={member.isAdmin ? <Badge tone="accent">Créateur</Badge> : undefined}
+              joinedLabel={t("Dans le groupe depuis le")}
+              badge={member.isAdmin ? <Badge tone="accent">{t("Créateur")}</Badge> : undefined}
               action={
                 admin && !member.isAdmin ? (
                   <Button
                     size="sm"
                     variant="danger"
                     disabled={busy}
-                    aria-label={`Retirer ${displayName(member)} du groupe`}
+                    aria-label={t("Retirer {0} du groupe", [displayName(member)])}
                     onClick={() => onRemove(member)}
                   >
-                    Retirer
-                  </Button>
+                    {t("Retirer")}</Button>
                 ) : undefined
               }
             />
@@ -63,11 +63,9 @@ export function GroupMembersPanel({ group, busy, onRemove, onLeave }: GroupMembe
       {!admin && (
         <div className="mt-6 border-t border-line pt-4">
           <p className="text-sm text-ink-soft">
-            Quitter le groupe vous retire l’accès à ses documents partagés, y compris ceux que vous avez créés.
-          </p>
+            {t("Quitter le groupe vous retire l’accès à ses documents partagés, y compris ceux que vous avez créés.")}</p>
           <Button size="sm" variant="danger" onClick={onLeave} disabled={busy} className="mt-2">
-            Quitter le groupe
-          </Button>
+            {t("Quitter le groupe")}</Button>
         </div>
       )}
     </section>

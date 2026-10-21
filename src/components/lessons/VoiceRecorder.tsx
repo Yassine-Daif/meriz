@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useEffect, useRef, useState } from 'react'
 import { toWavFile } from '../../lib/wavEncoder'
 import { Button } from '../ui/Button'
@@ -42,6 +44,7 @@ function formatDuration(seconds: number): string {
 type Phase = 'idle' | 'recording' | 'recorded'
 
 export function VoiceRecorder({ onRecorded, disabled = false }: VoiceRecorderProps) {
+  useLanguage()
   const [phase, setPhase] = useState<Phase>('idle')
   const [seconds, setSeconds] = useState(0)
   const [error, setError] = useState<string | null>(null)
@@ -89,7 +92,7 @@ export function VoiceRecorder({ onRecorded, disabled = false }: VoiceRecorderPro
     recordedRef.current = null
     const type = supportedType()
     if (type === null || typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      setError("Ce navigateur ne sait pas enregistrer le son. Envoyez plutôt un fichier audio.")
+      setError(t("Ce navigateur ne sait pas enregistrer le son. Envoyez plutôt un fichier audio."))
       return
     }
     let stream: MediaStream
@@ -99,12 +102,12 @@ export function VoiceRecorder({ onRecorded, disabled = false }: VoiceRecorderPro
       const name = cause instanceof DOMException ? cause.name : ''
       if (name === 'NotAllowedError' || name === 'SecurityError') {
         setError(
-          "Le micro a été refusé. Autorisez-le dans votre navigateur, puis réessayez, ou envoyez un fichier audio.",
+          t("Le micro a été refusé. Autorisez-le dans votre navigateur, puis réessayez, ou envoyez un fichier audio."),
         )
       } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
-        setError('Aucun micro détecté sur cet appareil. Envoyez plutôt un fichier audio.')
+        setError(t("Aucun micro détecté sur cet appareil. Envoyez plutôt un fichier audio."))
       } else {
-        setError("Le micro n'a pas pu démarrer. Envoyez plutôt un fichier audio.")
+        setError(t("Le micro n'a pas pu démarrer. Envoyez plutôt un fichier audio."))
       }
       return
     }
@@ -145,7 +148,7 @@ export function VoiceRecorder({ onRecorded, disabled = false }: VoiceRecorderPro
       file = await toWavFile(recorded)
     } catch {
       setConverting(false)
-      setError("Cet enregistrement n'a pas pu être préparé. Recommencez, ou envoyez un fichier audio.")
+      setError(t("Cet enregistrement n'a pas pu être préparé. Recommencez, ou envoyez un fichier audio."))
       return
     }
     setConverting(false)
@@ -169,18 +172,16 @@ export function VoiceRecorder({ onRecorded, disabled = false }: VoiceRecorderPro
         {phase === 'idle' && (
           <Button variant="secondary" onClick={() => void start()} disabled={disabled}>
             <span aria-hidden="true">🎙</span>
-            Enregistrer ma voix
-          </Button>
+            {t("Enregistrer ma voix")}</Button>
         )}
 
         {phase === 'recording' && (
           <>
             <Button variant="danger" onClick={stop}>
               <span aria-hidden="true">■</span>
-              Arrêter
-            </Button>
+              {t("Arrêter")}</Button>
             <p role="status" aria-live="polite" className="text-sm font-medium text-ink">
-              Enregistrement en cours, {formatDuration(seconds)}
+              {t("Enregistrement en cours, ")}{formatDuration(seconds)}
             </p>
           </>
         )}
@@ -192,19 +193,17 @@ export function VoiceRecorder({ onRecorded, disabled = false }: VoiceRecorderPro
               onClick={() => void keep()}
               disabled={disabled || converting}
               loading={converting}
-              loadingLabel="Préparation…"
+              loadingLabel={t("Préparation…")}
             >
-              Utiliser cet enregistrement
-            </Button>
+              {t("Utiliser cet enregistrement")}</Button>
             <Button variant="ghost" onClick={again} disabled={converting}>
-              Recommencer
-            </Button>
+              {t("Recommencer")}</Button>
           </>
         )}
       </div>
 
       {preview && (
-        <audio controls src={preview} aria-label="Écouter l'enregistrement" className="w-full max-w-md" />
+        <audio controls src={preview} aria-label={t("Écouter l'enregistrement")} className="w-full max-w-md" />
       )}
 
       {error && (

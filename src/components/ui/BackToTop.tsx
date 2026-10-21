@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useEffect, useState } from 'react'
 import { motionStore } from '../../lib/motion'
 
@@ -21,6 +23,7 @@ interface BackToTopProps {
  * tabulation repartirait du bas du document, là où ce bouton se trouve.
  */
 export function BackToTop({ targetId }: BackToTopProps) {
+  useLanguage()
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -67,7 +70,6 @@ export function BackToTop({ targetId }: BackToTopProps) {
         <path d="M8 13V3" />
         <path d="m4 7 4-4 4 4" />
       </svg>
-      Revenir en haut
-    </button>
+      {t("Revenir en haut")}</button>
   )
 }

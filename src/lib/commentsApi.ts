@@ -1,3 +1,6 @@
+import { counted } from "./plural"
+import { localeTag } from "../i18n/runtime"
+import { t } from "../i18n/runtime"
 import type { ApiClient, Outcome } from './apiClient'
 import { unexpectedResponse } from './apiClient'
 import { parsePublicProfile } from './classroomsApi'
@@ -223,15 +226,15 @@ export function pinnedComments(comments: Comment[]): Comment[] {
 }
 
 export function commentCountLabel(count: number): string {
-  if (count === 0) return 'Aucun commentaire'
-  return count === 1 ? '1 commentaire' : `${count} commentaires`
+  if (count === 0) return t("Aucun commentaire")
+  return counted(count, 'commentaire', 'commentaires')
 }
 
 export function formatCommentDate(iso: string | null): string {
-  if (iso === null) return 'date inconnue'
+  if (iso === null) return t("date inconnue")
   const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return 'date inconnue'
-  return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeStyle: 'short' }).format(date)
+  if (Number.isNaN(date.getTime())) return t("date inconnue")
+  return new Intl.DateTimeFormat(localeTag(), { dateStyle: 'long', timeStyle: 'short' }).format(date)
 }
 
 /** Nom lisible d'une personne, sans dépendre de l'ordre des champs. */
@@ -242,8 +245,8 @@ function personName(person: PublicProfile): string {
 /** Étiquette d'une bulle, pour un lecteur d'écran : le texte porte l'état. */
 export function pinLabel(comment: Comment, index: number): string {
   const extract = comment.body.length > 60 ? `${comment.body.slice(0, 60)}…` : comment.body
-  const state = comment.resolved ? ', résolu' : ''
-  return `Commentaire ${index + 1} de ${personName(comment.author)}${state} : « ${extract} »`
+  const state = comment.resolved ? t(", résolu") : ''
+  return t("Commentaire {0} de {1}{2} : « {3} »", [index + 1, personName(comment.author), state, extract])
 }
 
 /**

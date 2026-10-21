@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useCallback, useEffect, useId, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import { deleteCloudDocument, updateCloudDocument } from '../../lib/documentsApi'
@@ -26,10 +28,10 @@ interface GroupDocumentsPanelProps {
 function nextName(documents: GroupDocument[]): string {
   const taken = new Set(documents.map((document) => document.name))
   for (let index = 1; index < 1000; index += 1) {
-    const candidate = `Modèle du groupe ${index}`
+    const candidate = t("Modèle du groupe {0}", [index])
     if (!taken.has(candidate)) return candidate
   }
-  return 'Modèle du groupe'
+  return t("Modèle du groupe")
 }
 
 /**
@@ -40,6 +42,7 @@ function nextName(documents: GroupDocument[]): string {
  * son refus s'affiche tel quel.
  */
 export function GroupDocumentsPanel({ client, group, onOpenGroupDocument, onStatus }: GroupDocumentsPanelProps) {
+  useLanguage()
   const titleId = useId()
   const [documents, setDocuments] = useState<GroupDocument[] | null>(group.documents)
   const [error, setError] = useState<string | null>(null)
@@ -82,7 +85,7 @@ export function GroupDocumentsPanel({ client, group, onOpenGroupDocument, onStat
       setDocuments((previous) =>
         (previous ?? []).map((item) => (item.id === document.id ? { ...item, name } : item)),
       )
-      onStatus(`Document renommé en « ${name} ».`)
+      onStatus(t("Document renommé en « {0} ».", [name]))
     } else {
       onStatus(result.error.message, 'error')
     }
@@ -95,7 +98,7 @@ export function GroupDocumentsPanel({ client, group, onOpenGroupDocument, onStat
     const result = await deleteCloudDocument(client, document.id)
     if (result.ok) {
       setDocuments((previous) => (previous ?? []).filter((item) => item.id !== document.id))
-      onStatus(`Document « ${document.name} » supprimé.`)
+      onStatus(t("Document « {0} » supprimé.", [document.name]))
     } else {
       onStatus(result.error.message, 'error')
     }
@@ -106,19 +109,15 @@ export function GroupDocumentsPanel({ client, group, onOpenGroupDocument, onStat
     <section aria-labelledby={titleId}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 id={titleId} className="text-base font-semibold text-ink">
-          Documents partagés
-          {documents && documents.length > 0 && (
+          {t("Documents partagés")}{documents && documents.length > 0 && (
             <span className="font-normal text-ink-soft"> ({documents.length})</span>
           )}
         </h3>
-        <Button variant="primary" size="sm" onClick={() => void create()} loading={creating} loadingLabel="Création…">
-          Nouveau document du groupe
-        </Button>
+        <Button variant="primary" size="sm" onClick={() => void create()} loading={creating} loadingLabel={t("Création…")}>
+          {t("Nouveau document du groupe")}</Button>
       </div>
       <p className="mt-1 text-sm text-ink-soft">
-        Ouvrez un document pour travailler dessus. Si plusieurs membres l’ouvrent en même temps, vous vous voyez
-        travailler en direct.
-      </p>
+        {t("Ouvrez un document pour travailler dessus. Si plusieurs membres l’ouvrent en même temps, vous vous voyez travailler en direct.")}</p>
 
       {error && (
         <Notice
@@ -127,8 +126,7 @@ export function GroupDocumentsPanel({ client, group, onOpenGroupDocument, onStat
           className="mt-3"
           action={
             <Button size="sm" onClick={() => void reload()}>
-              Réessayer
-            </Button>
+              {t("Réessayer")}</Button>
           }
         >
           {error}
@@ -137,12 +135,10 @@ export function GroupDocumentsPanel({ client, group, onOpenGroupDocument, onStat
 
       {documents === null ? (
         <p role="status" className="mt-3 text-sm text-ink-soft">
-          Chargement des documents du groupe…
-        </p>
+          {t("Chargement des documents du groupe…")}</p>
       ) : documents.length === 0 ? (
         <p className="mt-3 rounded-card border border-dashed border-line-strong bg-surface p-6 text-center text-sm text-ink-soft">
-          Aucun document partagé pour l’instant. Créez le premier.
-        </p>
+          {t("Aucun document partagé pour l’instant. Créez le premier.")}</p>
       ) : (
         <ul className="mt-3 flex flex-col gap-2">
           {documents.map((document) => (
@@ -160,9 +156,9 @@ export function GroupDocumentsPanel({ client, group, onOpenGroupDocument, onStat
 
       <ConfirmDialog
         open={pendingDelete !== null}
-        title="Supprimer ce document du groupe ?"
-        message={`« ${pendingDelete?.name ?? ''} » disparaîtra pour tous les membres. Seul son auteur ou le créateur du groupe peut le supprimer.`}
-        confirmLabel="Oui, supprimer"
+        title={t("Supprimer ce document du groupe ?")}
+        message={t("« {0} » disparaîtra pour tous les membres. Seul son auteur ou le créateur du groupe peut le supprimer.", [pendingDelete?.name ?? ''])}
+        confirmLabel={t("Oui, supprimer")}
         onConfirm={() => void confirmDelete()}
         onCancel={() => setPendingDelete(null)}
       />

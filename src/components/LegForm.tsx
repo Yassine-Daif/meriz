@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useId } from 'react'
 import type { Dispatch } from 'react'
 import type { Association, Cardinality, Leg, Mcd } from '../model/mcd'
@@ -21,19 +23,20 @@ interface LegFormProps {
 
 /** Formulaire d'édition d'une patte : cardinalité et rôle. */
 export function LegForm({ mcd, association, leg, dispatch }: LegFormProps) {
+  useLanguage()
   const roleId = useId()
   const radioName = useId()
   const entity = findEntity(mcd, leg.entityId)
 
   return (
     <form onSubmit={(event) => event.preventDefault()} className="flex flex-col gap-3">
-      <h2 className="text-sm font-semibold">Patte</h2>
+      <h2 className="text-sm font-semibold">{t("Patte")}</h2>
       <p className="text-xs text-ink-soft">
-        {association.name} → {entity ? entity.name : 'entité inexistante'}
+        {association.name} → {entity ? entity.name : t("entité inexistante")}
       </p>
 
       <fieldset>
-        <legend className="text-xs font-medium text-ink-soft">Cardinalité</legend>
+        <legend className="text-xs font-medium text-ink-soft">{t("Cardinalité")}</legend>
         <div className="mt-1 flex gap-1">
           {CARDINALITY_OPTIONS.map((option) => {
             const label = `${option.min},${option.max}`
@@ -65,8 +68,7 @@ export function LegForm({ mcd, association, leg, dispatch }: LegFormProps) {
 
       <div>
         <label htmlFor={roleId} className="block text-xs font-medium text-ink-soft">
-          Rôle
-        </label>
+          {t("Rôle")}</label>
         <input
           id={roleId}
           type="text"
@@ -82,8 +84,7 @@ export function LegForm({ mcd, association, leg, dispatch }: LegFormProps) {
           className="mt-0.5 w-full rounded-lg border border-line-strong px-2 py-1 text-sm"
         />
         <p className="mt-0.5 text-xs text-ink-soft">
-          Utile quand plusieurs pattes visent la même entité.
-        </p>
+          {t("Utile quand plusieurs pattes visent la même entité.")}</p>
       </div>
     </form>
   )

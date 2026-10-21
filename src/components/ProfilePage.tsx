@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ApiClient } from '../lib/apiClient'
@@ -41,6 +43,7 @@ const SERVER_FIELD: Record<Field, string> = {
  * le champ Contact et on active son partage.
  */
 export function ProfilePage({ user, client, onShowClasses, onAccountDeleted }: ProfilePageProps) {
+  useLanguage()
   const { updateUser } = useSession()
   const [firstName, setFirstName] = useState(user.firstName ?? '')
   const [name, setName] = useState(user.name)
@@ -73,9 +76,9 @@ export function ProfilePage({ user, client, onShowClasses, onAccountDeleted }: P
     // Garde de lisibilité : une pastille illisible ne part pas au serveur.
     if (contrastRatio(avatarBg, avatarFg) < READABLE_CONTRAST) {
       setFieldErrors({
-        avatar: 'Les deux couleurs de la pastille sont trop proches : choisissez une paire plus contrastée.',
+        avatar: t("Les deux couleurs de la pastille sont trop proches : choisissez une paire plus contrastée."),
       })
-      setFormError('Vérifiez les champs signalés.')
+      setFormError(t("Vérifiez les champs signalés."))
       setSaved('')
       // L'alerte du formulaire prend le focus, comme pour les autres champs.
       setAttempt((count) => count + 1)
@@ -98,7 +101,7 @@ export function ProfilePage({ user, client, onShowClasses, onAccountDeleted }: P
     setPending(false)
     if (outcome.ok) {
       updateUser(outcome.value)
-      setSaved('Profil enregistré.')
+      setSaved(t("Profil enregistré."))
       return
     }
     const next: Partial<Record<Field, string>> = {}
@@ -107,23 +110,22 @@ export function ProfilePage({ user, client, onShowClasses, onAccountDeleted }: P
       if (message) next[field] = message
     }
     setFieldErrors(next)
-    setFormError(Object.keys(next).length > 0 ? 'Vérifiez les champs signalés.' : outcome.error.message)
+    setFormError(Object.keys(next).length > 0 ? t("Vérifiez les champs signalés.") : outcome.error.message)
     setAttempt((count) => count + 1)
   }
 
   return (
-    <PageShell title="Mon profil">
+    <PageShell title={t("Mon profil")}>
       <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-6">
         <FormAlert message={formError} attempt={attempt} />
 
         <section aria-labelledby="identite-titre" className="rounded-card border border-line bg-surface p-5 shadow-soft sm:p-6">
           <h2 id="identite-titre" className="text-lg font-semibold tracking-tight text-ink">
-            Identité
-          </h2>
-          <p className="mt-1 text-xs text-ink-soft">Votre prénom et votre nom sont visibles par les membres de vos classes.</p>
+            {t("Identité")}</h2>
+          <p className="mt-1 text-xs text-ink-soft">{t("Votre prénom et votre nom sont visibles par les membres de vos classes.")}</p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <FormField
-              label="Prénom"
+              label={t("Prénom")}
               type="text"
               value={firstName}
               onChange={setFirstName}
@@ -132,7 +134,7 @@ export function ProfilePage({ user, client, onShowClasses, onAccountDeleted }: P
               error={fieldErrors.firstName}
             />
             <FormField
-              label="Nom"
+              label={t("Nom")}
               type="text"
               value={name}
               onChange={setName}
@@ -145,18 +147,13 @@ export function ProfilePage({ user, client, onShowClasses, onAccountDeleted }: P
 
         <section aria-labelledby="partage-titre" className="rounded-card border border-line bg-surface p-5 shadow-soft sm:p-6">
           <h2 id="partage-titre" className="text-lg font-semibold tracking-tight text-ink">
-            Présentation et contact
-          </h2>
+            {t("Présentation et contact")}</h2>
           <p className="mt-2 rounded-control bg-accent-soft px-4 py-3 text-sm leading-6 text-ink">
-            Votre email de connexion (<span className="font-mono">{user.email}</span>) reste privé :
-            il n'est jamais montré aux autres. Pour qu'on puisse vous joindre, indiquez une adresse
-            dans « Contact » et activez son partage. Rien n'est partagé tant que vous ne l'activez
-            pas.
-          </p>
+            {t("Votre email de connexion (")}<span className="font-mono">{user.email}</span>{t(") reste privé : il n'est jamais montré aux autres. Pour qu'on puisse vous joindre, indiquez une adresse dans « Contact » et activez son partage. Rien n'est partagé tant que vous ne l'activez pas.")}</p>
 
           <div className="mt-4 flex flex-col gap-4">
             <FormField
-              label="Présentation"
+              label={t("Présentation")}
               type="text"
               value={bio}
               onChange={setBio}
@@ -164,30 +161,30 @@ export function ProfilePage({ user, client, onShowClasses, onAccountDeleted }: P
               multiline
               required={false}
               maxLength={280}
-              hint="Quelques mots sur vous, visibles par vos classes si vous les partagez."
+              hint={t("Quelques mots sur vous, visibles par vos classes si vous les partagez.")}
               error={fieldErrors.bio}
             />
             <ToggleSwitch
-              label="Partager ma présentation"
-              description="Visible par le prof et les membres de vos classes."
+              label={t("Partager ma présentation")}
+              description={t("Visible par le prof et les membres de vos classes.")}
               checked={bioShared}
               onChange={setBioShared}
             />
 
             <FormField
-              label="Contact"
+              label={t("Contact")}
               type="text"
               value={contact}
               onChange={setContact}
               autoComplete="off"
               required={false}
               maxLength={255}
-              hint="Une adresse où l'on peut vous écrire, différente de votre email de connexion si vous le souhaitez."
+              hint={t("Une adresse où l'on peut vous écrire, différente de votre email de connexion si vous le souhaitez.")}
               error={fieldErrors.contact}
             />
             <ToggleSwitch
-              label="Partager mon contact"
-              description="Visible par le prof et les membres de vos classes."
+              label={t("Partager mon contact")}
+              description={t("Visible par le prof et les membres de vos classes.")}
               checked={contactShared}
               onChange={setContactShared}
             />
@@ -196,11 +193,9 @@ export function ProfilePage({ user, client, onShowClasses, onAccountDeleted }: P
 
         <section aria-labelledby="pastille-titre" className="rounded-card border border-line bg-surface p-5 shadow-soft sm:p-6">
           <h2 id="pastille-titre" className="text-lg font-semibold tracking-tight text-ink">
-            Pastille
-          </h2>
+            {t("Pastille")}</h2>
           <p className="mt-1 text-xs text-ink-soft">
-            Vos initiales, dans les couleurs de votre choix. Elles vous représentent partout dans Meriz.
-          </p>
+            {t("Vos initiales, dans les couleurs de votre choix. Elles vous représentent partout dans Meriz.")}</p>
           <div className="mt-4">
             <AvatarPicker
               person={{ firstName: preview.firstName, name: preview.name, avatarBg, avatarFg }}
@@ -215,34 +210,31 @@ export function ProfilePage({ user, client, onShowClasses, onAccountDeleted }: P
 
         <section aria-labelledby="apercu-titre" className="rounded-card border border-dashed border-line-strong bg-surface-soft p-5 sm:p-6">
           <h2 id="apercu-titre" className="text-lg font-semibold tracking-tight text-ink">
-            Ce que voient les autres
-          </h2>
+            {t("Ce que voient les autres")}</h2>
           <dl className="mt-3 grid gap-1 text-sm">
             <div className="flex items-center gap-2">
-              <dt className="w-28 shrink-0 text-ink-soft">Nom</dt>
+              <dt className="w-28 shrink-0 text-ink-soft">{t("Nom")}</dt>
               <dd className="flex items-center gap-2">
                 <Avatar person={preview} size="sm" />
                 {displayName(preview) || '(vide)'}
               </dd>
             </div>
             <div className="flex gap-2">
-              <dt className="w-28 shrink-0 text-ink-soft">Présentation</dt>
-              <dd>{preview.bio ?? <span className="text-ink-soft">non partagée</span>}</dd>
+              <dt className="w-28 shrink-0 text-ink-soft">{t("Présentation")}</dt>
+              <dd>{preview.bio ?? <span className="text-ink-soft">{t("non partagée")}</span>}</dd>
             </div>
             <div className="flex gap-2">
-              <dt className="w-28 shrink-0 text-ink-soft">Contact</dt>
-              <dd>{preview.contact ?? <span className="text-ink-soft">non partagé</span>}</dd>
+              <dt className="w-28 shrink-0 text-ink-soft">{t("Contact")}</dt>
+              <dd>{preview.contact ?? <span className="text-ink-soft">{t("non partagé")}</span>}</dd>
             </div>
           </dl>
           <p className="mt-2 text-xs text-ink-soft">
-            Aperçu de vos réglages en cours. Ils s'appliquent une fois enregistrés.
-          </p>
+            {t("Aperçu de vos réglages en cours. Ils s'appliquent une fois enregistrés.")}</p>
         </section>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="submit" variant="primary" loading={pending} loadingLabel="Enregistrement…">
-            Enregistrer
-          </Button>
+          <Button type="submit" variant="primary" loading={pending} loadingLabel={t("Enregistrement…")}>
+            {t("Enregistrer")}</Button>
           <p role="status" aria-live="polite" className="text-sm text-ink-soft">
             {saved && (
               <>

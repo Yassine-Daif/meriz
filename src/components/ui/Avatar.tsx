@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { displayName } from '../../lib/authApi'
 import { initials } from '../../lib/initials'
 
@@ -36,8 +38,9 @@ const SIZES: Record<AvatarSize, string> = {
  * ligne : elle vient des données, pas du thème.
  */
 export function Avatar({ person, size = 'md', labelled = false, className }: AvatarProps) {
+  useLanguage()
   const naming = labelled
-    ? { role: 'img' as const, 'aria-label': displayName(person) || 'Personne sans nom' }
+    ? { role: 'img' as const, 'aria-label': displayName(person) || t("Personne sans nom") }
     : { 'aria-hidden': true as const }
 
   return (

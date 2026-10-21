@@ -1,3 +1,4 @@
+import { useLanguage } from "../../lib/useLanguage"
 import { useId } from 'react'
 
 export interface SegmentedOption<T extends string> {
@@ -28,6 +29,7 @@ export function Segmented<T extends string>({
   onChange,
   size = 'md',
 }: SegmentedProps<T>) {
+  useLanguage()
   const name = useId()
   const pad = size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3.5 py-1.5 text-sm'
 

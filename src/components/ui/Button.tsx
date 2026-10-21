@@ -1,3 +1,4 @@
+import { useLanguage } from "../../lib/useLanguage"
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { buttonClass } from './buttonClass'
 import type { ButtonClassOptions } from './buttonClass'
@@ -22,6 +23,7 @@ export function Button({
   disabled,
   ...rest
 }: ButtonProps) {
+  useLanguage()
   return (
     <button
       {...rest}

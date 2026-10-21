@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import type { Mcd } from '../model/mcd'
 import type { ValidationProblem } from '../model/validate'
 import { validationErrors, validationWarnings } from '../model/validate'
@@ -27,6 +29,7 @@ interface ProblemGroupProps {
 }
 
 function ProblemGroup({ title, icon, problems, mcd, onSelectElement, toneClass }: ProblemGroupProps) {
+  useLanguage()
   if (problems.length === 0) {
     return null
   }
@@ -73,24 +76,25 @@ function ProblemGroup({ title, icon, problems, mcd, onSelectElement, toneClass }
  * bavardage pour un lecteur d'écran.
  */
 export function ProblemsPanel({ problems, mcd, onSelectElement }: ProblemsPanelProps) {
+  useLanguage()
   const errors = validationErrors(problems)
   const warnings = validationWarnings(problems)
 
   const summary =
     errors.length === 0 && warnings.length === 0
-      ? 'Aucun problème. Le modèle est prêt à être transformé.'
+      ? t("Aucun problème. Le modèle est prêt à être transformé.")
       : errors.length === 0
-        ? `Aucune erreur, ${warnings.length} avertissement${warnings.length > 1 ? 's' : ''}. Le modèle est prêt à être transformé.`
-        : `${errors.length} erreur${errors.length > 1 ? 's' : ''} et ${warnings.length} avertissement${warnings.length > 1 ? 's' : ''}. Les erreurs bloquent la génération.`
+        ? t("Aucune erreur, {0} avertissement{1}. Le modèle est prêt à être transformé.", [warnings.length, warnings.length > 1 ? 's' : ''])
+        : t("{0} erreur{1} et {2} avertissement{3}. Les erreurs bloquent la génération.", [errors.length, errors.length > 1 ? 's' : '', warnings.length, warnings.length > 1 ? 's' : ''])
 
   return (
-    <section aria-label="Rapport de vérification" className="p-3">
-      <h2 className="text-sm font-semibold">Vérification</h2>
+    <section aria-label={t("Rapport de vérification")} className="p-3">
+      <h2 className="text-sm font-semibold">{t("Vérification")}</h2>
       <p role="status" aria-live="polite" className="mt-1 text-xs text-ink-soft">
         {summary}
       </p>
       <ProblemGroup
-        title="Erreurs"
+        title={t("Erreurs")}
         icon="✕"
         problems={errors}
         mcd={mcd}
@@ -98,7 +102,7 @@ export function ProblemsPanel({ problems, mcd, onSelectElement }: ProblemsPanelP
         toneClass="border-danger/50 bg-danger-soft hover:border-danger"
       />
       <ProblemGroup
-        title="Avertissements"
+        title={t("Avertissements")}
         icon="⚠"
         problems={warnings}
         mcd={mcd}

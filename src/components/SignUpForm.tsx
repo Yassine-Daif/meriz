@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ApiUser } from '../lib/authApi'
@@ -26,6 +28,7 @@ const SERVER_FIELD: Record<Field, string> = {
  * Le rôle et le statut scolaire sont décidés par le serveur.
  */
 export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
+  useLanguage()
   const { signUp } = useSession()
   const [values, setValues] = useState<Record<Field, string>>({ firstName: '', name: '', email: '', password: '' })
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<Field, string>>>({})
@@ -87,7 +90,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
     <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-4">
       <FormAlert message={formError} attempt={attempt} />
       <FormField
-        label="Prénom"
+        label={t("Prénom")}
         type="text"
         value={values.firstName}
         onChange={setValue('firstName')}
@@ -97,7 +100,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
         inputRef={firstNameRef}
       />
       <FormField
-        label="Nom"
+        label={t("Nom de famille")}
         type="text"
         value={values.name}
         onChange={setValue('name')}
@@ -107,7 +110,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
         inputRef={nameRef}
       />
       <FormField
-        label="Email"
+        label={t("Email")}
         type="email"
         value={values.email}
         onChange={setValue('email')}
@@ -117,29 +120,27 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
         inputRef={emailRef}
       />
       <FormField
-        label="Mot de passe"
+        label={t("Mot de passe")}
         type="password"
         value={values.password}
         onChange={setValue('password')}
         autoComplete="new-password"
-        hint="8 caractères minimum."
+        hint={t("8 caractères minimum.")}
         minLength={8}
         maxLength={72}
         error={fieldErrors.password}
         inputRef={passwordRef}
       />
-      <Button type="submit" variant="primary" block loading={pending} loadingLabel="Création du compte…">
-        Créer mon compte
-      </Button>
+      <Button type="submit" variant="primary" block loading={pending} loadingLabel={t("Création du compte…")}>
+        {t("Créer mon compte")}</Button>
       <p className="text-center text-sm text-ink-soft">
-        Déjà un compte ?{' '}
+        {t("Déjà un compte ?")}{' '}
         <button
           type="button"
           onClick={onSwitchToSignIn}
           className="font-medium text-accent-ink underline underline-offset-2 hover:text-ink"
         >
-          Se connecter
-        </button>
+          {t("Se connecter")}</button>
       </p>
     </form>
   )

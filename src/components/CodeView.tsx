@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useMemo, useState } from 'react'
 import { copyText } from '../lib/clipboard'
 import { saveFileAs } from '../lib/download'
@@ -25,12 +27,13 @@ interface CodeViewProps {
  * copie seul ; rien ne s'écrit sur disque sans le dire.
  */
 export function CodeView({ mcd, tables, settings, hasErrors }: CodeViewProps) {
+  const locale = useLanguage()
   const [framework, setFramework] = useState<FrameworkId>('laravel')
   const [status, setStatus] = useState('')
 
   const files = useMemo(
-    () => generateFiles(framework, mcd, tables, settings),
-    [framework, mcd, tables, settings],
+    () => { void locale; return generateFiles(framework, mcd, tables, settings) },
+    [framework, mcd, tables, settings, locale],
   )
 
   if (tables.length === 0) {
@@ -41,38 +44,36 @@ export function CodeView({ mcd, tables, settings, hasErrors }: CodeViewProps) {
 
   const copy = async (text: string, success: string) => {
     const copied = await copyText(text)
-    setStatus(copied ? success : 'Erreur : copie impossible dans ce navigateur.')
+    setStatus(copied ? success : t("Erreur : copie impossible dans ce navigateur."))
   }
 
   const handleExport = async () => {
     const result = await saveFileAs(
       `${framework}.md`,
-      new Blob([filesToMarkdown(files, `Code ${label} généré par Meriz`)], { type: 'text/markdown' }),
-      'Code généré',
+      new Blob([filesToMarkdown(files, t("Code {0} généré par Meriz", [label]))], { type: 'text/markdown' }),
+      t("Code généré"),
       { 'text/markdown': ['.md'] },
     )
-    setStatus(result === 'cancelled' ? 'Export annulé.' : 'Fichiers exportés en .md.')
+    setStatus(result === 'cancelled' ? t("Export annulé.") : t("Fichiers exportés en .md."))
   }
 
   return (
-    <section aria-label="Vue Code" className="flex min-h-0 flex-1 flex-col">
+    <section aria-label={t("Vue Code")} className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2">
         <Segmented
-          legend="Framework cible"
+          legend={t("Framework cible")}
           hideLegend
           size="sm"
           options={FRAMEWORKS.map((candidate) => ({ value: candidate.id, label: candidate.label }))}
           value={framework}
           onChange={setFramework}
         />
-        <Button size="sm" onClick={() => void copy(concatFiles(files), 'Tous les fichiers copiés dans le presse-papiers.')}>
-          Copier tout
-        </Button>
+        <Button size="sm" onClick={() => void copy(concatFiles(files), t("Tous les fichiers copiés dans le presse-papiers."))}>
+          {t("Copier tout")}</Button>
         <Button size="sm" onClick={() => void handleExport()}>
-          Exporter en .md
-        </Button>
+          {t("Exporter en .md")}</Button>
         <p className="text-xs text-ink-soft">
-          {files.length === 1 ? '1 fichier généré pour ' : `${files.length} fichiers générés pour `}
+          {files.length === 1 ? t("1 fichier généré pour ") : t("{0} fichiers générés pour ", [files.length])}
           <span className="font-mono">{label}</span>
         </p>
         <p role="status" aria-live="polite" className="text-xs text-ink-soft">
@@ -86,38 +87,23 @@ export function CodeView({ mcd, tables, settings, hasErrors }: CodeViewProps) {
         <Notice
           tone="info"
           announce={false}
-          title="Meriz pose les fondations de votre base"
+          title={t("Meriz pose les fondations de votre base")}
           className="mb-4"
         >
           <p>
-            <strong className="font-semibold">Ce que Meriz écrit pour vous.</strong> La structure de la
-            base de données : les tables, leurs colonnes et les liens entre elles, écrits aux conventions de
-            votre framework. Chaque fichier porte le dossier où le copier dans votre projet.
-          </p>
+            <strong className="font-semibold">{t("Ce que Meriz écrit pour vous.")}</strong> {t(" La structure de la base de données : les tables, leurs colonnes et les liens entre elles, écrits aux conventions de votre framework. Chaque fichier porte le dossier où le copier dans votre projet.")}</p>
           <p className="mt-1.5">
-            <strong className="font-semibold">Ce qui reste à vous.</strong> Ce que votre application fait
-            vraiment : vos règles de gestion, les vérifications des données saisies et les tests. Les
-            fondations sont posées, vous construisez dessus. Relisez le code avant de vous en servir.
-          </p>
+            <strong className="font-semibold">{t("Ce qui reste à vous.")}</strong> {t(" Ce que votre application fait vraiment : vos règles de gestion, les vérifications des données saisies et les tests. Les fondations sont posées, vous construisez dessus. Relisez le code avant de vous en servir.")}</p>
 
-          <MoreInfo summary="À savoir, si vous voulez creuser">
+          <MoreInfo summary={t("À savoir, si vous voulez creuser")}>
             <p>
-              Les noms suivent les habitudes du framework : tables au pluriel, colonnes en minuscules avec
-              des tirets bas, classes avec une majuscule à chaque mot. Ils peuvent donc différer du script
-              de la vue SQL. La mise au pluriel suit le français courant, elle rate les mots rares.
-            </p>
+              {t("Les noms suivent les habitudes du framework : tables au pluriel, colonnes en minuscules avec des tirets bas, classes avec une majuscule à chaque mot. Ils peuvent donc différer du script de la vue SQL. La mise au pluriel suit le français courant, elle rate les mots rares.")}</p>
             <p>
-              Les migrations Laravel ajoutent deux colonnes de dates, created_at et updated_at, que le
-              framework tient à jour tout seul.
-            </p>
+              {t("Les migrations Laravel ajoutent deux colonnes de dates, created_at et updated_at, que le framework tient à jour tout seul.")}</p>
             <p>
-              Quand un identifiant tient sur deux colonnes, Laravel ne sait pas suivre le lien tout seul :
-              la relation est laissée en commentaire dans le modèle, à écrire à la main.
-            </p>
+              {t("Quand un identifiant tient sur deux colonnes, Laravel ne sait pas suivre le lien tout seul : la relation est laissée en commentaire dans le modèle, à écrire à la main.")}</p>
             <p>
-              La migration Symfony porte une date figée dans son nom. Renommez le fichier avec la date du
-              jour avant de l’ajouter à un projet qui a déjà des migrations.
-            </p>
+              {t("La migration Symfony porte une date figée dans son nom. Renommez le fichier avec la date du jour avant de l’ajouter à un projet qui a déjà des migrations.")}</p>
           </MoreInfo>
         </Notice>
 
@@ -130,16 +116,15 @@ export function CodeView({ mcd, tables, settings, hasErrors }: CodeViewProps) {
                   size="sm"
                   variant="ghost"
                   className="ml-auto"
-                  onClick={() => void copy(file.content, `${file.path} copié dans le presse-papiers.`)}
-                  aria-label={`Copier ${file.path}`}
+                  onClick={() => void copy(file.content, t("{0} copié dans le presse-papiers.", [file.path]))}
+                  aria-label={t("Copier {0}", [file.path])}
                 >
-                  Copier
-                </Button>
+                  {t("Copier")}</Button>
               </div>
               <pre
                 tabIndex={0}
                 role="region"
-                aria-label={`Contenu de ${file.path}`}
+                aria-label={t("Contenu de {0}", [file.path])}
                 className="max-h-96 overflow-auto px-4 py-3 font-mono text-micro leading-6"
               >
                 <code>{file.content}</code>

@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { DocumentMeta } from '../model/document'
 import type { ApiError } from '../lib/apiClient'
@@ -54,6 +56,7 @@ export function DocumentList({
   announcement = null,
   assignments,
 }: DocumentListProps) {
+  useLanguage()
   const [documents, setDocuments] = useState<DocumentMeta[]>(() => repository.cachedList())
   const [loading, setLoading] = useState(cloud)
   const [offline, setOffline] = useState<ApiError | null>(null)
@@ -115,7 +118,7 @@ export function DocumentList({
     const error = await onImportFile(file)
     setBusy(false)
     if (error) {
-      setStatus({ kind: 'error', text: `Import de « ${file.name} » impossible : ${error}` })
+      setStatus({ kind: 'error', text: t("Import de « {0} » impossible : {1}", [file.name, error]) })
     }
   }
 
@@ -123,13 +126,13 @@ export function DocumentList({
     run(async () => {
       const result = await repository.rename(meta.id, name)
       return result.ok ? null : result.error
-    }, `Document « ${meta.name} » renommé.`)
+    }, t("Document « {0} » renommé.", [meta.name]))
 
   const handleDuplicate = (meta: DocumentMeta) =>
     run(async () => {
       const result = await repository.duplicate(meta.id)
       return result.ok ? null : result.error
-    }, `Document « ${meta.name} » dupliqué.`)
+    }, t("Document « {0} » dupliqué.", [meta.name]))
 
   const confirmDelete = () => {
     const meta = pendingDelete
@@ -138,7 +141,7 @@ export function DocumentList({
     void run(async () => {
       const result = await repository.remove(meta.id)
       return result.ok ? null : result.error
-    }, `Document « ${meta.name} » supprimé.`).then(() => {
+    }, t("Document « {0} » supprimé.", [meta.name])).then(() => {
       // La ligne supprimée emportait le focus : on le pose sur la liste.
       window.setTimeout(() => listHeadingRef.current?.focus(), 0)
     })
@@ -159,14 +162,11 @@ export function DocumentList({
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="primary" onClick={() => void run(onNewDocument)} disabled={busy}>
           <span aria-hidden="true">+</span>
-          Nouveau document
-        </Button>
+          {t("Nouveau document")}</Button>
         <ImportFileButton className={buttonClass({ variant: 'secondary' })} onFile={(file) => void handleImport(file)}>
-          Ouvrir un fichier
-        </ImportFileButton>
+          {t("Ouvrir un fichier")}</ImportFileButton>
         <Button variant="ghost" onClick={() => void run(onOpenExample)} disabled={busy}>
-          Découvrir avec l'exemple
-        </Button>
+          {t("Découvrir avec l'exemple")}</Button>
       </div>
 
       <p role="status" aria-live="polite" className="mt-3 min-h-6 text-sm">
@@ -196,7 +196,7 @@ export function DocumentList({
         </h2>
         {pendingCount > 0 && (
           <span className="text-sm text-ink-soft">
-            {pendingCount === 1 ? '1 document en attente d’envoi' : `${pendingCount} documents en attente d’envoi`}
+            {pendingCount === 1 ? t("1 document en attente d’envoi") : `${pendingCount} documents en attente d’envoi`}
           </span>
         )}
       </div>
@@ -208,34 +208,28 @@ export function DocumentList({
           className="mt-3"
           action={
             <Button size="sm" onClick={() => void load()}>
-              Réessayer
-            </Button>
+              {t("Réessayer")}</Button>
           }
         >
           {offline
-            ? 'Serveur injoignable : voici les documents gardés sur cet appareil. Votre travail est conservé.'
+            ? t("Serveur injoignable : voici les documents gardés sur cet appareil. Votre travail est conservé.")
             : loadError}
         </Notice>
       )}
 
       {loading && documents.length === 0 ? (
         <p role="status" className="mt-3 rounded-card border border-line bg-surface p-8 text-center text-sm text-ink-soft">
-          Chargement de vos documents…
-        </p>
+          {t("Chargement de vos documents…")}</p>
       ) : documents.length === 0 ? (
         <div className="mt-3 rounded-card border border-dashed border-line-strong bg-surface p-8 text-center">
-          <p className="text-lg font-semibold tracking-tight text-ink">Aucun document pour l'instant</p>
+          <p className="text-lg font-semibold tracking-tight text-ink">{t("Aucun document pour l'instant")}</p>
           <p className="mx-auto mt-1.5 max-w-md text-sm leading-6 text-ink-soft">
-            Créez votre premier modèle, ou partez de l'exemple Client passe Commande pour voir Meriz à l'œuvre en
-            quelques secondes.
-          </p>
+            {t("Créez votre premier modèle, ou partez de l'exemple Client passe Commande pour voir Meriz à l'œuvre en quelques secondes.")}</p>
           <div className="mt-5 flex flex-wrap justify-center gap-2">
             <Button variant="primary" onClick={() => void run(onNewDocument)} disabled={busy}>
-              Créer mon premier document
-            </Button>
+              {t("Créer mon premier document")}</Button>
             <Button onClick={() => void run(onOpenExample)} disabled={busy}>
-              Découvrir avec l'exemple
-            </Button>
+              {t("Découvrir avec l'exemple")}</Button>
           </div>
         </div>
       ) : (

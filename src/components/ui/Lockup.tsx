@@ -1,3 +1,4 @@
+import { useLanguage } from "../../lib/useLanguage"
 /**
  * Logo de Meriz, repris de design/logo : une tuile indigo, la queue en V
  * et deux merises. Les couleurs suivent le thème par les tokens (tuile
@@ -17,6 +18,7 @@ function a11y(label: string | undefined) {
 }
 
 function Mark() {
+  useLanguage()
   return (
     <>
       <rect width="64" height="64" rx="15" className="fill-logo" />
@@ -36,6 +38,7 @@ function Mark() {
 
 /** L'icône seule. */
 export function LogoMark({ size = 28, label, className }: LogoProps) {
+  useLanguage()
   return (
     <svg viewBox="0 0 64 64" width={size} height={size} className={`shrink-0 ${className ?? ''}`} {...a11y(label)}>
       <Mark />
@@ -48,6 +51,7 @@ const WORD =
 
 /** L'icône et le mot « Meriz ». */
 export function Lockup({ size = 32, label, className }: LogoProps) {
+  useLanguage()
   return (
     <svg
       viewBox="0 0 191 64"

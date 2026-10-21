@@ -1,12 +1,14 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import type { ReactNode } from 'react'
 
 export type NoticeTone = 'info' | 'success' | 'warning' | 'error'
 
 const TONES: Record<NoticeTone, { box: string; icon: string; symbol: string; prefix: string }> = {
-  info: { box: 'bg-sky-soft', icon: 'text-sky', symbol: 'i', prefix: 'Information : ' },
-  success: { box: 'bg-sage-soft', icon: 'text-sage', symbol: '✓', prefix: 'Succès : ' },
-  warning: { box: 'bg-warning-soft', icon: 'text-warning', symbol: '!', prefix: 'Attention : ' },
-  error: { box: 'bg-danger-soft', icon: 'text-danger', symbol: '✕', prefix: 'Erreur : ' },
+  info: { box: 'bg-sky-soft', icon: 'text-sky', symbol: 'i', get prefix() { return t("Information : ") } },
+  success: { box: 'bg-sage-soft', icon: 'text-sage', symbol: '✓', get prefix() { return t("Succès : ") } },
+  warning: { box: 'bg-warning-soft', icon: 'text-warning', symbol: '!', get prefix() { return t("Attention : ") } },
+  error: { box: 'bg-danger-soft', icon: 'text-danger', symbol: '✕', get prefix() { return t("Erreur : ") } },
 }
 
 interface NoticeProps {
@@ -25,6 +27,7 @@ interface NoticeProps {
 
 /** Message d'information, de succès, d'avertissement ou d'erreur. */
 export function Notice({ tone = 'info', title, children, announce = true, action, className }: NoticeProps) {
+  useLanguage()
   const style = TONES[tone]
   const role = announce ? (tone === 'error' ? 'alert' : 'status') : undefined
   return (

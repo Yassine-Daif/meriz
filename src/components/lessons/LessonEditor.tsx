@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import type { BlockType, LessonBlock } from '../../lib/lessonBlocks'
@@ -59,33 +61,30 @@ interface PendingRemoval {
 
 /** État de l'enregistrement, dit au plus juste pour un cours. */
 function SaveLine({ status, onRetry }: { status: SaveStatus; onRetry: () => void }) {
+  useLanguage()
   const retry = (
     <button
       type="button"
       onClick={onRetry}
       className="rounded-lg border border-line-strong bg-surface px-1.5 py-0.5 text-xs text-ink hover:bg-surface-soft"
     >
-      Réessayer
-    </button>
+      {t("Réessayer")}</button>
   )
   let content = (
     <span className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong bg-surface-soft px-2 py-1 text-xs text-ink-soft">
       <span aria-hidden="true">✓</span>
-      Enregistré
-    </span>
+      {t("Enregistré")}</span>
   )
   if (status.kind === 'saving') {
     content = (
       <span className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong bg-surface-soft px-2 py-1 text-xs text-ink-soft">
-        Enregistrement…
-      </span>
+        {t("Enregistrement…")}</span>
     )
   } else if (status.kind === 'offline') {
     content = (
       <span className="inline-flex items-center gap-1.5 rounded-lg border border-warning bg-warning-soft px-2 py-1 text-xs text-ink">
         <span aria-hidden="true">⚠</span>
-        Serveur injoignable : nouvel essai en cours, ne fermez pas cette page.
-        {retry}
+        {t("Serveur injoignable : nouvel essai en cours, ne fermez pas cette page.")}{retry}
       </span>
     )
   } else if (status.kind === 'error') {
@@ -110,6 +109,7 @@ function SaveLine({ status, onRetry }: { status: SaveStatus; onRetry: () => void
  * sans attendre, jamais laissé orphelin.
  */
 export function LessonEditor({ client, classroomName, lesson, onDone, onChanged }: LessonEditorProps) {
+  useLanguage()
   const lessonId = lesson.id
   const [title, setTitle] = useState(lesson.title)
   const [blocks, setBlocks] = useState<EditorBlock[]>(() =>
@@ -210,7 +210,7 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
     setAddedId(id)
     // Un bloc s'ajoute en écriture : si l'aperçu est ouvert, on y revient.
     setTab('ecrire')
-    setAnnouncement(`Bloc ${blockLabel(type)} ajouté en position ${blocks.length + 1}.`)
+    setAnnouncement(t("Bloc {0} ajouté en position {1}.", [blockLabel(type), blocks.length + 1]))
   }
 
   const changeBlock = (index: number, block: LessonBlock) => {
@@ -223,7 +223,7 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
     if (!entry || target < 0 || target >= blocks.length) return
     focusAfterMove.current = { blockId: entry.id, direction }
     setBlocks(moveBlock(blocks, index, direction))
-    setAnnouncement(`Bloc ${blockLabel(entry.block.type)} déplacé en position ${target + 1} sur ${blocks.length}.`)
+    setAnnouncement(t("Bloc {0} déplacé en position {1} sur {2}.", [blockLabel(entry.block.type), target + 1, blocks.length]))
   }
 
   const askRemoval = (index: number) => {
@@ -235,7 +235,7 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
       // Rien à détruire : le bloc part sans confirmation.
       focusAfterRemoval.current = index
       setBlocks((current) => current.filter((_, position) => position !== index))
-      setAnnouncement(`Bloc ${label} retiré.`)
+      setAnnouncement(t("Bloc {0} retiré.", [label]))
       return
     }
     setRemoval({ index, mediumId, label })
@@ -257,7 +257,7 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
     }
     focusAfterRemoval.current = target.index
     setBlocks((current) => current.filter((_, position) => position !== target.index))
-    setAnnouncement(`Bloc ${target.label} et son fichier retirés.`)
+    setAnnouncement(t("Bloc {0} et son fichier retirés.", [target.label]))
   }
 
   /** Action sur le cours : publication, dépublication. */
@@ -281,8 +281,8 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
       onChanged(result.value)
       setAnnouncement(
         result.value.status === 'published'
-          ? 'Cours publié : vos élèves le voient.'
-          : 'Cours dépublié : vos élèves ne le voient plus.',
+          ? t("Cours publié : vos élèves le voient.")
+          : t("Cours dépublié : vos élèves ne le voient plus."),
       )
     } else {
       setActionError(result.error.message)
@@ -297,7 +297,7 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
     saver?.dispose()
     const result = await deleteLesson(client, lesson.id)
     setPending(false)
-    if (result.ok) onDone(`Cours « ${state.title} » supprimé.`)
+    if (result.ok) onDone(t("Cours « {0} » supprimé.", [state.title]))
     else setActionError(result.error.message)
   }
 
@@ -311,8 +311,7 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
   const liste =
     blocks.length === 0 ? (
       <p className="rounded-card border border-dashed border-line-strong bg-surface-soft p-6 text-center text-sm text-ink-soft">
-        Page vide : commencez par un titre de section ou un texte.
-      </p>
+        {t("Page vide : commencez par un titre de section ou un texte.")}</p>
     ) : (
       <ul className="flex flex-col gap-3">
         {blocks.map((entry, index) => (
@@ -349,14 +348,14 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
 
   return (
     <div className="flex flex-col gap-5">
-      <BackButton label="Retour aux cours" onClick={() => onDone(null)} className="-ml-3" />
+      <BackButton label={t("Retour aux cours")} onClick={() => onDone(null)} className="-ml-3" />
 
       <header>
-        <p className="text-xs font-semibold tracking-wide text-ink-soft uppercase">Cours</p>
+        <p className="text-xs font-semibold tracking-wide text-ink-soft uppercase">{t("Cours")}</p>
         <h3 className="text-xl font-semibold tracking-tight text-ink">
-          {title.trim() === '' ? 'Cours sans titre' : title}
+          {title.trim() === '' ? t("Cours sans titre") : title}
         </h3>
-        <p className="mt-1 text-sm text-ink-soft">Classe {classroomName}.</p>
+        <p className="mt-1 text-sm text-ink-soft">{t("Classe ")}{classroomName}.</p>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Badge tone={state.status === 'published' ? 'sage' : 'neutral'}>{lessonStateLabel(state)}</Badge>
@@ -374,13 +373,13 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
       )}
 
       <FormField
-        label="Titre du cours"
+        label={t("Titre du cours")}
         type="text"
         value={title}
         onChange={setTitle}
         autoComplete="off"
         maxLength={200}
-        hint="Ce que vos élèves verront dans la liste."
+        hint={t("Ce que vos élèves verront dans la liste.")}
       />
 
       {/*
@@ -390,12 +389,12 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
         */}
       <div>
         <Tabs
-          label="Modes du cours"
+          label={t("Modes du cours")}
           idBase={tabsId}
           size="sm"
           items={[
-            { value: 'ecrire', label: 'Écrire', count: blocks.length },
-            { value: 'apercu', label: 'Aperçu' },
+            { value: 'ecrire', label: t("Écrire"), count: blocks.length },
+            { value: 'apercu', label: t("Aperçu") },
           ]}
           value={tab}
           onChange={setTab}
@@ -404,9 +403,9 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
         {tab === 'ecrire' && (
           <TabPanel idBase={tabsId} value="ecrire">
             <FormSection
-              title="La page du cours"
+              title={t("La page du cours")}
               level="h4"
-              description="Ajoutez des blocs, remplissez-les, et rangez-les avec les flèches Monter et Descendre."
+              description={t("Ajoutez des blocs, remplissez-les, et rangez-les avec les flèches Monter et Descendre.")}
             >
               {liste}
               <div ref={addBar} className="mt-4">
@@ -419,10 +418,10 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
         {tab === 'apercu' && (
           <TabPanel idBase={tabsId} value="apercu">
             <FormSection
-              title="Ce que verra la classe"
+              title={t("Ce que verra la classe")}
               level="h4"
               tone="soft"
-              description={`Votre page telle qu'elle s'affichera, ${blocks.length} ${plural(blocks.length, 'bloc', 'blocs')}.`}
+              description={t("Votre page telle qu'elle s'affichera, {0} {1}.", [blocks.length, plural(blocks.length, 'bloc', 'blocs')])}
             >
               <LessonPage client={client} lessonId={lesson.id} blocks={pageBlocks} />
             </FormSection>
@@ -431,12 +430,12 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
       </div>
 
       <FormSection
-        title="Diffusion"
+        title={t("Diffusion")}
         level="h4"
         description={
           state.status === 'published'
-            ? 'Ce cours est visible par les élèves de la classe.'
-            : 'Ce cours est un brouillon : personne d’autre ne le voit.'
+            ? t("Ce cours est visible par les élèves de la classe.")
+            : t("Ce cours est un brouillon : personne d’autre ne le voit.")
         }
       >
         {/*
@@ -448,44 +447,41 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
           {state.status === 'published' ? (
             <Button
               loading={pending}
-              loadingLabel="Un instant…"
+              loadingLabel={t("Un instant…")}
               onClick={() => void run(() => unpublishLesson(client, lesson.id))}
             >
-              Dépublier
-            </Button>
+              {t("Dépublier")}</Button>
           ) : (
             <Button
               variant="primary"
               loading={pending}
-              loadingLabel="Un instant…"
+              loadingLabel={t("Un instant…")}
               onClick={() => void run(() => publishLesson(client, lesson.id))}
             >
-              Publier
-            </Button>
+              {t("Publier")}</Button>
           )}
         </div>
       </FormSection>
 
       <div className="border-t border-line pt-4">
         <Button variant="danger" disabled={pending} onClick={() => setConfirmDelete(true)}>
-          Supprimer le cours
-        </Button>
+          {t("Supprimer le cours")}</Button>
       </div>
 
       <ConfirmDialog
         open={removal !== null}
-        title={`Retirer le bloc ${removal?.label ?? ''}`}
-        message="Le bloc et son fichier seront supprimés du cours. Cette action est définitive."
-        confirmLabel="Retirer le bloc"
+        title={t("Retirer le bloc {0}", [removal?.label ?? ''])}
+        message={t("Le bloc et son fichier seront supprimés du cours. Cette action est définitive.")}
+        confirmLabel={t("Retirer le bloc")}
         onConfirm={() => void confirmRemoval()}
         onCancel={() => setRemoval(null)}
       />
 
       <ConfirmDialog
         open={confirmDelete}
-        title="Supprimer le cours"
-        message={`Supprimer « ${state.title} » ? Sa page et tous ses fichiers seront supprimés. Cette action est définitive.`}
-        confirmLabel="Supprimer le cours"
+        title={t("Supprimer le cours")}
+        message={t("Supprimer « {0} » ? Sa page et tous ses fichiers seront supprimés. Cette action est définitive.", [state.title])}
+        confirmLabel={t("Supprimer le cours")}
         onConfirm={() => void remove()}
         onCancel={() => setConfirmDelete(false)}
       />

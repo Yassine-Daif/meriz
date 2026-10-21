@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useCallback, useEffect, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import { assignmentTypeLabel, formatDueDate, getAssignment, listClassroomAssignments } from '../../lib/assignmentsApi'
@@ -44,6 +46,7 @@ export function StudentAssignmentsPanel({
   onOpenWorkDocument,
   onOpenReadOnlyModel,
 }: StudentAssignmentsPanelProps) {
+  useLanguage()
   const { session } = useSession()
   const userId = session.status === 'signed-in' ? String(session.user.id) : ''
   // Le lien devoir vers document de travail vit dans ce navigateur, sous
@@ -127,8 +130,7 @@ export function StudentAssignmentsPanel({
   return (
     <section aria-labelledby="exercices-titre">
       <h3 id="exercices-titre" className="text-base font-semibold text-ink">
-        Exercices de la classe
-        {assignments && assignments.length > 0 && (
+        {t("Exercices de la classe")}{assignments && assignments.length > 0 && (
           <span className="font-normal text-ink-soft"> ({assignments.length})</span>
         )}
       </h3>
@@ -143,20 +145,17 @@ export function StudentAssignmentsPanel({
           announce={false}
           action={
             <Button size="sm" onClick={() => void load()}>
-              Réessayer
-            </Button>
+              {t("Réessayer")}</Button>
           }
         >
           {loadError}
         </Notice>
       ) : assignments === null ? (
         <p role="status" className="text-sm text-ink-soft">
-          Chargement des exercices…
-        </p>
+          {t("Chargement des exercices…")}</p>
       ) : assignments.length === 0 ? (
         <p className="rounded-card border border-dashed border-line-strong bg-surface-soft p-6 text-center text-sm text-ink-soft">
-          Aucun exercice pour l’instant. Ceux que votre prof publiera apparaîtront ici, avec leur échéance.
-        </p>
+          {t("Aucun exercice pour l’instant. Ceux que votre prof publiera apparaîtront ici, avec leur échéance.")}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {assignments.map((assignment) => {
@@ -168,7 +167,7 @@ export function StudentAssignmentsPanel({
                   type="button"
                   onClick={() => void open(assignment.id)}
                   disabled={opening !== null}
-                  aria-label={`Ouvrir le devoir ${assignment.title}`}
+                  aria-label={t("Ouvrir le devoir {0}", [assignment.title])}
                   className="flex w-full flex-col items-start gap-1.5 rounded-card border border-line bg-surface p-4 text-left shadow-soft transition duration-150 hover:shadow-lift disabled:cursor-wait motion-safe:hover:-translate-y-0.5"
                 >
                   <span className="flex w-full flex-wrap items-center justify-between gap-2">
@@ -176,9 +175,9 @@ export function StudentAssignmentsPanel({
                     <span className="flex flex-wrap items-center gap-1.5">
                       <Badge tone="sky">{assignmentTypeLabel(assignment.type)}</Badge>
                       <Badge tone={STATE_TONE[state]}>
-                        {state === 'graded' && grade ? `Noté : ${grade}` : workStateLabel(state)}
+                        {state === 'graded' && grade ? t("Noté : {0}", [grade]) : workStateLabel(state)}
                       </Badge>
-                      {submissions[assignment.id]?.isLate && <Badge tone="apricot">En retard</Badge>}
+                      {submissions[assignment.id]?.isLate && <Badge tone="apricot">{t("En retard")}</Badge>}
                     </span>
                   </span>
                   <span className="text-xs text-ink-soft">{formatDueDate(assignment.dueAt)}</span>

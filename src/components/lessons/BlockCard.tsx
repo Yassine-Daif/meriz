@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useEffect, useRef } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import type { LessonBlock } from '../../lib/lessonBlocks'
@@ -54,6 +56,7 @@ export function BlockCard({
   onUploaded,
   onMediumGone,
 }: BlockCardProps) {
+  useLanguage()
   const position = `${index + 1} sur ${total}`
   const label = blockLabel(block.type)
   const mediaId = mediaIdOf(block)
@@ -81,23 +84,23 @@ export function BlockCard({
       // qui parcourt la page sait de quel bloc il parle, et le parent
       // peut y ramener le focus après un retrait.
       role="group"
-      aria-label={`Bloc ${position}, ${label}`}
+      aria-label={t("Bloc {0}, {1}", [position, label])}
       tabIndex={-1}
       className="rounded-card border border-line bg-surface p-4 shadow-soft focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="flex items-center gap-2">
           <Badge tone="neutral">{label}</Badge>
-          <span className="text-xs text-ink-soft">Bloc {position}</span>
+          <span className="text-xs text-ink-soft">{t("Bloc ")}{position}</span>
         </p>
-        <div role="group" aria-label={`Ordre du bloc ${position}`} className="flex gap-1">
+        <div role="group" aria-label={t("Ordre du bloc {0}", [position])} className="flex gap-1">
           <button
             type="button"
             ref={(element) => onRegisterMoveButton('up', element)}
             className={moveButtonClass}
             disabled={index === 0}
-            aria-label={`Monter le bloc ${position}, ${label}`}
-            title="Monter ce bloc"
+            aria-label={t("Monter le bloc {0}, {1}", [position, label])}
+            title={t("Monter ce bloc")}
             onClick={() => onMove('up')}
           >
             <span aria-hidden="true">↑</span>
@@ -107,8 +110,8 @@ export function BlockCard({
             ref={(element) => onRegisterMoveButton('down', element)}
             className={moveButtonClass}
             disabled={index === total - 1}
-            aria-label={`Descendre le bloc ${position}, ${label}`}
-            title="Descendre ce bloc"
+            aria-label={t("Descendre le bloc {0}, {1}", [position, label])}
+            title={t("Descendre ce bloc")}
             onClick={() => onMove('down')}
           >
             <span aria-hidden="true">↓</span>
@@ -116,18 +119,17 @@ export function BlockCard({
           <button
             type="button"
             className="inline-flex min-h-9 items-center rounded-control border border-danger bg-surface px-3 text-sm font-medium text-danger transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
-            aria-label={`Retirer le bloc ${position}, ${label}`}
+            aria-label={t("Retirer le bloc {0}, {1}", [position, label])}
             onClick={onRemove}
           >
-            Retirer
-          </button>
+            {t("Retirer")}</button>
         </div>
       </div>
 
       <div className="mt-3 flex flex-col gap-3">
         {block.type === 'heading' && (
           <FormField
-            label="Titre de section"
+            label={t("Titre de section")}
             type="text"
             value={block.text}
             onChange={(text) => onChange({ type: 'heading', text })}
@@ -138,7 +140,7 @@ export function BlockCard({
 
         {block.type === 'text' && (
           <FormField
-            label="Texte"
+            label={t("Texte")}
             type="text"
             value={block.text}
             onChange={(text) => onChange({ type: 'text', text })}
@@ -146,29 +148,29 @@ export function BlockCard({
             multiline
             rows={6}
             maxLength={5000}
-            hint="Les retours à la ligne sont conservés."
+            hint={t("Les retours à la ligne sont conservés.")}
           />
         )}
 
         {block.type === 'link' && (
           <>
             <FormField
-              label="Adresse du lien"
+              label={t("Adresse du lien")}
               type="url"
               value={block.url}
               onChange={(url) => onChange({ type: 'link', url, label: block.label })}
               autoComplete="off"
-              hint="Commence par https://"
+              hint={t("Commence par https://")}
             />
             <FormField
-              label="Libellé"
+              label={t("Libellé")}
               type="text"
               value={block.label}
               onChange={(text) => onChange({ type: 'link', url: block.url, label: text })}
               autoComplete="off"
               maxLength={200}
               required={false}
-              hint="Ce que vos élèves liront. Vide, l'adresse s'affiche."
+              hint={t("Ce que vos élèves liront. Vide, l'adresse s'affiche.")}
             />
           </>
         )}
@@ -176,18 +178,18 @@ export function BlockCard({
         {block.type === 'video' && (
           <>
             <FormField
-              label="Adresse de la vidéo"
+              label={t("Adresse de la vidéo")}
               type="url"
               value={block.url}
               onChange={(url) => onChange({ type: 'video', url })}
               autoComplete="off"
-              hint={`Intégrée pour ${KNOWN_PROVIDERS}. Ailleurs, elle s'affiche en lien.`}
+              hint={t("Intégrée pour {0}. Ailleurs, elle s'affiche en lien.", [KNOWN_PROVIDERS])}
             />
             {block.url.trim() !== '' && (
               <p className="text-xs text-ink-soft">
                 {resolveVideo(block.url)
-                  ? 'Cet hébergeur est reconnu : la vidéo sera intégrée à la page.'
-                  : 'Hébergeur non reconnu : un lien sera affiché à la place du lecteur.'}
+                  ? t("Cet hébergeur est reconnu : la vidéo sera intégrée à la page.")
+                  : t("Hébergeur non reconnu : un lien sera affiché à la place du lecteur.")}
               </p>
             )}
           </>
@@ -204,13 +206,13 @@ export function BlockCard({
               onReplaced={onMediumGone}
             />
             <FormField
-              label="Description de l'image"
+              label={t("Description de l'image")}
               type="text"
               value={block.alt}
               onChange={(alt) => onChange({ type: 'image', mediaId: block.mediaId, alt })}
               autoComplete="off"
               maxLength={300}
-              hint="Ce que voit quelqu'un qui n'a pas l'image : décrivez-la en une phrase."
+              hint={t("Ce que voit quelqu'un qui n'a pas l'image : décrivez-la en une phrase.")}
             />
           </>
         )}
@@ -226,14 +228,14 @@ export function BlockCard({
               onReplaced={onMediumGone}
             />
             <FormField
-              label="Libellé de l'audio"
+              label={t("Libellé de l'audio")}
               type="text"
               value={block.label}
               onChange={(text) => onChange({ type: 'audio', mediaId: block.mediaId, label: text })}
               autoComplete="off"
               maxLength={200}
               required={false}
-              hint="Par exemple « Explication des cardinalités »."
+              hint={t("Par exemple « Explication des cardinalités ».")}
             />
           </>
         )}
@@ -241,7 +243,7 @@ export function BlockCard({
         {/* Aperçu : le bloc tel que la classe le verra. */}
         {(block.type === 'video' || block.type === 'image' || block.type === 'audio') && (
           <div className="rounded-card bg-surface-soft p-3">
-            <p className="mb-2 text-xs font-semibold tracking-wide text-ink-soft uppercase">Aperçu</p>
+            <p className="mb-2 text-xs font-semibold tracking-wide text-ink-soft uppercase">{t("Aperçu")}</p>
             <LessonBlockView client={client} lessonId={lessonId} block={block} />
           </div>
         )}

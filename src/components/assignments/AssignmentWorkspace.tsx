@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useId, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import { assignmentTypeLabel, formatDueDate } from '../../lib/assignmentsApi'
@@ -35,9 +37,9 @@ interface AssignmentWorkspaceProps {
 }
 
 const TABS = [
-  { value: 'enonce', label: 'Énoncé' },
-  { value: 'rendus', label: 'Rendus' },
-  { value: 'suivi', label: 'Suivi' },
+  { value: 'enonce', get label() { return t("Énoncé") } },
+  { value: "rendus", get label() { return t("Rendus") } },
+  { value: 'suivi', get label() { return t("Suivi") } },
 ] as const
 
 /**
@@ -59,6 +61,7 @@ export function AssignmentWorkspace({
   onOpenReadOnlyModel,
   onStartLiveCoedition,
 }: AssignmentWorkspaceProps) {
+  useLanguage()
   const [tab, setTab] = useState<AssignmentTab>(initialTab)
   /*
    * Ouvrir l'onglet Suivi ouvre le suivi, mais une fermeture à la main
@@ -82,30 +85,30 @@ export function AssignmentWorkspace({
 
   return (
     <div>
-      <BackButton label="Retour aux devoirs" onClick={() => onDone(null)} className="-ml-3 mb-3" />
+      <BackButton label={t("Retour aux devoirs")} onClick={() => onDone(null)} className="-ml-3 mb-3" />
 
       {/* Surtitre : on est dans un devoir, sous l'onglet Exercices de la classe. */}
-      {assignment && <p className="text-xs font-semibold tracking-wide text-ink-soft uppercase">Devoir</p>}
+      {assignment && <p className="text-xs font-semibold tracking-wide text-ink-soft uppercase">{t("Devoir")}</p>}
       <h3 className="text-xl font-semibold tracking-tight text-ink">
-        {assignment ? assignment.title : 'Créer un devoir'}
+        {assignment ? assignment.title : t("Créer un devoir")}
       </h3>
-      <p className="mt-1 text-sm text-ink-soft">Classe {classroomName}.</p>
+      <p className="mt-1 text-sm text-ink-soft">{t("Classe ")}{classroomName}.</p>
 
       {assignment && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Badge tone={assignment.status === 'published' ? 'sage' : 'neutral'}>
-            {assignment.status === 'published' ? 'Publié' : 'Brouillon'}
+            {assignment.status === 'published' ? t("Publié") : t("Brouillon")}
           </Badge>
           <Badge tone="sky">{assignmentTypeLabel(assignment.type)}</Badge>
           <Badge tone={assignment.hasBase ? 'accent' : 'neutral'}>
-            {assignment.hasBase ? 'Base prête' : 'Sans base'}
+            {assignment.hasBase ? t("Base prête") : t("Sans base")}
           </Badge>
           <Badge tone={assignment.hasSolution ? (assignment.solutionReleased ? 'apricot' : 'neutral') : 'neutral'}>
             {assignment.hasSolution
               ? assignment.solutionReleased
-                ? 'Corrigé libéré'
-                : 'Corrigé retenu'
-              : 'Sans corrigé'}
+                ? t("Corrigé libéré")
+                : t("Corrigé retenu")
+              : t("Sans corrigé")}
           </Badge>
           <span className="text-sm text-ink-soft">{formatDueDate(assignment.dueAt)}</span>
         </div>
@@ -114,7 +117,7 @@ export function AssignmentWorkspace({
       {assignment ? (
         <div className="mt-5">
           <Tabs<AssignmentTab>
-            label="Sections du devoir"
+            label={t("Sections du devoir")}
             items={TABS}
             value={tab}
             onChange={setTab}
@@ -128,7 +131,7 @@ export function AssignmentWorkspace({
             </TabPanel>
           )}
 
-          {tab === 'rendus' && (
+          {tab === "rendus" && (
             <TabPanel idBase={idBase} value="rendus">
               <SubmissionsPanel
                 client={client}

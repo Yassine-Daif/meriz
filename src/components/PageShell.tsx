@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { BackButton } from './ui/BackButton'
@@ -32,9 +34,10 @@ export function PageShell({
   focusKey,
   leading,
   onBack,
-  backLabel = 'Retour',
+  backLabel = t("Retour"),
   children,
 }: PageShellProps) {
+  useLanguage()
   const headingRef = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {

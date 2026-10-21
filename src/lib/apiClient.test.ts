@@ -38,7 +38,7 @@ describe('apiClient, requêtes', () => {
 
     expect(calls[0]?.url).toBe('http://127.0.0.1:8000/api/health')
     expect(calls[0]?.init.method).toBe('GET')
-    expect(headersOf(calls[0])).toEqual({ Accept: 'application/json' })
+    expect(headersOf(calls[0])).toEqual({ Accept: 'application/json', 'Accept-Language': 'fr', })
     expect(calls[0]?.init.body).toBeUndefined()
   })
 
@@ -49,7 +49,7 @@ describe('apiClient, requêtes', () => {
     await client.request('POST', '/auth/logout', { a: 1 })
 
     expect(headersOf(calls[0])).toEqual({
-      Accept: 'application/json',
+      Accept: 'application/json', 'Accept-Language': 'fr',
       'Content-Type': 'application/json',
       Authorization: 'Bearer abc|123',
     })

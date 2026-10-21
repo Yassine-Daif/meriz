@@ -1,3 +1,5 @@
+import { t } from "../i18n/runtime"
+import { useLanguage } from "../lib/useLanguage"
 import { useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ApiUser } from '../lib/authApi'
@@ -24,6 +26,7 @@ interface DeleteAccountDialogProps {
  * bouton reste inerte tant que les deux manquent.
  */
 export function DeleteAccountDialog({ open, user, onCancel, onDeleted }: DeleteAccountDialogProps) {
+  useLanguage()
   const { deleteOwnAccount } = useSession()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
@@ -89,38 +92,29 @@ export function DeleteAccountDialog({ open, user, onCancel, onDeleted }: DeleteA
     >
       <form onSubmit={(event) => void submit(event)} className="p-6">
         <h2 id={titleId} className="text-lg font-semibold tracking-tight">
-          Supprimer mon compte
-        </h2>
+          {t("Supprimer mon compte")}</h2>
 
         <div className="mt-3 flex flex-col gap-2 text-sm leading-6 text-ink-soft">
           <p>
-            <span className="font-semibold text-ink">Ce qui disparaît.</span> Vos informations
-            personnelles, vos documents personnels et vos inscriptions aux classes et aux groupes.
-          </p>
+            <span className="font-semibold text-ink">{t("Ce qui disparaît.")}</span> {t(" Vos informations personnelles, vos documents personnels et vos inscriptions aux classes et aux groupes.")}</p>
           <p>
-            <span className="font-semibold text-ink">Ce qui reste, sans votre nom.</span> Un rendu
-            déjà noté, un commentaire dans un fil, un document de groupe : ils appartiennent aussi
-            aux autres, donc ils restent, signés « Compte supprimé ».
-          </p>
+            <span className="font-semibold text-ink">{t("Ce qui reste, sans votre nom.")}</span> {t(" Un rendu déjà noté, un commentaire dans un fil, un document de groupe : ils appartiennent aussi aux autres, donc ils restent, signés « Compte supprimé ».")}</p>
           {teacher && (
             <p>
-              <span className="font-semibold text-ink">Vos classes partent avec vous.</span> Vos
-              classes, leurs devoirs et leurs cours sont supprimés, et vos élèves en perdent
-              l'accès. Prévenez-les avant.
-            </p>
+              <span className="font-semibold text-ink">{t("Vos classes partent avec vous.")}</span> {t(" Vos classes, leurs devoirs et leurs cours sont supprimés, et vos élèves en perdent l'accès. Prévenez-les avant.")}</p>
           )}
-          <p>Cette suppression est définitive : rien ne se récupère ensuite.</p>
+          <p>{t("Cette suppression est définitive : rien ne se récupère ensuite.")}</p>
         </div>
 
         <div className="mt-4">
           <FormField
-            label="Mot de passe actuel"
+            label={t("Mot de passe actuel")}
             type="password"
             value={password}
             onChange={setPassword}
             autoComplete="current-password"
             error={fieldError}
-            hint="Il confirme que c'est bien vous."
+            hint={t("Il confirme que c'est bien vous.")}
             inputRef={passwordRef}
           />
         </div>
@@ -133,8 +127,7 @@ export function DeleteAccountDialog({ open, user, onCancel, onDeleted }: DeleteA
             onChange={(event) => setUnderstood(event.target.checked)}
             className="mt-1.5"
           />
-          Je comprends que la suppression est définitive.
-        </label>
+          {t("Je comprends que la suppression est définitive.")}</label>
 
         {error !== null && (
           <div className="mt-3">
@@ -144,17 +137,15 @@ export function DeleteAccountDialog({ open, user, onCancel, onDeleted }: DeleteA
 
         <div className="mt-6 flex flex-wrap justify-end gap-2">
           <Button type="button" onClick={onCancel}>
-            Annuler
-          </Button>
+            {t("Annuler")}</Button>
           <Button
             type="submit"
             variant="danger"
             disabled={password === '' || !understood}
             loading={pending}
-            loadingLabel="Suppression…"
+            loadingLabel={t("Suppression…")}
           >
-            Supprimer définitivement
-          </Button>
+            {t("Supprimer définitivement")}</Button>
         </div>
       </form>
     </dialog>

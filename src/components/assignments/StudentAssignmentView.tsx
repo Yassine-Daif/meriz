@@ -1,3 +1,5 @@
+import { t } from "../../i18n/runtime"
+import { useLanguage } from "../../lib/useLanguage"
 import { useCallback, useEffect, useState } from 'react'
 import type { ApiClient, ApiError } from '../../lib/apiClient'
 import { assignmentTypeLabel, formatDueDate, startAssignmentWork } from '../../lib/assignmentsApi'
@@ -49,6 +51,7 @@ export function StudentAssignmentView({
   onOpenWorkDocument,
   onOpenReadOnlyModel,
 }: StudentAssignmentViewProps) {
+  useLanguage()
   const [submission, setSubmission] = useState<Submission | null>(initialSubmission)
   const [workId, setWorkId] = useState<string | null>(() => workLinks.get(assignment.id))
   const [busy, setBusy] = useState(false)
@@ -212,7 +215,7 @@ export function StudentAssignmentView({
       return
     }
     setSubmission(sent.value)
-    setStatus(sent.value.isLate ? 'Travail rendu, après l’échéance.' : 'Travail rendu.')
+    setStatus(sent.value.isLate ? t("Travail rendu, après l’échéance.") : t("Travail rendu."))
   }
 
   const overdue = assignment.dueAt !== null && new Date(assignment.dueAt).getTime() < Date.now()
@@ -220,7 +223,7 @@ export function StudentAssignmentView({
   return (
     <section aria-labelledby="devoir-eleve-titre" className="flex flex-col gap-4">
       <div>
-        <BackButton label="Retour aux exercices" onClick={() => onBack(null)} />
+        <BackButton label={t("Retour aux exercices")} onClick={() => onBack(null)} />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -230,9 +233,9 @@ export function StudentAssignmentView({
         <span className="flex flex-wrap items-center gap-1.5">
           <Badge tone="sky">{assignmentTypeLabel(assignment.type)}</Badge>
           {submission && (
-            <Badge tone={locked ? 'accent' : 'sage'}>{locked ? 'Noté' : 'Rendu'}</Badge>
+            <Badge tone={locked ? 'accent' : 'sage'}>{locked ? t("Noté") : t("Rendu")}</Badge>
           )}
-          {submission?.isLate && <Badge tone="apricot">Rendu en retard</Badge>}
+          {submission?.isLate && <Badge tone="apricot">{t("Rendu en retard")}</Badge>}
         </span>
       </div>
 
@@ -243,36 +246,32 @@ export function StudentAssignmentView({
       </p>
 
       {error && (
-        <Notice tone="error" title="Action impossible">
+        <Notice tone="error" title={t("Action impossible")}>
           {error}
         </Notice>
       )}
 
       {locked && submission && (
-        <Notice tone="success" title={`Note : ${submission.grade ?? ''}`}>
+        <Notice tone="success" title={t("Note : {0}", [submission.grade ?? ''])}>
           {submission.feedback ? (
             <span className="whitespace-pre-wrap">{submission.feedback}</span>
           ) : (
-            'Votre prof n’a pas laissé de commentaire.'
+            t("Votre prof n’a pas laissé de commentaire.")
           )}
           <span className="mt-1 block text-ink-soft">
-            Votre rendu est verrouillé tant que la note reste en place.
-          </span>
+            {t("Votre rendu est verrouillé tant que la note reste en place.")}</span>
         </Notice>
       )}
 
       {assignment.liveTracking && (
-        <Notice tone="info" announce={false} title="Votre prof peut suivre cet exercice">
-          Il voit votre modèle évoluer en direct, sans pouvoir y toucher. Il ne voit ni vos autres
-          documents, ni votre travail sur d’autres devoirs. S’il décide de corriger avec vous, dans le même
-          modèle, l’outil vous le dira clairement.
-          <span className="mt-1 block text-ink-soft">
+        <Notice tone="info" announce={false} title={t("Votre prof peut suivre cet exercice")}>
+          {t("Il voit votre modèle évoluer en direct, sans pouvoir y toucher. Il ne voit ni vos autres documents, ni votre travail sur d’autres devoirs. S’il décide de corriger avec vous, dans le même modèle, l’outil vous le dira clairement.")}<span className="mt-1 block text-ink-soft">
             {observedAt !== null ? (
               <>
-                Dernière lecture de votre travail : <time dateTime={observedAt}>{formatDate(observedAt)}</time>.
+                {t("Dernière lecture de votre travail : ")}<time dateTime={observedAt}>{formatDate(observedAt)}</time>.
               </>
             ) : (
-              'Votre travail n’a pas encore été lu.'
+              t("Votre travail n’a pas encore été lu.")
             )}
           </span>
         </Notice>
@@ -280,8 +279,7 @@ export function StudentAssignmentView({
 
       <Card as="section" aria-labelledby="consigne-titre">
         <h4 id="consigne-titre" className="text-base font-semibold text-ink">
-          Consigne
-        </h4>
+          {t("Consigne")}</h4>
         <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-ink">{assignment.instructions}</p>
         {assignment.hasImage && (
           <div className="mt-3">
@@ -292,33 +290,29 @@ export function StudentAssignmentView({
 
       <Card as="section" aria-labelledby="travail-titre">
         <h4 id="travail-titre" className="text-base font-semibold text-ink">
-          Mon travail
-        </h4>
+          {t("Mon travail")}</h4>
         <p className="mt-1 text-sm text-ink-soft">
           {workId !== null
             ? assignment.liveTracking
-              ? 'Votre travail est un document personnel : il s’enregistre tout seul. Votre prof peut le regarder pendant ce devoir, mais le rendre reste votre geste.'
-              : 'Votre travail est un document personnel : il s’enregistre tout seul, et n’est remis à votre prof qu’au clic sur Rendre.'
+              ? t("Votre travail est un document personnel : il s’enregistre tout seul. Votre prof peut le regarder pendant ce devoir, mais le rendre reste votre geste.")
+              : t("Votre travail est un document personnel : il s’enregistre tout seul, et n’est remis à votre prof qu’au clic sur Rendre.")
             : submission
-              ? 'Votre travail n’est pas ouvert sur cet appareil. Vous pouvez reprendre le travail enregistré dans votre compte.'
+              ? t("Votre travail n’est pas ouvert sur cet appareil. Vous pouvez reprendre le travail enregistré dans votre compte.")
               : assignment.hasBase
-                ? 'Votre prof a préparé une base. Vous en obtiendrez une copie à vous, modifiable.'
-                : 'Vous partirez d’une page blanche, dans l’outil de modélisation.'}
+                ? t("Votre prof a préparé une base. Vous en obtiendrez une copie à vous, modifiable.")
+                : t("Vous partirez d’une page blanche, dans l’outil de modélisation.")}
         </p>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {workId !== null ? (
             <Button variant="primary" onClick={() => void openWork()} disabled={busy}>
-              Ouvrir mon travail
-            </Button>
+              {t("Ouvrir mon travail")}</Button>
           ) : submission ? (
             <Button variant="primary" onClick={() => void resumeFromSubmission()} disabled={busy}>
-              Reprendre mon travail
-            </Button>
+              {t("Reprendre mon travail")}</Button>
           ) : (
             <Button variant="primary" onClick={() => void startWork()} disabled={busy}>
-              Commencer
-            </Button>
+              {t("Commencer")}</Button>
           )}
 
           {!locked && (
@@ -327,22 +321,22 @@ export function StudentAssignmentView({
               onClick={() => setConfirmSubmit(true)}
               disabled={busy || workId === null}
             >
-              {submission ? 'Rendre à nouveau' : 'Rendre'}
+              {submission ? t("Rendre à nouveau") : t("Rendre")}
             </Button>
           )}
           <p role="status" aria-live="polite" className="text-sm text-ink-soft empty:hidden">
-            {busy ? 'Un instant…' : ''}
+            {busy ? t("Un instant…") : ''}
           </p>
         </div>
 
         {!locked && workId === null && (
-          <p className="mt-2 text-sm text-ink-soft">Commencez votre travail avant de le rendre.</p>
+          <p className="mt-2 text-sm text-ink-soft">{t("Commencez votre travail avant de le rendre.")}</p>
         )}
 
         {submission && (
           <p className="mt-3 text-sm text-ink-soft">
             {formatSubmittedAt(submission.submittedAt)}
-            {submission.isLate && ', après l’échéance'}.
+            {submission.isLate && t(", après l’échéance")}.
           </p>
         )}
       </Card>
@@ -350,11 +344,9 @@ export function StudentAssignmentView({
       {assignment.solutionContent !== null && (
         <Card as="section" aria-labelledby="corrige-titre">
           <h4 id="corrige-titre" className="text-base font-semibold text-ink">
-            Corrigé
-          </h4>
+            {t("Corrigé")}</h4>
           <p className="mt-1 text-sm text-ink-soft">
-            Votre prof a libéré le corrigé. Il s’ouvre en consultation, sans rien modifier.
-          </p>
+            {t("Votre prof a libéré le corrigé. Il s’ouvre en consultation, sans rien modifier.")}</p>
           <div className="mt-3">
             <Button
               variant="secondary"
@@ -365,26 +357,26 @@ export function StudentAssignmentView({
                   submissionId: null,
                   key: `${assignment.id}:corrige`,
                   name: assignment.title,
-                  label: 'Corrigé',
+                  label: t("Corrigé"),
+            labelMessage: { source: "Corrigé", values: [] },
                   content: assignment.solutionContent ?? '',
                 })
               }
             >
-              Voir le corrigé
-            </Button>
+              {t("Voir le corrigé")}</Button>
           </div>
         </Card>
       )}
 
       <ConfirmDialog
         open={confirmSubmit}
-        title={submission ? 'Rendre une nouvelle version' : 'Rendre mon travail'}
+        title={submission ? t("Rendre une nouvelle version") : t("Rendre mon travail")}
         message={
-          `Votre prof verra le modèle tel qu'il est enregistré maintenant.` +
-          (submission ? ' Cette version remplacera la précédente.' : '') +
-          (overdue ? ' L’échéance est passée : le rendu sera marqué en retard.' : '')
+          t("Votre prof verra le modèle tel qu'il est enregistré maintenant.") +
+          (submission ? t(" Cette version remplacera la précédente.") : '') +
+          (overdue ? t(" L’échéance est passée : le rendu sera marqué en retard.") : '')
         }
-        confirmLabel={submission ? 'Rendre à nouveau' : 'Rendre'}
+        confirmLabel={submission ? t("Rendre à nouveau") : 'Rendre'}
         onConfirm={() => void submit()}
         onCancel={() => setConfirmSubmit(false)}
       />

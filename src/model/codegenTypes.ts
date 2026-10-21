@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 /**
  * Un fichier prêt à copier dans un projet : son chemin de destination,
  * et son contenu. C'est tout ce que les générateurs ont à produire.
@@ -11,6 +12,6 @@ export interface GeneratedFile {
 export type FrameworkId = 'laravel' | 'symfony'
 
 export const FRAMEWORKS: readonly { id: FrameworkId; label: string }[] = [
-  { id: 'laravel', label: 'Laravel' },
-  { id: 'symfony', label: 'Symfony' },
+  { id: 'laravel', get label() { return t("Laravel") } },
+  { id: 'symfony', get label() { return t("Symfony") } },
 ]
