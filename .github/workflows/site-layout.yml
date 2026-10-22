@@ -1,0 +1,45 @@
+name: Site layout
+
+on:
+  push:
+    branches: [main]
+    paths: ['site/**', 'scripts/check-site-layout.mjs', '.github/workflows/site-layout.yml']
+  pull_request:
+    paths: ['site/**', 'scripts/check-site-layout.mjs', '.github/workflows/site-layout.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-layout-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Vérifier les textes, menus et panneaux dans Chromium
+        env:
+          MERIZ_LAYOUT_ARTIFACTS: ${{ runner.temp }}/meriz-site-layout
+        run: |
+          set -euo pipefail
+          google-chrome --headless=new --no-sandbox --disable-background-timer-throttling --disable-renderer-backgrounding --remote-debugging-port=9222 --user-data-dir="$RUNNER_TEMP/meriz-site-chrome" --no-first-run about:blank > "$RUNNER_TEMP/meriz-site-chrome.log" 2>&1 &
+          chrome_pid=$!
+          trap 'kill "$chrome_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 60); do
+            if curl --silent --fail http://127.0.0.1:9222/json/version > /dev/null; then break; fi
+            sleep 0.2
+          done
+          node scripts/check-site-layout.mjs --stress
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: site-layout-report
+          path: ${{ runner.temp }}/meriz-site-layout
+          retention-days: 7

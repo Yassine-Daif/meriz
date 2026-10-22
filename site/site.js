@@ -178,9 +178,49 @@ var merizEnglish = document.documentElement.lang === 'en'
 })()
 
 /*
+ * Mesurer les vrais libellés évite les hypothèses sur la langue, la police
+ * ou le numéro de version. La copie ne participe ni au rendu ni au focus.
+ */
+;(function () {
+  var header = document.querySelector('.mz-nav')
+  var row = header && header.querySelector('.mz-nav-row')
+  if (!row) return
+  var scheduled = false
+  function measure() {
+    scheduled = false
+    var copy = row.cloneNode(true)
+    copy.classList.add('mz-nav-measure')
+    copy.setAttribute('aria-hidden', 'true')
+    copy.inert = true
+    for (var element of copy.querySelectorAll('[id]')) element.removeAttribute('id')
+    header.appendChild(copy)
+    var required = copy.getBoundingClientRect().width
+    copy.remove()
+    var style = getComputedStyle(row)
+    var available = row.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
+    header.classList.toggle('mz-nav-compact', required > available - 2)
+    header.dispatchEvent(new Event('meriz:navigation-layout'))
+  }
+  function schedule() {
+    if (scheduled) return
+    scheduled = true
+    requestAnimationFrame(measure)
+  }
+  measure()
+  window.addEventListener('resize', schedule)
+  if (window.ResizeObserver) {
+    var observer = new ResizeObserver(schedule)
+    observer.observe(row)
+    for (var child of row.children) observer.observe(child)
+  }
+  new MutationObserver(schedule).observe(row, { childList: true, characterData: true, subtree: true })
+  if (document.fonts) document.fonts.ready.then(schedule)
+})()
+
+/*
  * Le menu de navigation sur petit écran.
  *
- * Sous 820 px, la barre n'a plus la place d'afficher les quatre liens.
+ * Quand les libellés ne tiennent plus, la barre passe en mode compact.
  * Le panneau les reprend, avec le choix de thème et le bouton d'essai.
  * Sans ce script, le panneau reste ouvert : la navigation est alors
  * une liste de liens visible, jamais un menu qu'on ne peut pas ouvrir.
@@ -243,9 +283,14 @@ var merizEnglish = document.documentElement.lang === 'en'
   })
 
   // Repassé en grand écran, le menu n'a plus lieu d'être ouvert.
-  window.matchMedia('(min-width: 821px)').addEventListener('change', function (vue) {
-    if (vue.matches) fermer()
-  })
+  function suivreDisposition() {
+    if (getComputedStyle(bouton).display !== 'none' || panneau.hidden) return
+    var rendreFocus = panneau.contains(document.activeElement)
+    fermer()
+    if (rendreFocus) document.querySelector('.mz-navlinks a[aria-current], .mz-logo')?.focus()
+  }
+  document.querySelector('.mz-nav')?.addEventListener('meriz:navigation-layout', suivreDisposition)
+  window.addEventListener('resize', suivreDisposition)
 })()
 
 /*

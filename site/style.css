@@ -326,5 +326,51 @@ html:not(.js) .mz-menu[hidden]{display:block !important}
 .mz-language { display: inline-flex; flex-shrink: 0; gap: 2px; border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
 .mz-language a { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; min-height: 34px; border-radius: 999px; color: var(--muted); font-size: 12px; font-weight: 600; text-decoration: none; }
 .mz-language a[aria-current] { color: #fff; background: var(--accent); }
-@media (max-width: 1100px) { .mz-navlinks { display: none !important; } .mz-hide-sm { display: none !important; } .mz-burger { display: inline-flex !important; } }
+
 @media (max-width: 820px) { .mz-nav > .mz-wrap > .mz-tg { display: none; } .mz-nav > .mz-wrap { gap: 10px !important; } }
+
+/* La navigation conserve la largeur de ses libellés ; le contenu reste à 1200 px. */
+.mz-nav-row{display:flex;align-items:center;gap:16px;min-height:72px;max-width:1440px}
+.mz-nav-row > :is(.mz-logo,.mz-ver,.mz-navlinks,.mz-language,.mz-tg,.mz-iconbtn,.mz-btn,.mz-burger){flex-shrink:0}
+.mz-nav-row .mz-nl,.mz-nav-row > .mz-btn,.mz-tg button{white-space:nowrap}
+.mz-tg,.mz-tg button,.mz-iconbtn,.mz-burger,.mz-tg svg{flex-shrink:0}
+.mz-burger{align-items:center;justify-content:center;width:44px;height:44px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.mz-menu{border-top:1px solid var(--line);background:var(--bg);padding:12px 0 18px}
+.mz-menu .mz-wrap{display:flex;flex-direction:column;gap:4px}
+.mz-menu a.mz-nl{min-height:48px;height:auto;padding:8px 12px;font-size:17px}
+.mz-menu-bas{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:12px;margin-top:8px;border-top:1px solid var(--line)}
+.mz-menu .mz-btn{align-self:flex-start;max-width:100%}
+.mz-nav-compact .mz-nav-row > :is(.mz-navlinks,.mz-hide-sm,.mz-tg){display:none !important}
+.mz-nav-compact .mz-nav-row > .mz-burger{display:inline-flex}
+.mz-nav-compact .mz-menu:not([hidden]){display:block}
+/* Repli CSS immédiat, avant le chargement du script ou de la police. */
+@media(max-width:1280px){
+ .mz-nav-row > :is(.mz-navlinks,.mz-hide-sm,.mz-tg){display:none !important}
+ .mz-nav-row > .mz-burger{display:inline-flex}
+ .mz-menu:not([hidden]){display:block}
+}
+/* Mesure invisible et temporaire du header complet, même en mode compact. */
+.mz-nav > .mz-nav-measure{position:fixed;left:0;top:0;visibility:hidden;pointer-events:none;width:max-content;max-width:none;min-height:0;padding:0;gap:16px}
+.mz-nav > .mz-nav-measure > :is(.mz-navlinks,.mz-hide-sm,.mz-tg){display:inline-flex !important}
+.mz-nav > .mz-nav-measure > .mz-burger{display:none !important}
+
+/* Les longs mots restent dans la prose ; les schémas gardent leurs propres zones. */
+.mz main :is(h1,h2,h3,h4,p),.mz footer :is(p,a){overflow-wrap:anywhere}
+.mz-fig-h{flex-wrap:wrap;min-width:0;overflow-wrap:anywhere}
+.mz-fig-h > span{min-width:0;max-width:100%}
+.mz-menu{max-height:calc(100dvh - 72px);overflow-y:auto;overscroll-behavior:contain}
+.mz-btn svg,.mz-os svg{flex-shrink:0}
+body.p-telecharger [role="tablist"]{flex-wrap:wrap}
+body.p-telecharger .mz-os{flex:1 0 auto;max-width:100%;padding-top:8px;padding-bottom:8px}
+
+.mz-panel{min-width:0;max-width:100%}
+.mz-rule-count{flex-wrap:wrap;min-width:0;max-width:100%}
+.mz-parcours-nav{flex-wrap:wrap}
+.mz-parcours-nav > div{flex:1 1 10rem;min-width:0;max-width:100%}
+.mz-parcours-nav > div:last-child .mz-pg{margin-left:auto}
+.mz-pg{max-width:100%;overflow-wrap:anywhere}
+.mz-pg > span{min-width:0;max-width:100%}
+.mz-preview-toolbar{flex-wrap:wrap}
+.mz-preview-toolbar > svg{flex-shrink:0}
+
+.mz-mapi{flex-wrap:wrap;max-width:100%;overflow-wrap:anywhere}
