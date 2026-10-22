@@ -53,7 +53,7 @@ export function AccountStatus({
       content = (
         <>
           <Avatar person={session.user} size="sm" />
-          <span className={compact ? 'hidden max-w-36 min-w-0 truncate text-sm text-ink-soft sm:inline' : 'max-w-36 min-w-0 truncate text-sm text-ink-soft'} title={session.user.email}>
+          <span className={compact ? 'relative hidden max-w-36 min-w-0 truncate text-sm text-ink-soft sm:inline-block' : 'relative max-w-36 min-w-0 truncate text-sm text-ink-soft'} title={session.user.email}>
             <span className="font-semibold text-ink">{displayName(session.user)}</span>
             {compact ? (
               <span className="sr-only"> ({session.user.email})</span>

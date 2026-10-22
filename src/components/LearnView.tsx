@@ -90,7 +90,7 @@ function Section({ id, title, children }: { id: string; title: string; children:
     <section
       id={id}
       aria-labelledby={`${id}-titre`}
-      className="scroll-mt-4 rounded-card border border-line bg-surface p-5 shadow-soft"
+      className="scroll-mt-4 [overflow-wrap:anywhere] rounded-card border border-line bg-surface p-5 shadow-soft"
     >
       <h3 id={`${id}-titre`} tabIndex={-1} className="text-lg font-semibold tracking-tight">
         {title}

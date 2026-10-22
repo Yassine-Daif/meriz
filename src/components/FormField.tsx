@@ -1,3 +1,4 @@
+import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import { useId } from 'react'
 import type { Ref } from 'react'
@@ -44,7 +45,7 @@ export function FormField({
   minLength,
   maxLength,
   required = true,
-  optionalLabel = '(facultatif)',
+  optionalLabel = t("(facultatif)"),
   multiline = false,
   rows = 3,
   mono = false,
@@ -60,7 +61,7 @@ export function FormField({
     .filter(Boolean)
     .join(' ')
 
-  const fieldClass = `mt-1.5 w-full rounded-control border bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-soft transition-[color,background-color,border-color] duration-150 ${mono ? 'font-mono tracking-wide' : ''} ${
+  const fieldClass = `mt-1.5 min-w-0 w-full rounded-control border bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-soft transition-[color,background-color,border-color] duration-150 ${mono ? 'font-mono tracking-wide' : ''} ${
     error ? 'border-2 border-danger' : 'border-line-strong hover:border-ink-soft focus:border-accent'
   }`
   const shared = {

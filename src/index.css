@@ -502,3 +502,6 @@ html[data-motion='off'] [class*='motion-safe:'] { translate: none !important; }
  .mcd-toolbar { flex-wrap:nowrap; overflow-x:auto; flex-shrink:0; }
  .mcd-toolbar > [role='group'] { flex-wrap:nowrap; flex-shrink:0; }
 }
+
+/* Un menu fermé n’occupe pas de place, même avec un enfant positionné. */
+.editor-file-actions details:not([open]) > .editor-file-menu { display:none; }

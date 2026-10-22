@@ -247,7 +247,7 @@ export function AssignmentEditor({
             value={dueAt}
             onChange={setDueAt}
             required={false}
-            optionalLabel="(facultative)"
+            optionalLabel={t("(facultative)")}
             hint={t("Laissez vide pour un devoir sans échéance.")}
             error={fieldErrors.dueAt}
           />

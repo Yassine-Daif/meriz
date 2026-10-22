@@ -18,7 +18,7 @@ interface PageHeaderProps {
 export function PageHeader({ title, eyebrow, description, actions, headingRef, leading }: PageHeaderProps) {
   useLanguage()
   return (
-    <header className="flex flex-wrap items-end justify-between gap-4">
+    <header className="flex min-w-0 flex-wrap items-end justify-between gap-4 [overflow-wrap:anywhere]">
       <div className="flex min-w-0 items-center gap-4">
         {leading}
         <div className="min-w-0">
@@ -29,7 +29,7 @@ export function PageHeader({ title, eyebrow, description, actions, headingRef, l
           {description && <div className="mt-1.5 max-w-2xl text-base leading-7 text-ink-soft">{description}</div>}
         </div>
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {actions && <div className="flex max-w-full flex-wrap items-center gap-2">{actions}</div>}
     </header>
   )
 }

@@ -135,7 +135,7 @@ export function TeacherHome({
        * Deux colonnes : ce qu'on lit à gauche, ce sur quoi on agit à
        * droite. Sous le point de bascule, tout s'empile dans cet ordre.
        */}
-      <div className="mt-8 grid gap-8 lg:grid-cols-3">
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="flex flex-col gap-8 lg:col-span-2">
           <AttentionToGrade state={toGrade} onOpen={onOpenCorrection} onShowAll={onShowCorrections} />
 

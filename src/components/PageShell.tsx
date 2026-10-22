@@ -45,7 +45,7 @@ export function PageShell({
   }, [focusKey, title])
 
   return (
-    <div className="meriz-page-enter">
+    <div className="meriz-page-enter min-w-0 [overflow-wrap:anywhere]">
       {onBack && (
         <BackButton label={backLabel} onClick={onBack} className="-ml-3 mb-3" />
       )}

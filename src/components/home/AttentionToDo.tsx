@@ -70,9 +70,9 @@ export function AttentionToDo({ rows, error, onReload, onOpenClassroom }: Attent
                     })
                   }
                   aria-label={t("Ouvrir {0}, dans la classe {1}", [row.title, row.classroom.name])}
-                  className="flex w-full items-center gap-3 rounded-card border border-line bg-surface p-4 text-left shadow-soft transition duration-150 hover:shadow-lift motion-safe:hover:-translate-y-0.5"
+                  className="flex w-full flex-wrap items-center gap-3 rounded-card border border-line bg-surface p-4 text-left shadow-soft transition duration-150 hover:shadow-lift motion-safe:hover:-translate-y-0.5"
                 >
-                  <span className="min-w-0 flex-1">
+                  <span className="min-w-0 flex-[1_1_12rem] [overflow-wrap:anywhere]">
                     <span className="block text-sm font-semibold text-ink">{row.title}</span>
                     <span className="block text-xs text-ink-soft">
                       {row.classroom.name} · {formatDueDate(row.dueAt)}

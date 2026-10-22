@@ -121,8 +121,8 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
   }
 
   return (
-    <section aria-label={t("Dictionnaire des données")} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center gap-3 border-b border-line bg-surface px-4 py-2">
+    <section aria-label={t("Dictionnaire des données")} className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2">
         {!readOnly && (
           <Button size="sm" onClick={() => dispatch({ type: 'ADD_PROPERTY' })}>
             {t("Ajouter une propriété")}</Button>
@@ -130,7 +130,7 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
         <p className="text-xs text-ink-soft">
           {counted(rows.length, 'propriété au dictionnaire', 'propriétés au dictionnaire')}</p>
       </div>
-      <div className="min-h-0 flex-1 overflow-auto p-4">
+      <div className="min-h-0 min-w-0 flex-1 overflow-auto p-4">
         {rows.length === 0 ? (
           <p className="text-sm text-ink-soft">
             {readOnly
@@ -138,7 +138,8 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryVi
               : t("Aucune propriété. Ajoutez-en une ici ou construisez le MCD, chaque attribut créé entre au dictionnaire.")}
           </p>
         ) : (
-          <table className="w-full border-separate border-spacing-0 rounded-card border border-line bg-surface text-sm shadow-soft">
+          // Le caption masqué reste ancré au tableau, même quand celui-ci défile.
+          <table className="relative w-full border-separate border-spacing-0 rounded-card border border-line bg-surface text-sm shadow-soft">
             <caption className="sr-only">
               {t("La liste maîtresse des propriétés : nom, type conceptuel, taille, utilisation dans le MCD et placement")}</caption>
             <thead>

@@ -82,7 +82,7 @@ export function AttentionToGrade({ state, onOpen, onShowAll }: AttentionToGradeP
                   className="flex w-full items-center gap-3 rounded-card border border-line bg-surface p-4 text-left shadow-soft transition duration-150 hover:shadow-lift motion-safe:hover:-translate-y-0.5"
                 >
                   <Avatar person={row.student} size="md" />
-                  <span className="min-w-0 flex-1">
+                  <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
                     <span className="block text-sm font-semibold text-ink">{displayName(row.student)}</span>
                     <span className="block text-sm text-ink">{row.assignment.title}</span>
                     <span className="block text-xs text-ink-soft">

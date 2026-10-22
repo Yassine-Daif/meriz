@@ -212,20 +212,20 @@ export function ProfilePage({ user, client, onShowClasses, onAccountDeleted }: P
           <h2 id="apercu-titre" className="text-lg font-semibold tracking-tight text-ink">
             {t("Ce que voient les autres")}</h2>
           <dl className="mt-3 grid gap-1 text-sm">
-            <div className="flex items-center gap-2">
-              <dt className="w-28 shrink-0 text-ink-soft">{t("Nom")}</dt>
-              <dd className="flex items-center gap-2">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+              <dt className="text-ink-soft sm:w-28 sm:shrink-0">{t("Nom")}</dt>
+              <dd className="flex min-w-0 flex-1 flex-wrap items-center gap-2 [overflow-wrap:anywhere]">
                 <Avatar person={preview} size="sm" />
-                {displayName(preview) || '(vide)'}
+                {displayName(preview) || t("(vide)")}
               </dd>
             </div>
-            <div className="flex gap-2">
-              <dt className="w-28 shrink-0 text-ink-soft">{t("Présentation")}</dt>
-              <dd>{preview.bio ?? <span className="text-ink-soft">{t("non partagée")}</span>}</dd>
+            <div className="flex flex-col gap-1 sm:flex-row sm:gap-2">
+              <dt className="text-ink-soft sm:w-28 sm:shrink-0">{t("Présentation")}</dt>
+              <dd className="min-w-0 flex-1 [overflow-wrap:anywhere]">{preview.bio ?? <span className="text-ink-soft">{t("non partagée")}</span>}</dd>
             </div>
-            <div className="flex gap-2">
-              <dt className="w-28 shrink-0 text-ink-soft">{t("Contact")}</dt>
-              <dd>{preview.contact ?? <span className="text-ink-soft">{t("non partagé")}</span>}</dd>
+            <div className="flex flex-col gap-1 sm:flex-row sm:gap-2">
+              <dt className="text-ink-soft sm:w-28 sm:shrink-0">{t("Contact")}</dt>
+              <dd className="min-w-0 flex-1 [overflow-wrap:anywhere]">{preview.contact ?? <span className="text-ink-soft">{t("non partagé")}</span>}</dd>
             </div>
           </dl>
           <p className="mt-2 text-xs text-ink-soft">

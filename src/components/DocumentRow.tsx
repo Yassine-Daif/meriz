@@ -98,24 +98,24 @@ export function DocumentRow({ meta, onOpen, onRename, onDuplicate, onRequestDele
           type="button"
           onClick={onOpen}
           aria-label={t("Ouvrir {0}{1}", [meta.name, provenance ? `, ${provenance.spoken}` : ''])}
-          className="flex min-w-0 flex-1 items-center gap-3 rounded-control px-3 py-2 text-left transition-colors duration-150 hover:bg-accent-soft"
+          className="flex min-w-0 flex-[1_1_16rem] items-center gap-3 rounded-control px-3 py-2 text-left transition-colors duration-150 hover:bg-accent-soft"
         >
           <span
             aria-hidden="true"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-accent-soft font-mono text-xs font-semibold text-accent-ink"
           >
             {t("MCD")}</span>
-          <span className="min-w-0">
+          <span className="min-w-0 flex-1">
             <span className="flex flex-wrap items-center gap-2">
-              <span className="truncate text-sm font-semibold text-ink">{meta.name}</span>
+              <span className="block min-w-0 max-w-full truncate text-sm font-semibold text-ink">{meta.name}</span>
               {provenance && <Badge tone={provenance.tone}>{provenance.label}</Badge>}
             </span>
-            <span className="block text-xs text-ink-soft">{t("Modifié le ")}{formatDate(meta.updatedAt)}</span>
+            <span className="block text-xs text-ink-soft [overflow-wrap:anywhere]">{t("Modifié le ")}{formatDate(meta.updatedAt)}</span>
           </span>
         </button>
       )}
 
-      <div role="group" aria-label={t("Actions pour {0}", [meta.name])} className="flex shrink-0 gap-1.5 pr-1">
+      <div role="group" aria-label={t("Actions pour {0}", [meta.name])} className="flex min-w-0 max-w-full flex-wrap gap-1.5 pr-1">
         <button
           ref={renameButtonRef}
           type="button"

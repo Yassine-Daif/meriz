@@ -112,7 +112,7 @@ export function RecentDocuments({
                   onClick={() => void run(() => onOpenDocument(meta.id))}
                   disabled={busy}
                   aria-label={t("Ouvrir {0}{1}", [meta.name, provenance ? `, ${provenance.spoken}` : ''])}
-                  className="flex w-full items-center gap-3 rounded-card border border-line bg-surface p-4 text-left shadow-soft transition duration-150 hover:shadow-lift disabled:cursor-wait motion-safe:hover:-translate-y-0.5"
+                  className="grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-card border border-line bg-surface p-4 text-left shadow-soft transition duration-150 hover:shadow-lift disabled:cursor-wait motion-safe:hover:-translate-y-0.5"
                 >
                   <span
                     aria-hidden="true"
@@ -121,9 +121,9 @@ export function RecentDocuments({
                     {t("MCD")}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-ink">{meta.name}</span>
-                    <span className="block text-xs text-ink-soft">{t("Modifié le ")}{formatDate(meta.updatedAt)}</span>
+                    <span className="block text-xs text-ink-soft [overflow-wrap:anywhere]">{t("Modifié le ")}{formatDate(meta.updatedAt)}</span>
                   </span>
-                  {provenance && <Badge tone={provenance.tone}>{provenance.label}</Badge>}
+                  {provenance && <span className="col-span-2"><Badge tone={provenance.tone}>{provenance.label}</Badge></span>}
                 </button>
               </li>
             )

@@ -141,7 +141,7 @@ export function ConnectedShell({ user, page, onNavigate, notice, onClearNotice, 
           </ul>
         </nav>
 
-        <main id="contenu" className="min-h-0 flex-1 overflow-y-auto">
+        <main id="contenu" className="min-h-0 min-w-0 flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 md:px-10">
             {notice && (
               <Notice

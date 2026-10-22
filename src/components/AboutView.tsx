@@ -6,7 +6,7 @@ import { LogoMark } from './ui/Lockup'
 export function AboutView() {
   useLanguage()
   return (
-    <section aria-label={t("À propos")} className="min-h-0 flex-1 overflow-y-auto">
+    <section aria-label={t("À propos")} className="min-h-0 flex-1 overflow-y-auto [overflow-wrap:anywhere]">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-8 py-8">
         <header className="flex items-center gap-3">
           <LogoMark size={44} />

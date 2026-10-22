@@ -17,7 +17,7 @@ interface CardProps {
 export function Card({ as: Tag = 'div', tone = 'default', lift = false, className, children, ...aria }: CardProps) {
   useLanguage()
   const classes = [
-    'rounded-card border border-line p-5 shadow-soft',
+    'min-w-0 rounded-card border border-line p-5 shadow-soft [overflow-wrap:anywhere]',
     tone === 'soft' ? 'bg-surface-soft' : 'bg-surface',
     lift
       ? 'meriz-card-lift transition-[box-shadow,transform] duration-150 hover:shadow-lift motion-safe:hover:-translate-y-0.5'

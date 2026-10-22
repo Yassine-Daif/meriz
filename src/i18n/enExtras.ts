@@ -1,5 +1,8 @@
 /** Phrases contextualisées et accords. */
 export const englishExtras: Readonly<Record<string, string>> = {
+  "(vide)": "(empty)",
+  "(facultatif)": "(optional)",
+  "(facultative)": "(optional)",
   "Fermer l’inspecteur": "Close inspector",
  "classe": "class", "classes": "classes", "groupe": "group", "groupes": "groups", "bloc": "block", "blocs": "blocks",
  "point à vérifier": "point to check", "points à vérifier": "points to check", "élément": "additional element", "éléments": "additional elements",

@@ -38,7 +38,7 @@ const SIZES: Record<ButtonSize, string> = {
  */
 export function buttonClass({ variant = 'secondary', size = 'md', block = false }: ButtonClassOptions = {}): string {
   return [
-    'meriz-button inline-flex items-center justify-center rounded-control border font-medium',
+    'meriz-button inline-flex min-w-0 max-w-full items-center justify-center rounded-control border font-medium',
     'transition-[color,background-color,border-color,box-shadow,transform] duration-150',
     'disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none',
     VARIANTS[variant],
