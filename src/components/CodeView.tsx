@@ -1,3 +1,4 @@
+import { useToast } from './ui/toastContext'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import { useMemo, useState } from 'react'
@@ -29,7 +30,7 @@ interface CodeViewProps {
 export function CodeView({ mcd, tables, settings, hasErrors }: CodeViewProps) {
   const locale = useLanguage()
   const [framework, setFramework] = useState<FrameworkId>('laravel')
-  const [status, setStatus] = useState('')
+  const setStatus = useToast()
 
   const files = useMemo(
     () => { void locale; return generateFiles(framework, mcd, tables, settings) },
@@ -44,7 +45,7 @@ export function CodeView({ mcd, tables, settings, hasErrors }: CodeViewProps) {
 
   const copy = async (text: string, success: string) => {
     const copied = await copyText(text)
-    setStatus(copied ? success : t("Erreur : copie impossible dans ce navigateur."))
+    setStatus({ kind: copied ? 'info' : 'error', text: copied ? success : t("Erreur : copie impossible dans ce navigateur.") })
   }
 
   const handleExport = async () => {
@@ -75,9 +76,6 @@ export function CodeView({ mcd, tables, settings, hasErrors }: CodeViewProps) {
         <p className="text-xs text-ink-soft">
           {files.length === 1 ? t("1 fichier généré pour ") : t("{0} fichiers générés pour ", [files.length])}
           <span className="font-mono">{label}</span>
-        </p>
-        <p role="status" aria-live="polite" className="text-xs text-ink-soft">
-          {status}
         </p>
       </div>
 

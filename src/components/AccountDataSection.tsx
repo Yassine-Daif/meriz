@@ -1,3 +1,4 @@
+import { useToast } from './ui/toastContext'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import { useState } from 'react'
@@ -27,7 +28,7 @@ interface AccountDataSectionProps {
 export function AccountDataSection({ user, client, onDeleted }: AccountDataSectionProps) {
   useLanguage()
   const [pending, setPending] = useState(false)
-  const [status, setStatus] = useState('')
+  const setStatus = useToast()
   const [error, setError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
 
@@ -67,14 +68,6 @@ export function AccountDataSection({ user, client, onDeleted }: AccountDataSecti
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <Button type="button" onClick={() => void download()} loading={pending} loadingLabel={t("Préparation…")}>
           {t("Télécharger mes données")}</Button>
-        <p role="status" aria-live="polite" className="text-sm text-ink-soft">
-          {status && (
-            <>
-              <span aria-hidden="true">✓ </span>
-              {status}
-            </>
-          )}
-        </p>
       </div>
 
       {error !== null && (

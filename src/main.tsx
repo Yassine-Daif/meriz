@@ -1,3 +1,4 @@
+import { ToastProvider } from './components/ui/ToastProvider'
 import { DesktopUpdates } from './components/DesktopUpdates'
 import { StrictMode } from 'react'
 import { isTauri } from '@tauri-apps/api/core'
@@ -21,7 +22,7 @@ function renderApplication() {
   root.render(
     <StrictMode>
       <SessionProvider>
-        <DesktopUpdates><App /></DesktopUpdates>
+        <ToastProvider><DesktopUpdates><App /></DesktopUpdates></ToastProvider>
       </SessionProvider>
     </StrictMode>,
   )

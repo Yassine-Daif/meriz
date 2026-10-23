@@ -1,8 +1,8 @@
+import { useToast } from './ui/toastContext'
 import { counted } from "../lib/plural"
 import { localeTag } from "../i18n/runtime"
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
-import { useState } from 'react'
 import type { MldTable } from '../model/mld'
 import { copyText } from '../lib/clipboard'
 import { relationalLine } from '../model/mld'
@@ -29,7 +29,7 @@ function mldrHeader(date: Date): string {
  */
 export function MldView({ tables, hasErrors }: MldViewProps) {
   useLanguage()
-  const [copyStatus, setCopyStatus] = useState('')
+  const setCopyStatus = useToast()
 
   if (tables.length === 0) {
     return <EmptyGeneration viewName={t("MLD (modèle logique de données)")} />
@@ -38,7 +38,7 @@ export function MldView({ tables, hasErrors }: MldViewProps) {
   const handleCopy = async () => {
     const text = [mldrHeader(new Date()), ...tables.map(relationalLine)].join('\n')
     const copied = await copyText(text)
-    setCopyStatus(copied ? t("Notation copiée dans le presse-papiers.") : t("Erreur : copie impossible dans ce navigateur."))
+    setCopyStatus({ kind: copied ? 'info' : 'error', text: copied ? t("Notation copiée dans le presse-papiers.") : t("Erreur : copie impossible dans ce navigateur.") })
   }
 
   return (
@@ -51,9 +51,6 @@ export function MldView({ tables, hasErrors }: MldViewProps) {
           {t("Copier la notation")}</Button>
         <p className="text-xs text-ink-soft">
           {counted(tables.length, 'table dérivée du MCD', 'tables dérivées du MCD')}</p>
-        <p role="status" aria-live="polite" className="text-xs text-ink-soft">
-          {copyStatus}
-        </p>
       </div>
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {hasErrors && <ErrorsBanner />}

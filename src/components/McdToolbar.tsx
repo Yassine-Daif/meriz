@@ -1,8 +1,9 @@
+import { useToast } from './ui/toastContext'
 import { counted } from "../lib/plural"
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import { Icon } from './ui/Icon'
-import { useEffect, useRef, useState } from 'react'
+import { useRef } from 'react'
 import type { Dispatch } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import type { McdAction } from '../model/mcdReducer'
@@ -26,11 +27,6 @@ interface McdToolbarProps {
   pencil?: { active: boolean; onToggle: () => void; onSelect: () => void }
 }
 
-interface StatusMessage {
-  kind: 'info' | 'error'
-  text: string
-}
-
 const iconProps = {
   width: 16,
   height: 16,
@@ -47,8 +43,7 @@ const iconProps = {
 export function McdToolbar({ dispatch, problems, onGenerate, readOnly = false, pencil, panel }: McdToolbarProps) {
   useLanguage()
   const { screenToFlowPosition, fitView } = useReactFlow()
-  const [status, setStatus] = useState<StatusMessage | null>(null)
-  useEffect(() => { if (readOnly) setStatus(null) }, [readOnly])
+  const setStatus = useToast()
   // Décalage en cascade pour que des ajouts répétés ne s'empilent pas.
   const addCountRef = useRef(0)
 
@@ -164,18 +159,6 @@ export function McdToolbar({ dispatch, problems, onGenerate, readOnly = false, p
         <Button size="sm" variant="ghost" aria-label={t("Ajuster à la fenêtre")} title={t("Ajuster à la fenêtre")} onClick={() => void fitView({ padding: .2, duration: 0 })}><Icon name="fit" /></Button>
         {panel && <Button id={panel.buttonId} size="sm" variant="ghost" className="md:hidden" aria-label={t("Inspecteur")} title={t("Inspecteur")} aria-expanded={panel.open} aria-controls={panel.controls} onClick={panel.onToggle}><Icon name="panel" /></Button>}
       </div>
-      <p role="status" aria-live="polite" className={status?.kind === 'error' ? 'basis-full min-w-0 text-xs text-danger' : 'sr-only'}>
-        {status && (
-          <span
-            className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 ${
-              status.kind === 'error' ? 'border-warning bg-warning-soft' : 'border-line-strong bg-surface-soft'
-            }`}
-          >
-            <span aria-hidden="true">{status.kind === 'error' ? '⚠' : '✓'}</span>
-            {status.text}
-          </span>
-        )}
-      </p>
     </div>
   )
 }

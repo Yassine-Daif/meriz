@@ -1,3 +1,4 @@
+import { useToast } from './ui/toastContext'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import { useId, useMemo, useState } from 'react'
@@ -38,7 +39,7 @@ function highlightSql(sql: string): ReactNode[] {
 export function SqlView({ tables, dialect, hasErrors }: SqlViewProps) {
   useLanguage()
   const [includeDrops, setIncludeDrops] = useState(true)
-  const [copyStatus, setCopyStatus] = useState('')
+  const setCopyStatus = useToast()
   const dropsId = useId()
 
   const sql = useMemo(
@@ -54,7 +55,7 @@ export function SqlView({ tables, dialect, hasErrors }: SqlViewProps) {
 
   const handleCopy = async () => {
     const copied = await copyText(sql)
-    setCopyStatus(copied ? t("Script copié dans le presse-papiers.") : t("Erreur : copie impossible dans ce navigateur."))
+    setCopyStatus({ kind: copied ? 'info' : 'error', text: copied ? t("Script copié dans le presse-papiers.") : t("Erreur : copie impossible dans ce navigateur.") })
   }
 
   const handleExport = async () => {
@@ -91,9 +92,6 @@ export function SqlView({ tables, dialect, hasErrors }: SqlViewProps) {
           {t("DROP TABLE IF EXISTS")}</label>
         <p className="text-xs text-ink-soft">
           {t("Dialecte : ")}<span className="font-mono">{dialectLabel}</span> {t(" (choisi dans la vue MPD)")}</p>
-        <p role="status" aria-live="polite" className="text-xs text-ink-soft">
-          {copyStatus}
-        </p>
       </div>
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {hasErrors && <ErrorsBanner />}

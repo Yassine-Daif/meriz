@@ -1,3 +1,4 @@
+import { useToast } from './ui/toastContext'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import { Icon } from './ui/Icon'
@@ -22,11 +23,6 @@ interface FileActionsProps {
   onNewDocument?: () => void
   /** Importe un fichier comme nouveau document : message d'erreur, ou null. */
   onImportFile?: (file: File) => Promise<string | null>
-}
-
-interface StatusMessage {
-  kind: 'info' | 'error'
-  text: string
 }
 
 const buttonClass =
@@ -56,7 +52,7 @@ export function FileActions({
     return () => { document.removeEventListener('pointerdown', closeOutside); window.removeEventListener('resize', closeOnResize) }
   }, [])
   const closeMenu = () => menu.current?.removeAttribute('open')
-  const [status, setStatus] = useState<StatusMessage | null>(null)
+  const setStatus = useToast()
   const { getNodes } = useReactFlow()
 
   const handleSave = async () => {
@@ -128,18 +124,6 @@ export function FileActions({
       </details>
       <button type="button" className={buttonClass} title={t("Enregistrer une copie en fichier")} aria-label={t("Enregistrer une copie en fichier")} onClick={() => void handleSave()}><Icon name="save" /><span className="hidden md:inline">{t("Enregistrer")}</span></button>
       <button type="button" className={buttonClass} disabled={!mcdVisible} title={t("Exporter le MCD en image PNG")} aria-label={t("Exporter le MCD en image PNG")} onClick={() => void handleExport()}><Icon name="image" /><span className="hidden lg:inline">{t("Image")}</span></button>
-      <p role="status" aria-live="polite" className="basis-full min-w-0 text-xs text-ink-soft empty:hidden">
-        {status && (
-          <span
-            className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 ${
-              status.kind === 'error' ? 'border-warning bg-warning-soft' : 'border-line-strong bg-surface-soft'
-            }`}
-          >
-            <span aria-hidden="true">{status.kind === 'error' ? '⚠' : '✓'}</span>
-            {status.text}
-          </span>
-        )}
-      </p>
     </div>
   )
 }
