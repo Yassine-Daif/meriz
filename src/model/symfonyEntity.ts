@@ -1,3 +1,5 @@
+import type { SqlDialect } from './mpd'
+import { doctrineColumn, nullablePhpType } from './frameworkSqlTypes'
 import { t } from "../i18n/runtime"
 import type { CodeSchema, Relation, SchemaColumn, SchemaTable } from './codeSchema'
 import type { GeneratedFile } from './codegenTypes'
@@ -14,40 +16,6 @@ import { phpString } from './php'
  * entité, dont l'identité passe par ses relations.
  */
 
-interface ColumnFormat {
-  /** Le corps de `#[ORM\\Column(...)]`, sans le nom ni le nullable. */
-  attribute: string
-  phpType: string
-  /** Vrai quand la classe `Types` doit être importée. */
-  needsTypes: boolean
-}
-
-function columnFormat(column: SchemaColumn): ColumnFormat {
-  switch (column.conceptualType) {
-    case 'texte':
-      return { attribute: `length: ${column.size ?? 255}`, phpType: 'string', needsTypes: false }
-    case 'entier':
-      return { attribute: '', phpType: 'int', needsTypes: false }
-    case 'decimal':
-      return {
-        attribute: 'type: Types::DECIMAL, precision: 10, scale: 2',
-        phpType: 'string',
-        needsTypes: true,
-      }
-    case 'booleen':
-      return { attribute: '', phpType: 'bool', needsTypes: false }
-    case 'date':
-      return { attribute: 'type: Types::DATE_MUTABLE', phpType: '\\DateTimeInterface', needsTypes: true }
-    case 'datetime':
-      return {
-        attribute: 'type: Types::DATETIME_MUTABLE',
-        phpType: '\\DateTimeInterface',
-        needsTypes: true,
-      }
-    case 'heure':
-      return { attribute: 'type: Types::TIME_MUTABLE', phpType: '\\DateTimeInterface', needsTypes: true }
-  }
-}
 
 function studly(name: string): string {
   return name.charAt(0).toUpperCase() + name.slice(1)
@@ -70,7 +38,7 @@ function joinColumns(relation: Relation, nullable: boolean): string[] {
   )
 }
 
-export function symfonyEntityFile(table: SchemaTable, schema: CodeSchema): GeneratedFile {
+export function symfonyEntityFile(table: SchemaTable, schema: CodeSchema, dialect: SqlDialect = 'mysql'): GeneratedFile {
   const imports = new Set<string>(['use Doctrine\\ORM\\Mapping as ORM;'])
   const properties: string[] = []
   const methods: string[] = []
@@ -78,7 +46,7 @@ export function symfonyEntityFile(table: SchemaTable, schema: CodeSchema): Gener
 
   /* -------- Colonnes scalaires -------- */
   for (const column of scalarColumns(table)) {
-    const format = columnFormat(column)
+    const format = doctrineColumn(column, dialect)
     if (format.needsTypes) {
       imports.add('use Doctrine\\DBAL\\Types\\Types;')
     }
@@ -96,20 +64,20 @@ export function symfonyEntityFile(table: SchemaTable, schema: CodeSchema): Gener
       lines.push(t("    // Type imposé au MPD : {0}", [column.sqlType]))
     }
     lines.push(`    #[ORM\\Column(${parts.join(', ')})]`)
-    lines.push(`    private ?${format.phpType} $${column.propertyName} = null;`)
+    lines.push(`    private ${nullablePhpType(format.phpType)} $${column.propertyName} = null;`)
     properties.push(lines.join('\n'))
 
     const name = studly(column.propertyName)
     methods.push(
       [
-        `    public function get${name}(): ?${format.phpType}`,
+        `    public function get${name}(): ${nullablePhpType(format.phpType)}`,
         '    {',
         `        return $this->${column.propertyName};`,
         '    }',
       ].join('\n'),
     )
     if (!column.autoIncrement) {
-      const argument = column.nullable ? `?${format.phpType}` : format.phpType
+      const argument = column.nullable ? nullablePhpType(format.phpType) : format.phpType
       methods.push(
         [
           `    public function set${name}(${argument} $${column.propertyName}): static`,

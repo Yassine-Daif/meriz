@@ -1,8 +1,9 @@
+import { SqlTypeControl } from './SqlTypeControl'
+import { useSqlTypes } from './sqlTypesContext'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import { useState } from 'react'
 import type { AttributeType, Property } from '../model/mcd'
-import { ATTRIBUTE_TYPES } from '../model/mcd'
 import type { ResolvedAttribute } from '../model/queries'
 
 interface AttributesEditorProps {
@@ -38,11 +39,11 @@ export function AttributesEditor({
   onAdd,
   onPlace,
   onRename,
-  onChangeType,
   onToggleIdentifier,
   onRemove,
 }: AttributesEditorProps) {
   useLanguage()
+  const { physicalType } = useSqlTypes()
   const [propertyToPlace, setPropertyToPlace] = useState('')
 
   const handlePlace = () => {
@@ -69,7 +70,7 @@ export function AttributesEditor({
             <option value="">{t("Placer depuis le dictionnaire")}</option>
             {unplaced.map((property) => (
               <option key={property.id} value={property.id}>
-                {property.name} ({property.type})
+                {property.name} ({physicalType(property.id, property.type, property.size)})
               </option>
             ))}
           </select>
@@ -101,20 +102,7 @@ export function AttributesEditor({
               className="w-full min-w-0 rounded-lg border border-line-strong bg-surface px-2 py-1 text-sm"
             />
             <div className="mt-1.5 flex min-w-0 items-center gap-2">
-              <select
-                aria-label={t("Type de l'attribut {0}", [index + 1])}
-                value={attribute.type}
-                onChange={(event) =>
-                  onChangeType(attribute.propertyId, event.target.value as AttributeType)
-                }
-                className="min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-1.5 py-1 font-mono text-xs"
-              >
-                {ATTRIBUTE_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {t(type)}
-                  </option>
-                ))}
-              </select>
+              <SqlTypeControl compact property={{ id: attribute.propertyId, name: attribute.name, type: attribute.type, size: attribute.size }} />
               {allowIdentifier && onToggleIdentifier && (
                 <label
                   className="flex shrink-0 items-center gap-1 text-xs"

@@ -1,3 +1,4 @@
+import { physicalSchemaIssues } from './physicalSchema'
 import { buildCodeSchema } from './codeSchema'
 import type { FrameworkId, GeneratedFile } from './codegenTypes'
 import { laravelFiles } from './laravel'
@@ -25,6 +26,8 @@ export function generateFiles(
   settings: MpdSettings,
 ): GeneratedFile[] {
   const schema = buildCodeSchema(mcd, tables, settings)
+  const issues = physicalSchemaIssues(schema.physicalTables, settings.dialect)
+  if (issues.length) throw new Error(issues.join('\n'))
   return framework === 'laravel' ? laravelFiles(schema) : symfonyFiles(schema, settings.dialect)
 }
 

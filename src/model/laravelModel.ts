@@ -1,3 +1,5 @@
+import { isIntegerType } from './sqlTypes'
+import { eloquentCast, columnSqlSpec } from './frameworkSqlTypes'
 import { t } from "../i18n/runtime"
 import type { CodeSchema, ManyToManyRelation, Relation, SchemaColumn, SchemaTable } from './codeSchema'
 import type { GeneratedFile } from './codegenTypes'
@@ -117,7 +119,7 @@ export function laravelModelFile(table: SchemaTable, schema: CodeSchema): Genera
   if (simplePrimary && simplePrimary.columnName !== 'id') {
     properties.push('', `    protected $primaryKey = ${phpString(simplePrimary.columnName)};`)
   }
-  if (simplePrimary && simplePrimary.conceptualType !== 'entier') {
+  if (simplePrimary && !isIntegerType(columnSqlSpec(simplePrimary).name)) {
     properties.push('', `    protected $keyType = 'string';`)
   }
   if (!simplePrimary || !simplePrimary.autoIncrement) {
@@ -138,7 +140,9 @@ export function laravelModelFile(table: SchemaTable, schema: CodeSchema): Genera
   const fillable = fillableColumns(table).map((column) => column.columnName)
   properties.push('', `    protected $fillable = ${phpStringBlock(fillable, '    ')};`)
 
+  const casts = table.columns.flatMap(column => { const cast = eloquentCast(column); return cast ? ["        " + phpString(column.columnName) + " => " + phpString(cast) + ","] : [] })
   const methods = [
+    ...(casts.length ? ['', '    protected function casts(): array', '    {', '        return [', ...casts, '        ];', '    }'] : []),
     ...relations.flatMap((relation) => ['', ...relationMethod(relation, schema)]),
     ...table.manyToMany.flatMap((relation) => ['', ...manyToManyMethod(relation, schema)]),
   ]

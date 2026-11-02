@@ -1,153 +1,84 @@
-import { t } from "../i18n/runtime"
+import { blueprintColumn } from './frameworkSqlTypes'
+import { t } from '../i18n/runtime'
 import type { CodeSchema, SchemaColumn, SchemaTable } from './codeSchema'
 import type { GeneratedFile } from './codegenTypes'
 import { phpString, phpStringList } from './php'
 
-/**
- * Migrations Laravel : une par table, en classe anonyme, comme les
- * squelettes du framework depuis Laravel 9.
- *
- * La date est figée et identique pour toutes : `php artisan migrate` ne
- * lit que l'ordre relatif des noms de fichiers, et une date fixe rend la
- * génération déterministe, donc vérifiable par des tests.
- */
-
 export const LARAVEL_MIGRATION_DATE = '2025_01_01'
 
-/** Appel de colonne du Blueprint, selon le type conceptuel. */
-function blueprintCall(column: SchemaColumn): string {
-  const name = phpString(column.columnName)
-  switch (column.conceptualType) {
-    case 'texte':
-      return column.size === undefined
-        ? `$table->string(${name})`
-        : `$table->string(${name}, ${column.size})`
-    case 'entier':
-      return `$table->integer(${name})`
-    case 'decimal':
-      return `$table->decimal(${name}, 10, 2)`
-    case 'booleen':
-      return `$table->boolean(${name})`
-    case 'date':
-      return `$table->date(${name})`
-    case 'datetime':
-      return `$table->dateTime(${name})`
-    case 'heure':
-      return `$table->time(${name})`
-  }
-}
-
-/** Une surcharge du MPD ne se traduit pas en Blueprint : on la signale. */
-function overrideComment(column: SchemaColumn): string[] {
-  return column.overridden ? [t("// Type imposé au MPD : {0}", [column.sqlType])] : []
-}
-
-/**
- * Une clé étrangère passe par `foreignId()->constrained()` seulement si
- * elle tient sur une colonne et vise une clé auto-incrémentée : c'est le
- * seul cas où le type que Laravel fabrique correspond vraiment à la
- * colonne visée. Sinon, colonne explicite et contrainte à part.
- */
-function isConstrainable(columns: SchemaColumn[], schema: CodeSchema): boolean {
-  if (columns.length !== 1) return false
-  const column = columns[0] as SchemaColumn
-  const target = schema.tables.find((table) => table.id === column.foreignKey?.targetTableId)
-  const targetColumn = target?.primaryKey.find(
-    (candidate) => candidate.columnName === column.foreignKey?.referencedColumn,
-  )
-  return targetColumn?.autoIncrement === true && target?.primaryKey.length === 1
-}
-
-function groupsOf(table: SchemaTable): { group: string; columns: SchemaColumn[] }[] {
-  const groups: { group: string; columns: SchemaColumn[] }[] = []
+export function foreignGroups(table: SchemaTable): { group: string; columns: SchemaColumn[] }[] {
+  const groups = new Map<string, SchemaColumn[]>()
   for (const column of table.columns) {
-    const key = column.foreignKey?.group
-    if (key === undefined) continue
-    const existing = groups.find((candidate) => candidate.group === key)
-    if (existing) existing.columns.push(column)
-    else groups.push({ group: key, columns: [column] })
+    if (!column.foreignKey) continue
+    const group = groups.get(column.foreignKey.group) ?? []
+    group.push(column); groups.set(column.foreignKey.group, group)
   }
-  return groups
+  return [...groups].map(([group, columns]) => ({ group, columns }))
+}
+const list = (names: string[]) => names.length === 1 ? phpString(names[0]!) : phpStringList(names)
+
+export function foreignStatements(table: SchemaTable, schema: CodeSchema, groups: Set<string>): string[] {
+  return foreignGroups(table).filter(group => groups.has(group.group)).map(({ columns }) => {
+    const target = schema.tables.find(candidate => candidate.id === columns[0]?.foreignKey?.targetTableId)
+    return `$table->foreign(${list(columns.map(c => c.columnName))})->references(${list(columns.map(c => c.foreignKey!.referencedColumn))})->on(${phpString(target?.tableName ?? '')});`
+  })
 }
 
-export function laravelMigrationFile(
-  table: SchemaTable,
-  schema: CodeSchema,
-  index: number,
-  withTimestamps: boolean,
-): GeneratedFile {
-  const lines: string[] = []
-  const constrained = new Set<string>()
-  const groups = groupsOf(table)
-  const simplePrimary = table.primaryKey.length === 1 ? (table.primaryKey[0] as SchemaColumn) : null
-  const autoPrimary =
-    simplePrimary && simplePrimary.autoIncrement && simplePrimary.foreignKey === undefined
-      ? simplePrimary
-      : null
-
-  for (const column of table.columns) {
-    if (column === autoPrimary) {
-      lines.push(`$table->id(${phpString(column.columnName)});`)
-      continue
-    }
-    const group = column.foreignKey?.group
-    const groupColumns = groups.find((candidate) => candidate.group === group)?.columns ?? []
-    if (group !== undefined && isConstrainable(groupColumns, schema)) {
-      const target = schema.tables.find((candidate) => candidate.id === column.foreignKey?.targetTableId)
-      const nullable = column.nullable ? '->nullable()' : ''
-      lines.push(...overrideComment(column))
-      lines.push(
-        `$table->foreignId(${phpString(column.columnName)})${nullable}->constrained(` +
-          `${phpString(target?.tableName ?? '')}, ${phpString(column.foreignKey?.referencedColumn ?? '')});`,
-      )
-      constrained.add(group)
-      continue
-    }
-    lines.push(...overrideComment(column))
-    lines.push(`${blueprintCall(column)}${column.nullable ? '->nullable()' : ''};`)
-  }
-
-  if (withTimestamps) {
-    lines.push('$table->timestamps();')
-  }
-
-  // Clé primaire : `id()` l'a déjà posée, sinon contrainte explicite.
-  if (!autoPrimary && table.primaryKey.length > 0) {
-    const names = table.primaryKey.map((column) => column.columnName)
-    lines.push(
-      names.length === 1
-        ? `$table->primary(${phpString(names[0] as string)});`
-        : `$table->primary(${phpStringList(names)});`,
-    )
-  }
-  if (table.primaryKey.length === 0) {
-    lines.push(t("// Attention : {0} n'a pas d'identifiant dans le MCD.", [table.sourceName]))
-  }
-
-  // Les clés étrangères que `constrained()` n'a pas pu porter.
-  for (const { group, columns } of groups) {
-    if (constrained.has(group)) continue
-    const target = schema.tables.find((candidate) => candidate.id === columns[0]?.foreignKey?.targetTableId)
-    const locals = columns.map((column) => column.columnName)
-    const remotes = columns.map((column) => column.foreignKey?.referencedColumn ?? '')
-    const local = locals.length === 1 ? phpString(locals[0] as string) : phpStringList(locals)
-    const remote = remotes.length === 1 ? phpString(remotes[0] as string) : phpStringList(remotes)
-    lines.push(
-      `$table->foreign(${local})->references(${remote})->on(${phpString(target?.tableName ?? '')});`,
-    )
-  }
-
-  const body = lines.map((line) => `            ${line}`).join('\n')
-  const suffix = String(index).padStart(6, '0')
-  const origin =
-    table.origin === 'entity'
-      ? t("l'entité {0}", [table.sourceName])
-      : `l'association ${table.sourceName}`
-
-  const content = t("<?php\n\nuse Illuminate\\Database\\Migrations\\Migration;\nuse Illuminate\\Database\\Schema\\Blueprint;\nuse Illuminate\\Support\\Facades\\Schema;\n\n/** Table {0}, dérivée de {1} du MCD. */\nreturn new class extends Migration\n{\n    public function up(): void\n    {\n        Schema::create({2}, function (Blueprint $table) {\n{3}\n        });\n    }\n\n    public function down(): void\n    {\n        Schema::dropIfExists({4});\n    }\n};\n", [table.tableName, origin, phpString(table.tableName), body, phpString(table.tableName)])
-
+function migrationFile(name: string, index: number, up: string[], down: string[], description: string): GeneratedFile {
   return {
-    path: `database/migrations/${LARAVEL_MIGRATION_DATE}_${suffix}_create_${table.tableName}_table.php`,
-    content,
+    path: `database/migrations/${LARAVEL_MIGRATION_DATE}_${String(index).padStart(6, '0')}_${name}.php`,
+    content: `<?php
+
+use Illuminate\\Database\\Migrations\\Migration;
+use Illuminate\\Database\\Schema\\Blueprint;
+use Illuminate\\Support\\Facades\\Schema;
+
+/** ${description} */
+return new class extends Migration
+{
+    public function up(): void
+    {
+${up.map(line => '        ' + line).join('\n')}
+    }
+
+    public function down(): void
+    {
+${down.map(line => '        ' + line).join('\n')}
+    }
+};
+`,
   }
+}
+
+/** Les références à une table pas encore créée sont reportées dans une migration finale. */
+export function laravelMigrationFile(table: SchemaTable, schema: CodeSchema, index: number, withTimestamps: boolean, deferred = new Set<string>()): GeneratedFile {
+  const lines: string[] = []
+  const primary = table.primaryKey.length === 1 ? table.primaryKey[0] : undefined
+  const auto = primary?.autoIncrement && !primary.foreignKey ? primary : undefined
+  for (const column of table.columns) {
+    if (column.overridden) lines.push(t('// Type imposé au MPD : {0}', [column.sqlType]))
+    lines.push(`${blueprintColumn(column)}${column === auto ? '->autoIncrement()' : column.nullable ? '->nullable()' : ''};`)
+  }
+  if (withTimestamps) {
+    if (!table.columns.some(column => ['created_at', 'updated_at'].includes(column.columnName))) lines.push('$table->timestamps();')
+    else for (const name of ['created_at', 'updated_at']) if (!table.columns.some(column => column.columnName === name)) lines.push(`$table->timestamp('${name}')->nullable();`)
+  }
+  if (!auto && table.primaryKey.length) lines.push(`$table->primary(${list(table.primaryKey.map(c => c.columnName))});`)
+  if (!table.primaryKey.length) lines.push(t("// Attention : {0} n'a pas d'identifiant dans le MCD.", [table.sourceName]))
+  lines.push(...foreignStatements(table, schema, new Set(foreignGroups(table).map(g => g.group).filter(group => !deferred.has(group)))))
+  const origin = table.origin === 'entity' ? t("l'entité {0}", [table.sourceName]) : t('l’association {0}', [table.sourceName])
+  return migrationFile(`create_${table.tableName}_table`, index,
+    [`Schema::create(${phpString(table.tableName)}, function (Blueprint $table) {`, ...lines.map(line => '    ' + line), '});'],
+    [`Schema::dropIfExists(${phpString(table.tableName)});`], t('Table {0}, dérivée de {1} du MCD.', [table.tableName, origin]))
+}
+
+export function deferredForeignMigration(schema: CodeSchema, deferred: Map<string, Set<string>>, index: number): GeneratedFile {
+  const up: string[] = [], down: string[] = []
+  for (const table of schema.tables) {
+    const groups = deferred.get(table.id)
+    if (!groups?.size) continue
+    up.push(`Schema::table(${phpString(table.tableName)}, function (Blueprint $table) {`, ...foreignStatements(table, schema, groups).map(line => '    ' + line), '});')
+    down.unshift(`Schema::table(${phpString(table.tableName)}, function (Blueprint $table) {`, ...foreignGroups(table).filter(g => groups.has(g.group)).map(g => `    $table->dropForeign(${phpStringList(g.columns.map(c => c.columnName))});`), '});')
+  }
+  return migrationFile('add_meriz_foreign_keys', index, up, down, t('Clés étrangères ajoutées après la création des tables.'))
 }

@@ -1,283 +1,120 @@
-import { counted } from "../lib/plural"
-import { t } from "../i18n/runtime"
-import { useLanguage } from "../lib/useLanguage"
-import { useMemo, useState } from 'react'
-import type { Dispatch } from 'react'
-import { ConfirmDialog } from './ConfirmDialog'
-import { Button } from './ui/Button'
-import type { AttributeType, Mcd, Property } from '../model/mcd'
-import { ATTRIBUTE_TYPES } from '../model/mcd'
+import { useEffect, useRef, useState } from 'react'
+import type { Dispatch, DragEvent } from 'react'
+import type { Mcd, Property } from '../model/mcd'
 import type { McdAction } from '../model/mcdReducer'
 import { findPlacement } from '../model/queries'
+import { isIntegerType, parseSqlType } from '../model/sqlTypes'
+import { t } from '../i18n/runtime'
+import { useLanguage } from '../lib/useLanguage'
+import { ConfirmDialog } from './ConfirmDialog'
+import { Button } from './ui/Button'
+import { useToast } from './ui/toastContext'
+import { SqlTypeControl } from './SqlTypeControl'
+import { useSqlTypes } from './sqlTypesContext'
 
-interface DictionaryRow {
-  property: Property
-  used: boolean
-  /** « Client (Entité) », « passer (Association) » ou « non placée ». */
-  placementLabel: string
-  isIdentifier: boolean
-}
+const DRAG_TYPE = 'application/x-meriz-property'
+type Move = { propertyId: string; ownerId: string | null; beforeId?: string; sourceId: string | null }
 
-type SortKey = 'name' | 'type' | 'size' | 'used' | 'placement'
-type SortDirection = 'asc' | 'desc'
-
-const COLUMNS: readonly { key: SortKey; label: string }[] = [
-  { key: 'name', get label() { return t("Propriété") } },
-  { key: 'type', get label() { return t("Type") } },
-  { key: 'size', get label() { return t("Taille") } },
-  { key: 'used', get label() { return t("Utilisée") } },
-  { key: 'placement', get label() { return t("Placement") } },
-]
-
-function compareRows(a: DictionaryRow, b: DictionaryRow, key: SortKey, locale: string): number {
-  switch (key) {
-    case 'name':
-      return a.property.name.localeCompare(b.property.name, locale)
-    case 'type':
-      return a.property.type.localeCompare(b.property.type, locale)
-    case 'size':
-      return (a.property.size ?? 0) - (b.property.size ?? 0)
-    case 'used':
-      return Number(b.used) - Number(a.used)
-    case 'placement':
-      return a.placementLabel.localeCompare(b.placementLabel, locale)
-  }
-}
-
-interface DictionaryViewProps {
-  mcd: Mcd
-  dispatch: Dispatch<McdAction>
-  /** Consultation seule : la liste se lit et se trie, elle ne s'édite pas. */
-  readOnly?: boolean
-}
-
-/**
- * Dictionnaire des données : la liste maîtresse des propriétés.
- * Chaque propriété est définie ici une seule fois ; les entités et
- * associations la référencent. Une propriété peut rester non placée.
- */
-export function DictionaryView({ mcd, dispatch, readOnly = false }: DictionaryViewProps) {
-  const locale = useLanguage()
-  const [sortKey, setSortKey] = useState<SortKey>('name')
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
-
-  const rows = useMemo(() => {
-    const all: DictionaryRow[] = mcd.properties.map((property) => {
-      const placement = findPlacement(mcd, property.id)
-      if (!placement) {
-        return { property, used: false, placementLabel: t("non placée"), isIdentifier: false }
-      }
-      const kindLabel = placement.kind === 'entity' ? t("Entité") : t("Association")
-      const isIdentifier = placement.owner.attributes.some(
-        (ref) => ref.propertyId === property.id && ref.isIdentifier,
-      )
-      return {
-        property,
-        used: true,
-        placementLabel: `${placement.owner.name} (${kindLabel})`,
-        isIdentifier,
-      }
+/** Les groupes suivent les porteurs ; aucune copie de propriété ni tri implicite. */
+export function DictionaryView({ mcd, dispatch, readOnly = false }: { mcd: Mcd; dispatch: Dispatch<McdAction>; readOnly?: boolean }) {
+  const locale = useLanguage(), toast = useToast()
+  const { settings, physicalType } = useSqlTypes()
+  const [search, setSearch] = useState(''), [sort, setSort] = useState('placement')
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  const [dropTarget, setDropTarget] = useState<string | null>(null)
+  const [pendingMove, setPendingMove] = useState<Move | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<Property | null>(null)
+  const previousIds = useRef(new Set(mcd.properties.map(p => p.id)))
+  const adding = useRef(false)
+  useEffect(() => {
+    const added = mcd.properties.find(p => !previousIds.current.has(p.id))
+    previousIds.current = new Set(mcd.properties.map(p => p.id))
+    if (!added || !adding.current) return
+    adding.current = false; setSearch(''); setSort('placement')
+    const owner = findPlacement(mcd, added.id)?.owner.id ?? ''
+    setCollapsed(value => { const next = new Set(value); next.delete(owner); return next })
+    const frame = requestAnimationFrame(() => {
+      const input = document.querySelector<HTMLInputElement>(`[data-property-id="${CSS.escape(added.id)}"] input[data-property-name]`)
+      input?.scrollIntoView({ block: 'nearest' }); input?.focus(); input?.select()
     })
-    const direction = sortDirection === 'asc' ? 1 : -1
-    return all.sort((a, b) => direction * compareRows(a, b, sortKey, locale))
-  }, [mcd, sortKey, sortDirection, locale])
-
-  const toggleSort = (key: SortKey) => {
-    if (key === sortKey) {
-      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'))
-    } else {
-      setSortKey(key)
-      setSortDirection('asc')
-    }
+    return () => cancelAnimationFrame(frame)
+  }, [mcd])
+  const placed = new Set([...mcd.entities, ...mcd.associations].flatMap(o => o.attributes.map(a => a.propertyId)))
+  const groups = [
+    ...mcd.entities.map(owner => ({ id: owner.id, name: owner.name, kind: 'entity', properties: owner.attributes.flatMap(a => mcd.properties.filter(p => p.id === a.propertyId)) })),
+    ...mcd.associations.map(owner => ({ id: owner.id, name: owner.name, kind: 'association', properties: owner.attributes.flatMap(a => mcd.properties.filter(p => p.id === a.propertyId)) })),
+    { id: '', name: t('Propriétés non affectées'), kind: 'unplaced', properties: mcd.properties.filter(p => !placed.has(p.id)) },
+  ]
+  const add = (ownerId: string) => { adding.current = true; dispatch(ownerId ? { type: 'ADD_ATTRIBUTE', ownerId } : { type: 'ADD_PROPERTY' }) }
+  const executeMove = (move: Move) => {
+    if (readOnly) return
+    const current = findPlacement(mcd, move.propertyId)?.owner.id ?? null
+    if (current !== move.sourceId || (move.ownerId !== null && ![...mcd.entities, ...mcd.associations].some(owner => owner.id === move.ownerId))) { toast({ kind: 'error', text: t('Le placement a changé en direct. Recommencez le déplacement.') }); setPendingMove(null); return }
+    dispatch({ type: 'MOVE_PROPERTY', propertyId: move.propertyId, ownerId: move.ownerId, beforeId: move.beforeId })
+    setCollapsed(value => { const next = new Set(value); next.delete(move.ownerId ?? ''); return next })
+    setPendingMove(null); toast(t('Propriété déplacée. Ctrl+Z permet d’annuler.'))
   }
-
-  // Suppression protégée : une propriété placée ne se supprime pas
-  // sans prévenir, on propose de la retirer puis de la supprimer.
-  const [pendingDelete, setPendingDelete] = useState<DictionaryRow | null>(null)
-
-  const deleteProperty = (row: DictionaryRow) => {
-    if (row.used) {
-      setPendingDelete(row)
-      return
-    }
-    dispatch({ type: 'DELETE_PROPERTY', propertyId: row.property.id })
+  const requestMove = (propertyId: string, ownerId: string | null, beforeId?: string) => {
+    if (readOnly || propertyId === beforeId || !mcd.properties.some(p => p.id === propertyId)) return
+    const placement = findPlacement(mcd, propertyId), sourceId = placement?.owner.id ?? null
+    if (sourceId === ownerId && !beforeId) return
+    const move = { propertyId, ownerId, beforeId, sourceId }
+    if (sourceId !== ownerId && placement?.owner.attributes.some(a => a.propertyId === propertyId && a.isIdentifier)) setPendingMove(move)
+    else executeMove(move)
   }
-
-  const confirmPendingDelete = () => {
-    if (pendingDelete) {
-      dispatch({ type: 'DELETE_PROPERTY', propertyId: pendingDelete.property.id })
-    }
-    setPendingDelete(null)
+  const acceptDrag = (event: DragEvent, id: string) => {
+    if (readOnly || !event.dataTransfer.types.includes(DRAG_TYPE)) return
+    event.preventDefault(); event.dataTransfer.dropEffect = 'move'; setDropTarget(id)
   }
-
-  const updateSize = (propertyId: string, raw: string) => {
-    const parsed = Number.parseInt(raw, 10)
-    dispatch({
-      type: 'UPDATE_PROPERTY',
-      propertyId,
-      // Champ vidé ou valeur invalide → retour au défaut (pas de taille).
-      patch: { size: Number.isInteger(parsed) && parsed > 0 ? parsed : undefined },
-    })
+  const drop = (event: DragEvent, ownerId: string, beforeId?: string) => {
+    if (readOnly || !event.dataTransfer.types.includes(DRAG_TYPE)) return
+    event.preventDefault(); event.stopPropagation(); setDropTarget(null)
+    requestMove(event.dataTransfer.getData(DRAG_TYPE), ownerId || null, beforeId)
   }
-
-  return (
-    <section aria-label={t("Dictionnaire des données")} className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2">
-        {!readOnly && (
-          <Button size="sm" onClick={() => dispatch({ type: 'ADD_PROPERTY' })}>
-            {t("Ajouter une propriété")}</Button>
-        )}
-        <p className="text-xs text-ink-soft">
-          {counted(rows.length, 'propriété au dictionnaire', 'propriétés au dictionnaire')}</p>
-      </div>
-      <div className="min-h-0 min-w-0 flex-1 overflow-auto p-4">
-        {rows.length === 0 ? (
-          <p className="text-sm text-ink-soft">
-            {readOnly
-              ? t("Aucune propriété au dictionnaire de ce modèle.")
-              : t("Aucune propriété. Ajoutez-en une ici ou construisez le MCD, chaque attribut créé entre au dictionnaire.")}
-          </p>
-        ) : (
-          // Le caption masqué reste ancré au tableau, même quand celui-ci défile.
-          <table className="relative w-full border-separate border-spacing-0 rounded-card border border-line bg-surface text-sm shadow-soft">
-            <caption className="sr-only">
-              {t("La liste maîtresse des propriétés : nom, type conceptuel, taille, utilisation dans le MCD et placement")}</caption>
-            <thead>
-              <tr>
-                {COLUMNS.map((column) => (
-                  <th
-                    key={column.key}
-                    scope="col"
-                    aria-sort={
-                      sortKey === column.key
-                        ? sortDirection === 'asc'
-                          ? 'ascending'
-                          : 'descending'
-                        : undefined
-                    }
-                    className="border-b border-line bg-shell px-3 py-2 text-left first:rounded-tl-lg"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => toggleSort(column.key)}
-                      className="flex items-center gap-1 text-xs font-semibold text-ink-soft"
-                    >
-                      {column.label}
-                      <span aria-hidden="true" className="text-ink-soft">
-                        {sortKey === column.key ? (sortDirection === 'asc' ? '▲' : '▼') : '↕'}
-                      </span>
-                    </button>
-                  </th>
-                ))}
-                <th scope="col" className="rounded-tr-lg border-b border-line bg-shell px-3 py-2">
-                  <span className="sr-only">{t("Actions")}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.property.id}>
-                  <td className="border-b border-line px-3 py-1.5">
-                    <input
-                      type="text"
-                      aria-label={t("Nom de la propriété {0}", [row.property.name])}
-                      value={row.property.name}
-                      disabled={readOnly}
-                      onChange={(event) =>
-                        dispatch({
-                          type: 'UPDATE_PROPERTY',
-                          propertyId: row.property.id,
-                          patch: { name: event.target.value },
-                        })
-                      }
-                      className="w-full min-w-24 rounded-lg border border-transparent px-1 py-0.5 font-mono text-code hover:border-line-strong focus:border-line-strong"
-                    />
-                  </td>
-                  <td className="border-b border-line px-3 py-1.5">
-                    <select
-                      aria-label={t("Type de la propriété {0}", [row.property.name])}
-                      value={row.property.type}
-                      disabled={readOnly}
-                      onChange={(event) =>
-                        dispatch({
-                          type: 'UPDATE_PROPERTY',
-                          propertyId: row.property.id,
-                          patch: { type: event.target.value as AttributeType },
-                        })
-                      }
-                      className="rounded-lg border border-line-strong bg-surface px-1 py-0.5 font-mono text-xs"
-                    >
-                      {ATTRIBUTE_TYPES.map((type) => (
-                        <option key={type} value={type}>
-                          {t(type)}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="border-b border-line px-3 py-1.5">
-                    <input
-                      type="number"
-                      min={1}
-                      placeholder={t("défaut")}
-                      aria-label={t("Taille de la propriété {0} (nombre de caractères, vide = défaut)", [row.property.name])}
-                      value={row.property.size ?? ''}
-                      disabled={readOnly}
-                      onChange={(event) => updateSize(row.property.id, event.target.value)}
-                      className="w-20 rounded-lg border border-transparent px-1 py-0.5 text-right font-mono text-code hover:border-line-strong focus:border-line-strong"
-                    />
-                  </td>
-                  <td className="border-b border-line px-3 py-1.5">
-                    {row.used ? (
-                      <span className="text-sage">
-                        <span aria-hidden="true">✓ </span>{t("oui")}</span>
-                    ) : (
-                      <span className="text-ink-soft">{t("non")}</span>
-                    )}
-                  </td>
-                  <td className="border-b border-line px-3 py-1.5">
-                    {row.used ? (
-                      <>
-                        {row.placementLabel}
-                        {row.isIdentifier && (
-                          <span className="ml-1.5 rounded-sm border border-line bg-accent-soft px-1 font-mono text-micro font-medium text-accent-ink">
-                            {t("clé")}</span>
-                        )}
-                      </>
-                    ) : (
-                      <span className="text-ink-soft">{t("non placée")}</span>
-                    )}
-                  </td>
-                  <td className="border-b border-line px-3 py-1.5 text-right">
-                    {!readOnly && (
-                    <button
-                      type="button"
-                      aria-label={t("Supprimer la propriété {0} du dictionnaire", [row.property.name])}
-                      title={
-                        row.used
-                          ? t("Placée dans le MCD : demandera confirmation pour la retirer puis la supprimer")
-                          : t("Supprimer du dictionnaire")
-                      }
-                      onClick={() => deleteProperty(row)}
-                      className="rounded-control border border-line-strong px-1.5 py-0.5 text-sm hover:bg-surface-soft"
-                    >
-                      ✕
-                    </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-      <ConfirmDialog
-        open={pendingDelete !== null}
-        title={t("Propriété utilisée dans le MCD")}
-        message={t("« {0} » est placée dans {1}. La retirer puis la supprimer du dictionnaire ? Vous pourrez annuler avec Ctrl+Z.", [pendingDelete?.property.name ?? '', pendingDelete?.placementLabel ?? ''])}
-        confirmLabel={t("Oui, supprimer")}
-        onConfirm={confirmPendingDelete}
-        onCancel={() => setPendingDelete(null)}
-      />
-    </section>
-  )
+  const query = search.trim().toLocaleLowerCase(locale)
+  return <section aria-label={t('Dictionnaire des données')} className="flex min-h-0 min-w-0 flex-1 flex-col">
+    <div className="flex min-w-0 flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2">
+      {!readOnly && <Button size="sm" onClick={() => add('')}>{t('Ajouter une propriété')}</Button>}
+      <label className="flex min-w-0 basis-48 flex-1 items-center gap-2 text-xs">{t('Rechercher')}<input type="search" value={search} onChange={e => setSearch(e.target.value)} className="min-w-0 flex-1 rounded-control border border-line-strong bg-surface px-2 py-1" /></label>
+      <label className="flex min-w-0 items-center gap-2 text-xs">{t('Trier')}<select className="min-w-0 rounded-control border border-line-strong bg-surface px-2 py-1" value={sort} onChange={e => setSort(e.target.value)}><option value="placement">{t('Ordre du modèle')}</option><option value="name">{t('Nom')}</option><option value="type">{t('Type SQL')}</option></select></label>
+      <label className="flex min-w-0 flex-wrap items-center gap-2 text-xs">{t('Moteur SQL')}<select disabled={readOnly} value={settings.dialect} onChange={e => dispatch({ type: 'SET_DIALECT', dialect: e.target.value === 'postgresql' ? 'postgresql' : 'mysql' })} className="min-w-0 rounded-control border border-line-strong bg-surface px-2 py-1"><option value="mysql">MySQL</option><option value="postgresql">PostgreSQL</option></select></label>
+    </div>
+    <div className="min-h-0 min-w-0 flex-1 space-y-4 overflow-auto p-3 sm:p-4">
+      {groups.map(group => {
+        let properties = group.properties.filter(p => !query || group.name.toLocaleLowerCase(locale).includes(query) || p.name.toLocaleLowerCase(locale).includes(query))
+        if (sort !== 'placement') properties = [...properties].sort((a, b) => (sort === 'name' ? a.name : physicalType(a.id, a.type, a.size)).localeCompare(sort === 'name' ? b.name : physicalType(b.id, b.type, b.size), locale))
+        if (query && !properties.length) return null
+        const closed = collapsed.has(group.id)
+        return <section key={group.id} data-dictionary-group={group.id || 'unplaced'} onDragOver={e => acceptDrag(e, group.id)} onDrop={e => drop(e, group.id)} onDragLeave={e => { if (!(e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget))) setDropTarget(null) }}
+          className={'min-w-0 rounded-card border bg-surface shadow-soft ' + (dropTarget === group.id ? 'border-accent-ink outline-2 outline-accent-ink' : 'border-line')}>
+          <header className="flex min-w-0 flex-wrap items-center gap-2 rounded-t-card border-b border-line bg-shell px-3 py-2">
+            <button type="button" aria-expanded={!closed} aria-controls={'dictionary-group-' + group.id} onClick={() => setCollapsed(value => { const next = new Set(value); if (closed) next.delete(group.id); else next.add(group.id); return next })} className="flex min-w-0 basis-full items-center gap-2 text-left font-semibold sm:basis-40 sm:flex-1 [overflow-wrap:anywhere]"><span aria-hidden="true">{closed ? '▸' : '▾'}</span><span className="min-w-0">{group.name}</span><span className="shrink-0 text-xs font-normal text-ink-soft">{group.properties.length}</span></button>
+            <span className="text-xs text-ink-soft">{group.kind === 'entity' ? t('Entité') : group.kind === 'association' ? t('Association') : ''}</span>
+            {!readOnly && <Button size="sm" variant="ghost" onClick={() => add(group.id)} aria-label={t('Ajouter une propriété dans {0}', [group.name])}>+ {t('Propriété')}</Button>}
+          </header>
+          {closed && <div id={'dictionary-group-' + group.id} hidden />}
+          {!closed && <div id={'dictionary-group-' + group.id} className="min-w-0 divide-y divide-line">
+            {!properties.length && <p className="p-3 text-sm text-ink-soft">{t('Aucune propriété dans ce groupe.')}</p>}
+            {properties.map(property => {
+              const placement = findPlacement(mcd, property.id), identifier = placement?.owner.attributes.some(a => a.propertyId === property.id && a.isIdentifier) ?? false
+              const spec = parseSqlType(physicalType(property.id, property.type, property.size))
+              return <div key={property.id} data-property-id={property.id} onDragOver={e => acceptDrag(e, group.id)} onDrop={e => drop(e, group.id, property.id)} className="grid min-w-0 gap-3 p-3 xl:grid-cols-[minmax(10rem,1fr)_minmax(15rem,1.4fr)_minmax(10rem,1fr)]">
+                <div className="flex min-w-0 items-start gap-2">
+                  {!readOnly && <button type="button" draggable aria-label={t('Déplacer {0}', [property.name])} title={t('Glisser vers un autre groupe')} className="shrink-0 cursor-grab rounded-control border border-line-strong px-2 py-1" onDragStart={e => { e.dataTransfer.setData(DRAG_TYPE, property.id); e.dataTransfer.effectAllowed = 'move' }} onDragEnd={() => setDropTarget(null)}>⠿</button>}
+                  <div className="min-w-0 flex-1"><input data-property-name disabled={readOnly} value={property.name} aria-label={t('Nom de la propriété {0}', [property.name])} onChange={e => dispatch({ type: 'UPDATE_PROPERTY', propertyId: property.id, patch: { name: e.target.value } })} className="w-full min-w-0 rounded-control border border-line-strong bg-surface px-2 py-1 font-mono text-sm" />
+                    {placement?.kind === 'entity' && <label className="mt-2 flex items-center gap-2 text-xs"><input type="checkbox" disabled={readOnly} checked={identifier} onChange={e => dispatch({ type: 'SET_ATTRIBUTE_IDENTIFIER', entityId: placement.owner.id, propertyId: property.id, isIdentifier: e.target.checked })} />{t('Identifiant')}</label>}
+                  </div>
+                </div>
+                <div className="min-w-0"><SqlTypeControl property={property} />{identifier && spec && isIntegerType(spec.name) && <label className="mt-2 flex items-center gap-2 text-xs"><input type="checkbox" disabled={readOnly || placement?.owner.attributes.filter(a => a.isIdentifier).length !== 1} checked={(placement?.owner.attributes.filter(a => a.isIdentifier).length === 1) && (settings.identity?.[property.id] ?? settings.overrides[property.id] === undefined)} onChange={e => dispatch({ type: 'SET_IDENTITY', propertyId: property.id, value: e.target.checked })} />{t('Auto-incrément')}</label>}</div>
+                {!readOnly && <div className="flex min-w-0 items-start gap-2"><label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-ink-soft">{t('Déplacer vers…')}<select className="w-full min-w-0 rounded-control border border-line-strong bg-surface px-2 py-1 text-ink" value={group.id} onChange={e => requestMove(property.id, e.target.value || null)}>{groups.map(target => <option key={target.id} value={target.id}>{target.name}</option>)}</select></label><button type="button" className="mt-5 shrink-0 rounded-control border border-line-strong px-2 py-1 hover:bg-danger-soft" aria-label={t('Supprimer la propriété {0} du dictionnaire', [property.name])} onClick={() => { if (placement) setPendingDelete(property); else dispatch({ type: 'DELETE_PROPERTY', propertyId: property.id }) }}>×</button></div>}
+              </div>
+            })}
+          </div>}
+        </section>
+      })}
+      {query && !groups.some(g => g.name.toLocaleLowerCase(locale).includes(query) || g.properties.some(p => p.name.toLocaleLowerCase(locale).includes(query))) && <p className="text-sm text-ink-soft">{t('Aucun résultat.')}</p>}
+    </div>
+    <ConfirmDialog open={!!pendingMove} title={t('Déplacer un identifiant')} message={t('Cette propriété participe à un identifiant. Son déplacement peut modifier les clés étrangères. Vers une association ou les propriétés non affectées, elle perdra ce rôle. Vérifiez ensuite le rapport.')} confirmLabel={t('Déplacer')} onCancel={() => setPendingMove(null)} onConfirm={() => { if (pendingMove) executeMove(pendingMove) }} />
+    <ConfirmDialog open={!!pendingDelete} title={t('Propriété utilisée dans le MCD')} message={t('Retirer cette propriété du modèle et du dictionnaire ? Ctrl+Z permet d’annuler.')} confirmLabel={t('Oui, supprimer')} onCancel={() => setPendingDelete(null)} onConfirm={() => { if (!readOnly && pendingDelete) dispatch({ type: 'DELETE_PROPERTY', propertyId: pendingDelete.id }); setPendingDelete(null) }} />
+  </section>
 }

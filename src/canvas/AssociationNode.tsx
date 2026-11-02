@@ -1,4 +1,4 @@
-import { t } from '../i18n/runtime'
+import { useSqlTypes } from '../components/sqlTypesContext'
 import { useLanguage } from "../lib/useLanguage"
 import { Handle } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
@@ -13,6 +13,7 @@ import type { AssociationFlowNode } from './mcdToFlow'
  */
 export function AssociationNode({ data, selected, isConnectable }: NodeProps<AssociationFlowNode>) {
   useLanguage()
+  const { physicalType } = useSqlTypes()
   const { association, attributes } = data
   return (
     <div
@@ -34,10 +35,9 @@ export function AssociationNode({ data, selected, isConnectable }: NodeProps<Ass
           {attributes.map((attribute) => (
             <li key={attribute.propertyId}>
               {attribute.name}{' '}
-              <span className="font-mono text-micro text-ink-soft">
-                {t(attribute.type)}
-                {attribute.size !== undefined && `(${attribute.size})`}
-              </span>
+              <span className="max-w-40 truncate font-mono text-micro text-ink-soft" title={physicalType(attribute.propertyId, attribute.type, attribute.size)}>
+                {physicalType(attribute.propertyId, attribute.type, attribute.size)}
+                </span>
             </li>
           ))}
         </ul>

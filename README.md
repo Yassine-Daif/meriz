@@ -14,7 +14,7 @@ L’application et le site sont disponibles en français et en anglais ([site an
 
 ## Modéliser, vérifier et générer
 
-- **Dictionnaire des propriétés.** Chaque donnée est définie une seule fois, avec son type conceptuel, puis placée dans une entité ou une association. Les types SQL restent au niveau physique.
+- **Dictionnaire des propriétés.** Chaque donnée est définie une seule fois. Les propriétés sont regroupées par entité ou association, avec recherche, groupes repliables et déplacement par glisser-déposer ou au clavier, sans recréer les données. Les sélecteurs affichent les noms SQL réels et leurs paramètres ; les catégories conceptuelles restent dans le MCD et les réglages SQL dans le MPD.
 - **Éditeur de MCD.** Entités, associations, attributs, identifiants, pattes et cardinalités. Déplacement et sélection des éléments, annulation et rétablissement, commandes à la souris et au clavier.
 - **Vérification.** Les erreurs bloquantes et les avertissements s'affichent en direct. Un clic mène à l'élément concerné.
 - **MLD, MPD et SQL.** Ils suivent le MCD selon les règles de passage Merise. Le script SQL cible MySQL ou PostgreSQL, et les types restent modifiables colonne par colonne dans le MPD.
@@ -73,6 +73,8 @@ npm run test:release # vérifie les règles de versionnage
 ```
 
 L'éditeur local et la génération ne demandent pas de serveur Laravel. Pour les comptes, les classes, les groupes et le direct, configurez aussi Meriz API.
+
+Le dictionnaire et les exports proposent les types SQL usuels des deux moteurs, leurs longueurs, précision et décimales, les valeurs ENUM et les options d’identifiant. La vue Code fournit les commandes Laravel et deux parcours Symfony distincts : générer une migration depuis les entités, ou appliquer celle fournie. Les limites de correspondance Doctrine sont signalées. Voir [les types et les exports](docs/types-et-exports.md).
 
 ## Comptes et serveur
 

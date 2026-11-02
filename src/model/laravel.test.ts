@@ -51,11 +51,11 @@ describe('Laravel, les fichiers produits', () => {
 })
 
 describe('Laravel, migrations', () => {
-  it('pose un identifiant auto-incrémenté avec id()', () => {
+  it('conserve un identifiant INT signé et auto-incrémenté', () => {
     const content = fileAt(filesFor(clientCommande), 'database/migrations/2025_01_01_000001_create_clients_table.php')
 
-    expect(content).toContain("$table->id('numero_client');")
-    expect(content).toContain("$table->string('nom');")
+    expect(content).toContain("$table->integer('numero_client')->autoIncrement();")
+    expect(content).toContain("$table->string('nom', 255);")
     expect(content).toContain('$table->timestamps();')
     expect(content).toContain("Schema::dropIfExists('clients');")
   })
@@ -66,7 +66,7 @@ describe('Laravel, migrations', () => {
       'database/migrations/2025_01_01_000002_create_commandes_table.php',
     )
 
-    expect(content).toContain("$table->foreignId('numero_client')->constrained('clients', 'numero_client');")
+    expect(content).toContain("$table->foreign('numero_client')->references('numero_client')->on('clients');")
   })
 
   it('rend la clé étrangère facultative quand la cardinalité le dit', () => {
@@ -75,7 +75,7 @@ describe('Laravel, migrations', () => {
       'database/migrations/2025_01_01_000002_create_commandes_table.php',
     )
 
-    expect(content).toContain("->nullable()->constrained('clients', 'numero_client');")
+    expect(content).toContain("$table->integer('numero_client')->nullable();")
   })
 
   it('déclare une clé primaire composée', () => {

@@ -1,7 +1,8 @@
+import { quoteSqlName } from './sqlIdentifiers'
 import { t } from "../i18n/runtime"
 import type { CodeSchema } from './codeSchema'
 import type { GeneratedFile } from './codegenTypes'
-import { mpdToSql, sortForCreation } from './mpd'
+import { foreignConstraints, mpdToSql, sortForCreation } from './mpd'
 import type { SqlDialect } from './mpd'
 import { phpString } from './php'
 
@@ -29,9 +30,11 @@ function statements(sql: string): string[] {
 
 export function symfonyMigrationFile(schema: CodeSchema, dialect: SqlDialect): GeneratedFile {
   const up = statements(mpdToSql(schema.physicalTables, dialect, { includeDrops: false }))
-  const down = sortForCreation(schema.physicalTables)
-    .map((table) => ("DROP TABLE IF EXISTS " + String(table.name) + ""))
-    .reverse()
+  const down = [
+    ...foreignConstraints(schema.physicalTables).map(({ table, name }) =>
+      'ALTER TABLE ' + quoteSqlName(table.name, dialect) + (dialect === 'mysql' ? ' DROP FOREIGN KEY ' : ' DROP CONSTRAINT ') + quoteSqlName(name, dialect)),
+    ...sortForCreation(schema.physicalTables).reverse().map(table => 'DROP TABLE IF EXISTS ' + quoteSqlName(table.name, dialect)),
+  ]
 
   const toSql = (lines: string[]): string =>
     lines.map((line) => `        $this->addSql(${phpString(line)});`).join('\n')

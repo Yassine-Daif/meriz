@@ -214,3 +214,11 @@ function buildJunctionTable(
 
   return { id: association.id, name: association.name, columns }
 }
+
+/** Retrouve la propriété d'origine d'une FK, sans découper les identifiants importés. */
+export function sourcePropertyId(column: MldColumn, tables: MldTable[], seen = new Set<string>()): string {
+  if (!column.references || seen.has(column.id)) return column.id
+  seen.add(column.id)
+  const target = tables.find(table => table.id === column.references?.tableId)?.columns.find(c => c.name === column.references?.columnName)
+  return target ? sourcePropertyId(target, tables, seen) : column.id
+}

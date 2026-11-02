@@ -1,3 +1,4 @@
+import { useSqlTypes } from '../components/sqlTypesContext'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import { Handle } from '@xyflow/react'
@@ -14,6 +15,7 @@ import type { EntityFlowNode } from './mcdToFlow'
  */
 export function EntityNode({ data, selected, isConnectable }: NodeProps<EntityFlowNode>) {
   useLanguage()
+  const { physicalType } = useSqlTypes()
   const { entity, attributes } = data
   return (
     <div
@@ -44,9 +46,8 @@ export function EntityNode({ data, selected, isConnectable }: NodeProps<EntityFl
             >
               {attribute.name}
             </span>
-            <span className="font-mono text-micro text-ink-soft">
-              {t(attribute.type)}
-              {attribute.size !== undefined && `(${attribute.size})`}
+            <span className="max-w-40 truncate font-mono text-micro text-ink-soft" title={physicalType(attribute.propertyId, attribute.type, attribute.size)}>
+              {physicalType(attribute.propertyId, attribute.type, attribute.size)}
             </span>
             {attribute.isIdentifier && (
               <span className="ml-auto self-center rounded-full bg-accent-soft px-1.5 font-mono text-nano font-medium text-accent-ink">

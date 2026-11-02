@@ -1,3 +1,4 @@
+import { SqlTypeControl } from './SqlTypeControl'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import { Fragment, useCallback, useEffect, useId, useMemo, useState } from 'react'
@@ -188,12 +189,12 @@ function TypeMappingPanel({
     <section
       id={panelId}
       aria-label={t("Mappage des types")}
-      className="w-1/2 shrink-0 overflow-auto border-l border-line bg-surface p-4"
+      className="w-full min-w-0 shrink-0 overflow-auto border-l border-line bg-surface p-3 sm:w-1/2 sm:p-4"
     >
       <table className="w-full border-separate border-spacing-0 overflow-hidden rounded-card border border-line text-sm shadow-soft">
         <thead className="sticky top-0 z-10">
           <tr>
-            {[t("Colonne"), t("Type conceptuel"), t("Type SQL")].map((label) => (
+            {[t("Colonne"), t("Type proposé"), t("Type SQL")].map((label) => (
               <th
                 key={label}
                 scope="col"
@@ -226,19 +227,11 @@ function TypeMappingPanel({
                     )}
                   </td>
                   <td className="border-b border-line px-3 py-1.5 font-mono text-code text-ink-soft">
-                    {t(column.conceptualType)}
+                    {column.proposedType}
                   </td>
                   <td className="border-b border-line px-3 py-1.5">
                     <span className="flex items-center gap-1.5">
-                      <input
-                        type="text"
-                        aria-label={t("Type SQL de {0}.{1}", [table.name, column.name])}
-                        value={column.overridden ? column.sqlType : ''}
-                        disabled={readOnly}
-                        placeholder={column.proposedType}
-                        onChange={(event) => onOverrideChange(column.id, event.target.value)}
-                        className="w-full min-w-0 rounded-control border border-line-strong bg-surface px-1.5 py-0.5 font-mono text-micro placeholder:text-ink-soft"
-                      />
+                      {column.references ? <code className="min-w-0 break-all text-micro">{column.sqlType}</code> : <SqlTypeControl compact property={{ id: column.id, name: column.name, type: column.conceptualType }} />}
                       {column.overridden && (
                         <button
                           type="button"

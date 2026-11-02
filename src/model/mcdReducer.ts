@@ -1,3 +1,6 @@
+import { parseSqlType, conceptualTypeFor } from './sqlTypes'
+import type { MpdSettings, SqlDialect } from './mpd'
+import { DEFAULT_MPD_SETTINGS } from './mpd'
 import { t } from "../i18n/runtime"
 import type {
   Association,
@@ -21,6 +24,8 @@ import { newId } from '../lib/id'
 export interface McdEditorState {
   mcd: Mcd
   layout: McdLayout
+  /** Réglages physiques, hors du MCD mais partagés dans le même document. */
+  mpd?: MpdSettings
 }
 
 /** Modification partielle d'une propriété du dictionnaire. */
@@ -47,6 +52,10 @@ export type McdAction =
   | { type: 'RENAME_ENTITY'; id: string; name: string }
   | { type: 'RENAME_ASSOCIATION'; id: string; name: string }
   // Dictionnaire central : la propriété est définie une seule fois.
+  | { type: 'SET_DIALECT'; dialect: SqlDialect }
+  | { type: 'SET_SQL_TYPE'; propertyId: string; value: string }
+  | { type: 'SET_IDENTITY'; propertyId: string; value: boolean }
+  | { type: 'MOVE_PROPERTY'; propertyId: string; ownerId: string | null; beforeId?: string }
   | { type: 'ADD_PROPERTY' }
   | { type: 'UPDATE_PROPERTY'; propertyId: string; patch: PropertyPatch }
   | { type: 'DELETE_PROPERTY'; propertyId: string }
@@ -137,8 +146,39 @@ function withLeg(
   }
 }
 
-export function mcdReducer(state: McdEditorState, action: McdAction): McdEditorState {
+function reduceModel(state: McdEditorState, action: McdAction): McdEditorState {
   switch (action.type) {
+    case 'SET_DIALECT': return { ...state, mpd: { ...(state.mpd ?? DEFAULT_MPD_SETTINGS), dialect: action.dialect } }
+    case 'SET_SQL_TYPE': {
+      const settings = state.mpd ?? DEFAULT_MPD_SETTINGS
+      const overrides = { ...settings.overrides }
+      if (action.value.trim()) overrides[action.propertyId] = action.value.trim()
+      else delete overrides[action.propertyId]
+      const spec = parseSqlType(action.value)
+      const mcd = spec ? { ...state.mcd, properties: state.mcd.properties.map(p => p.id === action.propertyId ? { ...p, type: conceptualTypeFor(spec) } : p) } : state.mcd
+      return { ...state, mcd, mpd: { ...settings, overrides } }
+    }
+    case 'SET_IDENTITY': return { ...state, mpd: { ...(state.mpd ?? DEFAULT_MPD_SETTINGS), identity: { ...state.mpd?.identity, [action.propertyId]: action.value } } }
+    case 'MOVE_PROPERTY': {
+      if (!findProperty(state.mcd, action.propertyId)) return state
+      const owners = [...state.mcd.entities, ...state.mcd.associations]
+      if (action.ownerId !== null && !owners.some(o => o.id === action.ownerId)) return state
+      const placement = findPlacement(state.mcd, action.propertyId)
+      const identifier = placement?.owner.attributes.find(a => a.propertyId === action.propertyId)?.isIdentifier ?? false
+      const update = <T extends Entity | Association>(owner: T): T => {
+        if (owner.id !== placement?.owner.id && owner.id !== action.ownerId) return owner
+        const attributes = owner.attributes.map((a, index) => ({ ...a, order: a.order ?? index * 1024 })).filter(a => a.propertyId !== action.propertyId)
+        if (owner.id === action.ownerId) {
+          const at = action.beforeId ? attributes.findIndex(a => a.propertyId === action.beforeId) : -1
+          const position = at < 0 ? attributes.length : at
+          const left = attributes[position - 1]?.order ?? ((attributes[position]?.order ?? 0) - 2048)
+          const right = attributes[position]?.order ?? (left + 2048)
+          attributes.splice(position, 0, { order: (left + right) / 2, propertyId: action.propertyId, isIdentifier: state.mcd.entities.some(e => e.id === owner.id) && identifier })
+        }
+        return { ...owner, attributes }
+      }
+      return { ...state, mcd: { ...state.mcd, entities: state.mcd.entities.map(update), associations: state.mcd.associations.map(update) } }
+    }
     case 'ADD_ENTITY': {
       // Une entité naît avec une propriété identifiant placée, pour
       // respecter les invariants (au moins un attribut, un identifiant).
@@ -379,4 +419,10 @@ export function mcdReducer(state: McdEditorState, action: McdAction): McdEditorS
       return withLeg(state, action.legId, (l) => ({ ...l, role: action.role }))
     }
   }
+}
+
+/** Les actions du MCD conservent les réglages physiques, y compris lors d'une création. */
+export function mcdReducer(state: McdEditorState, action: McdAction): McdEditorState {
+  const next = reduceModel(state, action)
+  return state.mpd && !next.mpd ? { ...next, mpd: state.mpd } : next
 }

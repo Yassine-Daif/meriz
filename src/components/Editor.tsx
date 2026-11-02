@@ -1,3 +1,4 @@
+import { SqlTypesContext } from './sqlTypesContext'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import type { McdEditorState } from '../model/mcdReducer'
@@ -122,8 +123,9 @@ export function Editor({
   // Le modèle vit dans un document Yjs : c'est la source de vérité, et
   // le socle de l'édition à plusieurs. L'éditeur n'en voit qu'un état
   // JS ordinaire, exactement comme avant.
+  const initialState = useMemo(() => ({ ...openedDocument.state, mpd: openedDocument.mpdSettings }), [openedDocument.state, openedDocument.mpdSettings])
   const { state: syncedState, dispatch: editAction, canUndo, canRedo, undo, redo, adopt, sync, resetForSync } = useModelDoc(
-    openedDocument.state,
+    initialState,
     { seed: !guest && !member && !observer },
   )
   const [selection, setSelection] = useState<CanvasSelection>(EMPTY_SELECTION)
@@ -146,10 +148,10 @@ export function Editor({
     view: activeView === 'apprendre' || activeView === 'apropos' ? null : activeView,
   })
 
-  const lastSyncedState = useRef(openedDocument.state)
+  const lastSyncedState = useRef<McdEditorState>(initialState)
   if (collab.synced) lastSyncedState.current = syncedState
   const state = observer && (!collab.synced || collab.others.length === 0)
-    ? openedDocument.state : guest && !collab.synced ? lastSyncedState.current : syncedState
+    ? initialState : guest && !collab.synced ? lastSyncedState.current : syncedState
   // Modèle vide : c'est ce qui dit qu'un document de groupe attend
   // encore son contenu, et ce qui décide de la confirmation de fermeture.
   const modelIsEmpty =
@@ -176,7 +178,7 @@ export function Editor({
   const dispatch = locked ? IGNORE_ACTION : editAction
   // Réglages MPD, seule partie éditable du MPD : dialecte + surcharges
   // de types par colonne. Sauvegardés avec le document.
-  const [mpdSettings, setMpdSettings] = useState<MpdSettings>(openedDocument.mpdSettings)
+  const mpdSettings: MpdSettings = state.mpd ?? openedDocument.mpdSettings
   const [syncStatus, setSyncStatus] = useState<SaveStatus>(() => saver.getStatus())
 
   const problems = useMemo(() => { /* La validation produit des messages localisés. */ void locale; return validate(state.mcd) }, [state.mcd, locale])
@@ -195,14 +197,14 @@ export function Editor({
   // On retient l'instantané déjà adopté : l'état du document Yjs n'est
   // jamais la même référence que celui reçu, il faut donc comparer à la
   // source, sinon l'effet se rappellerait sans fin.
-  const adoptedRef = useRef(openedDocument.state)
+  const adoptedRef = useRef(initialState)
   useEffect(() => {
-    if (observer || !readOnly || openedDocument.state === adoptedRef.current) {
+    if (observer || !readOnly || initialState === adoptedRef.current) {
       return
     }
-    adoptedRef.current = openedDocument.state
-    adopt(openedDocument.state)
-  }, [observer, readOnly, openedDocument.state, adopt])
+    adoptedRef.current = initialState
+    adopt(initialState)
+  }, [observer, readOnly, initialState, adopt])
 
   /*
    * Document d'un groupe : il naît vide et se remplit par la
@@ -212,7 +214,7 @@ export function Editor({
    */
   const { ready } = useSharedSeed({
     active: member,
-    initial: openedDocument.state,
+    initial: initialState,
     empty: modelIsEmpty,
     state: collab.state,
     clientId: sync.awareness.clientID,
@@ -284,7 +286,7 @@ export function Editor({
       return
     }
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((!event.ctrlKey && !event.metaKey) || isEditableTarget(event.target)) {
+      if ((!event.ctrlKey && !event.metaKey) || (isEditableTarget(event.target) && !(event.target instanceof HTMLSelectElement))) {
         return
       }
       const key = event.key.toLowerCase()
@@ -306,20 +308,12 @@ export function Editor({
   }, [])
 
   const setDialect = useCallback((dialect: SqlDialect) => {
-    setMpdSettings((previous) => ({ ...previous, dialect }))
-  }, [])
+    dispatch({ type: 'SET_DIALECT', dialect })
+  }, [dispatch])
 
   const setTypeOverride = useCallback((columnId: string, value: string) => {
-    setMpdSettings((previous) => {
-      const overrides = { ...previous.overrides }
-      if (value.trim() === '') {
-        delete overrides[columnId]
-      } else {
-        overrides[columnId] = value
-      }
-      return { ...previous, overrides }
-    })
-  }, [])
+    dispatch({ type: 'SET_SQL_TYPE', propertyId: columnId, value })
+  }, [dispatch])
 
   // Clic sur un problème : sélectionne l'élément fautif dans le canvas.
   const selectElement = useCallback(
@@ -334,6 +328,7 @@ export function Editor({
   )
 
   return (
+    <SqlTypesContext value={{ settings: mpdSettings, dispatch, readOnly: locked }}>
     <div className="flex h-dvh flex-col bg-shell font-sans text-ink">
       <SkipLink />
       <ConfirmDialog open={confirmLeaveAnnotations} title={t("Des commentaires ou traits ne sont pas enregistrés")}
@@ -445,5 +440,6 @@ export function Editor({
         </div>
       </ReactFlowProvider>
     </div>
+    </SqlTypesContext>
   )
 }

@@ -1,3 +1,4 @@
+import { parseMpdSettings } from '../lib/persistence'
 import * as Y from 'yjs'
 import { Awareness } from 'y-protocols/awareness'
 import type { Association, AttributeType, Cardinality, Entity, Leg, Mcd, Property, PropertyRef } from './mcd'
@@ -139,7 +140,7 @@ function readProperty(node: YNode): Property {
 }
 
 function readRef(node: YNode): PropertyRef {
-  return { propertyId: node.get('propertyId') as string, isIdentifier: node.get('isIdentifier') === true }
+  return { propertyId: node.get('propertyId') as string, isIdentifier: node.get('isIdentifier') === true, ...(typeof node.get('order') === 'number' ? { order: node.get('order') as number } : {}) }
 }
 
 /*
@@ -149,7 +150,7 @@ function readRef(node: YNode): PropertyRef {
  */
 
 function readRefs(node: YNode): PropertyRef[] {
-  return firstOfEachId(node.get('attributes') as Y.Array<YNode>).map(readRef)
+  return firstOfEachId(node.get('attributes') as Y.Array<YNode>).map(readRef).map((ref, index) => ({ ref, rank: ref.order ?? index * 1024 })).sort((a, b) => a.rank - b.rank || a.ref.propertyId.localeCompare(b.ref.propertyId)).map(entry => entry.ref)
 }
 
 function readCardinality(node: YNode): Cardinality {
@@ -282,10 +283,12 @@ const REF_SHAPE: ListShape<PropertyRef> = {
     node.set('id', ref.propertyId)
     node.set('propertyId', ref.propertyId)
     node.set('isIdentifier', ref.isIdentifier)
+    if (ref.order !== undefined) node.set('order', ref.order)
     return node
   },
   update: (node, ref) => {
     setIfChanged(node, 'isIdentifier', ref.isIdentifier)
+    setOptional(node, 'order', ref.order)
   },
 }
 
@@ -439,6 +442,29 @@ export function createModelDoc(initial: McdEditorState, options: ModelDocOptions
     associations: doc.getArray<YNode>('associations'),
   }
   const layoutMap = doc.getMap<Position>('layout')
+  const physicalMap = doc.getMap<string | boolean>('physical')
+  const placements = doc.getMap<string | null>('placements')
+  function readPhysical() {
+    const dialect = physicalMap.get('dialect')
+    if (!dialect) return undefined
+    const overrides: Record<string, string> = {}, identity: Record<string, boolean> = {}
+    for (const [key, value] of physicalMap) {
+      if (key.startsWith('type:') && typeof value === 'string') overrides[key.slice(5)] = value
+      if (key.startsWith('identity:') && typeof value === 'boolean') identity[key.slice(9)] = value
+    }
+    return parseMpdSettings({ dialect, overrides, identity }) ?? undefined
+  }
+  function normalizedMcd() {
+    const mcd = readMcd(roots), used = new Set<string>()
+    const owners = [...mcd.entities, ...mcd.associations]
+    for (const owner of owners) owner.attributes = owner.attributes.filter(ref => {
+      const claim = placements.get(ref.propertyId)
+      if (claim !== undefined && claim !== owner.id) return false
+      if (used.has(ref.propertyId)) return false
+      used.add(ref.propertyId); return true
+    })
+    return mcd
+  }
   const awareness = new Awareness(doc)
 
   // Document rempli par le réseau : il naît vide et se remplit à la
@@ -453,10 +479,17 @@ export function createModelDoc(initial: McdEditorState, options: ModelDocOptions
     reconcileList(roots.entities, state.mcd.entities, ENTITY_SHAPE)
     reconcileList(roots.associations, state.mcd.associations, ASSOCIATION_SHAPE)
     reconcileLayout(layoutMap, state.layout)
+    if (state.mpd) {
+      const values = new Map<string, string | boolean>([['dialect', state.mpd.dialect]])
+      for (const [id, value] of Object.entries(state.mpd.overrides)) values.set('type:' + id, value)
+      for (const [id, value] of Object.entries(state.mpd.identity ?? {})) values.set('identity:' + id, value)
+      for (const key of physicalMap.keys()) if (!values.has(key)) physicalMap.delete(key)
+      for (const [key, value] of values) if (physicalMap.get(key) !== value) physicalMap.set(key, value)
+    }
   }
 
   const undoManager = new Y.UndoManager(
-    [roots.properties, roots.entities, roots.associations, layoutMap],
+    [roots.properties, roots.entities, roots.associations, layoutMap, physicalMap, placements],
     {
       trackedOrigins: new Set([LOCAL_ORIGIN]),
       captureTimeout: MERGE_WINDOW_MS,
@@ -465,11 +498,13 @@ export function createModelDoc(initial: McdEditorState, options: ModelDocOptions
 
   // Deux moitiés mises en cache à part : un déplacement de nœud ne doit
   // pas faire revalider le modèle, comme avant Yjs.
-  let cachedMcd: Mcd = readMcd(roots)
+  let cachedMcd: Mcd = normalizedMcd()
   let cachedLayout: McdLayout = readLayout(layoutMap)
-  let cachedState: McdEditorState = { mcd: cachedMcd, layout: cachedLayout }
+  let cachedPhysical = readPhysical()
+  let cachedState: McdEditorState = { mcd: cachedMcd, layout: cachedLayout, ...(cachedPhysical ? { mpd: cachedPhysical } : {}) }
   let mcdDirty = false
   let layoutDirty = false
+  let physicalDirty = false
   let changed = false
   let lastSignature: string | null = null
 
@@ -485,6 +520,8 @@ export function createModelDoc(initial: McdEditorState, options: ModelDocOptions
     layoutDirty = true
     changed = true
   })
+  physicalMap.observe(() => { physicalDirty = true; changed = true })
+  placements.observe(() => { mcdDirty = true; changed = true })
   // Une transaction, un avertissement : les observateurs se contentent
   // de marquer ce qui a bougé.
   doc.on('afterTransaction', () => {
@@ -498,18 +535,19 @@ export function createModelDoc(initial: McdEditorState, options: ModelDocOptions
   })
 
   const snapshot = (): McdEditorState => {
-    if (!mcdDirty && !layoutDirty) {
+    if (!mcdDirty && !layoutDirty && !physicalDirty) {
       return cachedState
     }
     if (mcdDirty) {
-      cachedMcd = readMcd(roots)
+      cachedMcd = normalizedMcd()
       mcdDirty = false
     }
     if (layoutDirty) {
       cachedLayout = readLayout(layoutMap)
       layoutDirty = false
     }
-    cachedState = { mcd: cachedMcd, layout: cachedLayout }
+    if (physicalDirty) cachedPhysical = readPhysical()
+    cachedState = { mcd: cachedMcd, layout: cachedLayout, ...(cachedPhysical ? { mpd: cachedPhysical } : {}) }; physicalDirty = false
     return cachedState
   }
 
@@ -533,7 +571,12 @@ export function createModelDoc(initial: McdEditorState, options: ModelDocOptions
       }
       lastSignature = signature
       const next = mcdReducer(snapshot(), action)
-      doc.transact(() => write(next), LOCAL_ORIGIN)
+      doc.transact(() => {
+        write(next)
+        if (action.type === 'MOVE_PROPERTY' && next !== cachedState) placements.set(action.propertyId, action.ownerId)
+        if (action.type === 'PLACE_PROPERTY' && next !== cachedState) placements.set(action.propertyId, action.ownerId)
+        if (action.type === 'REMOVE_ATTRIBUTE' && [...cachedState.mcd.entities, ...cachedState.mcd.associations].find(o => o.id === action.ownerId)?.attributes.some(a => a.propertyId === action.propertyId)) placements.set(action.propertyId, null)
+      }, LOCAL_ORIGIN)
       trimHistory()
     },
 

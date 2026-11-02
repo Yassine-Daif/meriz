@@ -21,7 +21,7 @@ export function hasEntity(table: SchemaTable): boolean {
 }
 
 export function symfonyFiles(schema: CodeSchema, dialect: SqlDialect): GeneratedFile[] {
-  const entities = schema.tables.filter(hasEntity).map((table) => symfonyEntityFile(table, schema))
+  const entities = schema.tables.filter(hasEntity).map((table) => symfonyEntityFile(table, schema, dialect))
   if (entities.length === 0) {
     return []
   }

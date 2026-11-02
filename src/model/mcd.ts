@@ -61,6 +61,8 @@ export interface Property {
  * Plusieurs références marquées forment un identifiant composé.
  */
 export interface PropertyRef {
+  /** Position stable dans le porteur, optionnelle pour les anciens fichiers. */
+  order?: number
   propertyId: string
   isIdentifier: boolean
 }

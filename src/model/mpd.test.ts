@@ -14,7 +14,7 @@ function sqlFor(
   const settings: MpdSettings = { dialect, overrides: options.overrides ?? {} }
   return mpdToSql(buildMpd(mcdToMld(mcd), settings), dialect, {
     includeDrops: options.includeDrops ?? false,
-  })
+  }).replaceAll('`', '').replaceAll('"', '')
 }
 
 /** Bloc CREATE TABLE d'une table, échec explicite s'il manque. */

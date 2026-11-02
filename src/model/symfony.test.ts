@@ -60,7 +60,7 @@ describe('Symfony, identifiants et colonnes', () => {
 
     expect(client).toContain('#[ORM\\Id]')
     expect(count(client, '#[ORM\\GeneratedValue]')).toBe(1)
-    expect(client).toContain("#[ORM\\Column(name: 'numero_client')]")
+    expect(client).toContain("#[ORM\\Column(name: 'numero_client', type: Types::INTEGER)]")
     expect(client).toContain('private ?int $numeroClient = null;')
     // Une clé auto-incrémentée n'a pas de setter : la base la pose.
     expect(client).not.toContain('public function setNumeroClient(')
@@ -71,13 +71,13 @@ describe('Symfony, identifiants et colonnes', () => {
 
     expect(count(vol, '#[ORM\\Id]')).toBe(2)
     expect(vol).not.toContain('#[ORM\\GeneratedValue]')
-    expect(vol).toContain("#[ORM\\Column(name: 'numero_vol', length: 8)]")
+    expect(vol).toContain("#[ORM\\Column(name: 'numero_vol', type: Types::STRING, length: 8)]")
     expect(vol).toContain('public function setNumeroVol(string $numeroVol): static')
   })
 
   it('mappe les types Doctrine et la taille', () => {
     const cours = fileAt(filesFor(inscription), 'src/Entity/Cours.php')
-    expect(cours).toContain("#[ORM\\Column(name: 'code_cours', length: 10)]")
+    expect(cours).toContain("#[ORM\\Column(name: 'code_cours', type: Types::STRING, length: 10)]")
 
     const inscrire = fileAt(filesFor(inscription), 'src/Entity/Inscrire.php')
     expect(inscrire).toContain('type: Types::DECIMAL, precision: 10, scale: 2')
@@ -206,11 +206,11 @@ describe('Symfony, migration Doctrine', () => {
 
     expect(migration).toContain(`final class Version${DOCTRINE_MIGRATION_VERSION} extends AbstractMigration`)
     expect(migration).toContain('use Doctrine\\Migrations\\AbstractMigration;')
-    // Deux créations de table, une contrainte, puis deux suppressions.
-    expect(count(migration, '$this->addSql(')).toBe(5)
-    expect(migration).toContain('CREATE TABLE clients')
-    expect(migration).toContain('ADD CONSTRAINT fk_commandes_clients')
-    expect(migration).toContain("DROP TABLE IF EXISTS commandes")
+    // Deux créations, une contrainte, puis retrait de la contrainte et des tables.
+    expect(count(migration, '$this->addSql(')).toBe(6)
+    expect(migration).toContain('CREATE TABLE `clients`')
+    expect(migration).toContain('ADD CONSTRAINT `fk_commandes_clients`')
+    expect(migration).toContain("DROP TABLE IF EXISTS `commandes`")
   })
 
   it('suit le dialecte choisi au MPD', () => {
@@ -227,8 +227,8 @@ describe('Symfony, migration Doctrine', () => {
     const migration = fileAt(filesFor(vols), `migrations/Version${DOCTRINE_MIGRATION_VERSION}.php`)
     const down = migration.slice(migration.indexOf('public function down'))
 
-    expect(down.indexOf('DROP TABLE IF EXISTS embarquer')).toBeLessThan(
-      down.indexOf('DROP TABLE IF EXISTS vols'),
+    expect(down.indexOf('DROP TABLE IF EXISTS `embarquer`')).toBeLessThan(
+      down.indexOf('DROP TABLE IF EXISTS `vols`'),
     )
   })
 })

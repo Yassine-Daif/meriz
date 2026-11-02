@@ -2,7 +2,7 @@ import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import { useContext, useState } from 'react'
 import type { Dispatch, PointerEvent } from 'react'
-import { BaseEdge, EdgeLabelRenderer, useReactFlow } from '@xyflow/react'
+import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, useReactFlow } from '@xyflow/react'
 import type { EdgeProps } from '@xyflow/react'
 import type { LegFlowEdge } from './mcdToFlow'
 import { RemoteSelectionContext } from './remoteSelectionContext'
@@ -13,8 +13,7 @@ import type { McdAction } from '../model/mcdReducer'
 import type { Position } from '../model/layout'
 
 /** Hors contexte de dispatch : rien à écrire, et une identité stable. */
-const IGNORE_ACTION: Dispatch<McdAction> = () => {
-  useLanguage()}
+const IGNORE_ACTION: Dispatch<McdAction> = () => {}
 
 /**
  * Lien patte : trait entre une association et une entité, avec une
@@ -22,7 +21,7 @@ const IGNORE_ACTION: Dispatch<McdAction> = () => {
  * déplace, la ligne se courbe pour passer par elle ; sa position est
  * enregistrée dans le layout (donc annulable et sauvegardée).
  */
-export function LegEdge({ id, sourceX, sourceY, targetX, targetY, data, selected }: EdgeProps<LegFlowEdge>) {
+export function LegEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, selected }: EdgeProps<LegFlowEdge>) {
   useLanguage()
   const remoteSelections = useContext(RemoteSelectionContext).filter((other) => other.selection.includes(id))
   const dispatch = useContext(McdDispatchContext)
@@ -32,20 +31,15 @@ export function LegEdge({ id, sourceX, sourceY, targetX, targetY, data, selected
   // seule étape d'annulation au bout.
   const gesture = useGestureStream(dispatch ?? IGNORE_ACTION)
 
-  // Position par défaut : aux trois quarts du chemin, côté entité.
-  const defaultLabel = {
-    x: sourceX + (targetX - sourceX) * 0.75,
-    y: sourceY + (targetY - sourceY) * 0.75,
-  }
-  const label = dragPosition ?? data?.labelPosition ?? defaultLabel
-
-  // Courbe quadratique qui passe par l'étiquette (à mi-parcours).
-  // Étiquette sur la ligne droite → la courbe reste une droite.
+  // Les nouveaux tracés suivent les ancrages. Les étiquettes déjà déplacées gardent leur courbe.
+  const [automaticPath, labelX, labelY] = getSmoothStepPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, borderRadius: 12, offset: 24 })
+  const label = dragPosition ?? data?.labelPosition ?? { x: labelX, y: labelY }
   const controlX = 2 * label.x - (sourceX + targetX) / 2
   const controlY = 2 * label.y - (sourceY + targetY) / 2
-  const path = `M ${sourceX},${sourceY} Q ${controlX},${controlY} ${targetX},${targetY}`
+  const path = dragPosition || data?.labelPosition ? 'M ' + sourceX + ',' + sourceY + ' Q ' + controlX + ',' + controlY + ' ' + targetX + ',' + targetY : automaticPath
 
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (!dispatch) return
     event.stopPropagation()
     event.currentTarget.setPointerCapture(event.pointerId)
     setDragPosition(label)
@@ -91,6 +85,7 @@ export function LegEdge({ id, sourceX, sourceY, targetX, targetY, data, selected
           <path d={path} fill="none" stroke={other.user.avatarFg} strokeWidth={1} pointerEvents="none" />
         </g>
       ))}
+      <path d={path} fill="none" stroke="var(--c-canvas)" strokeWidth={6} strokeLinejoin="round" pointerEvents="none" />
       <BaseEdge
         id={id}
         path={path}
@@ -114,6 +109,7 @@ export function LegEdge({ id, sourceX, sourceY, targetX, targetY, data, selected
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
+            onPointerCancel={() => { setDragPosition(null) }}
           >
             {data.cardinality.min},{data.cardinality.max}
             {data.role !== undefined && ` · ${data.role}`}

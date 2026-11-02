@@ -101,7 +101,9 @@ export function parseMpdSettings(raw: unknown): MpdSettings | null {
       }
     }
   }
-  return { dialect: raw.dialect, overrides }
+  const identity: Record<string, boolean> = {}
+  if (isRecord(raw.identity)) for (const [key, value] of Object.entries(raw.identity)) if (typeof value === 'boolean') identity[key] = value
+  return { dialect: raw.dialect, overrides, ...(Object.keys(identity).length ? { identity } : {}) }
 }
 
 function isAttributeType(value: unknown): boolean {
@@ -123,7 +125,8 @@ function isPropertyRef(value: unknown): value is PropertyRef {
   return (
     isRecord(value) &&
     typeof value.propertyId === 'string' &&
-    typeof value.isIdentifier === 'boolean'
+    typeof value.isIdentifier === 'boolean' &&
+    (value.order === undefined || (typeof value.order === 'number' && Number.isFinite(value.order)))
   )
 }
 

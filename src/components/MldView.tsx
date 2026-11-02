@@ -1,3 +1,5 @@
+import { sourcePropertyId } from '../model/mld'
+import { useSqlTypes } from './sqlTypesContext'
 import { useToast } from './ui/toastContext'
 import { counted } from "../lib/plural"
 import { localeTag } from "../i18n/runtime"
@@ -29,6 +31,7 @@ function mldrHeader(date: Date): string {
  */
 export function MldView({ tables, hasErrors }: MldViewProps) {
   useLanguage()
+  const { physicalType } = useSqlTypes()
   const setCopyStatus = useToast()
 
   if (tables.length === 0) {
@@ -72,7 +75,7 @@ export function MldView({ tables, hasErrors }: MldViewProps) {
                     >
                       {column.name}
                     </span>
-                    <span className="text-ink-soft">{column.type}</span>
+                    <span className="text-ink-soft">{physicalType(sourcePropertyId(column, tables), column.type, column.size)}</span>
                     {column.nullable && <span className="text-ink-soft">{t("NULL")}</span>}
                     {column.isPrimaryKey && (
                       <span className="rounded-sm border border-line bg-accent-soft px-1 text-nano font-medium text-accent-ink">

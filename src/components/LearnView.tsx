@@ -1,3 +1,6 @@
+import { useSqlTypes } from './sqlTypesContext'
+import { ATTRIBUTE_TYPES } from '../model/mcd'
+import type { AttributeType } from '../model/mcd'
 import { exampleCode } from '../i18n/builtInExample'
 import { Translated } from './ui/Translated'
 import { t } from "../i18n/runtime"
@@ -26,6 +29,7 @@ const SECTIONS: readonly { id: string; title: string }[] = [
 /** Mini carte d'entité, dans le style réel du canvas. */
 function MiniEntity({ name, rows }: { name: string; rows: [string, string, boolean][] }) {
   useLanguage()
+  const { physicalType } = useSqlTypes()
   return (
     <div className="inline-block min-w-40 rounded-card border border-line-strong bg-surface text-left shadow-soft">
       <div className="rounded-t-lg border-b border-line bg-shell px-3 py-1 text-center text-xs font-semibold">
@@ -41,7 +45,7 @@ function MiniEntity({ name, rows }: { name: string; rows: [string, string, boole
             >
               {t(attribute)}
             </span>
-            <span className="font-mono text-nano text-ink-soft">{t(type)}</span>
+            <span className="font-mono text-nano text-ink-soft">{(ATTRIBUTE_TYPES as readonly string[]).includes(type) ? physicalType('', type as AttributeType) : type}</span>
             {isIdentifier && (
               <span className="ml-auto rounded-sm border border-line bg-accent-soft px-1 font-mono text-nano font-medium text-accent-ink">
                 {t("clé")}</span>
@@ -190,7 +194,7 @@ export function LearnView({ onSelectView }: LearnViewProps) {
           </Section>
 
           <Section id="dictionnaire" title={t("3. Le dictionnaire des données")}>
-            <p><Translated source="Avant de dessiner, on liste. Le dictionnaire répertorie chaque donnée avec son nom, sa signification, son type et sa taille : {0} ou {1}. Une donnée, une ligne, une seule fois." values={[<span key="slot-0" className="font-mono text-code">{t("nomClient, texte(50)")}</span>, <span key="slot-1" className="font-mono text-code">{t("dateCommande, date")}</span>]} /></p>
+            <p><Translated source="Avant de dessiner, on liste. Le dictionnaire répertorie chaque donnée avec son nom, sa signification, son type et sa taille : {0} ou {1}. Une donnée, une ligne, une seule fois." values={[<span key="slot-0" className="font-mono text-code">{t("nomClient, VARCHAR(50)")}</span>, <span key="slot-1" className="font-mono text-code">{t("dateCommande, DATE")}</span>]} /></p>
             <p>{t("Quatre pièges classiques à laisser dehors :")}</p>
             <ul className="list-inside list-disc">
               <li><Translated source="Les {0} : deux noms pour la même donnée (lieuMagasin et nomMagasin qui désignent la même chose). On en garde un seul." values={[<strong key="slot-0">{t("synonymes")}</strong>]} /></li>
@@ -273,18 +277,18 @@ export function LearnView({ onSelectView }: LearnViewProps) {
           </Section>
 
           <Section id="types" title={t("6. Les types de données")}>
-            <p>{t("Au MCD, chaque propriété porte un des sept types conceptuels :")}</p>
+            <p>{t("Meriz affiche les noms SQL du moteur choisi. Les types courants sont :")}</p>
             <ul className="grid gap-1 font-mono text-code sm:grid-cols-2">
-              <li>{t("texte : du texte, comme un nom")}</li>
-              <li>{t("entier : un nombre entier, comme une quantité")}</li>
-              <li>{t("decimal : un nombre à virgule, comme un prix")}</li>
-              <li>{t("booleen : vrai ou faux")}</li>
-              <li>{t("date : une date")}</li>
-              <li>{t("datetime : une date avec l'heure")}</li>
-              <li>{t("heure : une heure seule")}</li>
+              <li>{t("VARCHAR, TEXT : du texte court ou long")}</li>
+              <li>{t("INT, INTEGER, BIGINT : des nombres entiers")}</li>
+              <li>{t("DECIMAL, NUMERIC : des nombres exacts, comme un montant")}</li>
+              <li>{t("BOOLEAN : vrai ou faux")}</li>
+              <li>{t("DATE : une date sans heure")}</li>
+              <li>{t("DATETIME, TIMESTAMP : une date et une heure")}</li>
+              <li>{t("TIME : une heure seule")}</li>
             </ul>
             <p>
-              {t("Ces types décrivent le sens de la donnée, pas son stockage. La taille (par exemple texte(50) pour un nom) précise la longueur prévue. Types et tailles deviennent des types SQL concrets (VARCHAR, INT…) seulement au niveau MPD, jamais avant : le MCD reste indépendant de la base choisie.")}</p>
+              {t("Les catégories conceptuelles du MCD restent indépendantes du moteur. Les noms SQL affichés sont leur traduction physique, modifiable dans le dictionnaire ou le MPD. VARCHAR(50) limite la longueur à 50 caractères ; DECIMAL(10,2) réserve dix chiffres dont deux après la virgule. FLOAT et DOUBLE sont approximatifs : pour un montant exact, préférez DECIMAL ou NUMERIC.")}</p>
           </Section>
 
           <Section id="transformation" title={t("7. Du MCD au SQL, le voyage")}>

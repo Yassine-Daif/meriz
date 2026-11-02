@@ -1,3 +1,6 @@
+import { quoteSqlName } from './sqlIdentifiers'
+import { sourcePropertyId } from './mld'
+import { parseSqlType, sqlTypeForDialect, formatSqlType, isIntegerType } from './sqlTypes'
 import { t } from "../i18n/runtime"
 import type { AttributeType } from './mcd'
 import type { MldColumn, MldTable } from './mld'
@@ -21,6 +24,7 @@ export const SQL_DIALECTS: readonly { id: SqlDialect; label: string }[] = [
 export interface MpdSettings {
   dialect: SqlDialect
   overrides: Record<string, string>
+  identity?: Record<string, boolean>
 }
 
 export const DEFAULT_MPD_SETTINGS: MpdSettings = { dialect: 'mysql', overrides: {} }
@@ -77,20 +81,25 @@ export function buildMpd(tables: MldTable[], settings: MpdSettings): MpdTable[] 
       name: table.name,
       columns: table.columns.map((column): MpdColumn => {
         const proposed = proposedSqlType(column.type, column.size, settings.dialect)
-        const override = settings.overrides[column.id]?.trim()
+        // Une FK hérite du type physique de la colonne visée, même si celui-ci change en direct.
+        const sourceId = sourcePropertyId(column, tables)
+        const override = (settings.overrides[column.id] ?? settings.overrides[sourceId])?.trim()
         const overridden = override !== undefined && override !== ''
+        const explicitIdentity = settings.identity?.[sourceId]
+        const parsed = parseSqlType(overridden ? override : proposed)
+        const translated = parsed && sqlTypeForDialect(parsed, settings.dialect)
+        const finalType = translated ? formatSqlType(translated) : overridden ? override : proposed
         const autoIncrement =
           column.isPrimaryKey &&
           primaryKeys.length === 1 &&
-          column.type === 'entier' &&
           column.references === undefined &&
-          !overridden
+          (explicitIdentity === true ? !!parsed && isIntegerType(parsed.name) : explicitIdentity !== false && column.type === 'entier' && !overridden)
         return {
           id: column.id,
           name: column.name,
           conceptualType: column.type,
           proposedType: proposed,
-          sqlType: overridden ? override : proposed,
+          sqlType: finalType,
           overridden,
           isPrimaryKey: column.isPrimaryKey,
           nullable: column.nullable,
@@ -157,7 +166,7 @@ export function mpdToSql(tables: MpdTable[], dialect: SqlDialect, options: SqlOp
     parts.push(
       [...ordered]
         .reverse()
-        .map((table) => ("DROP TABLE IF EXISTS " + String(sanitizeSqlName(table.name)) + ";"))
+        .map((table) => ("DROP TABLE IF EXISTS " + String(quoteSqlName(table.name, dialect)) + ";"))
         .join('\n'),
     )
   }
@@ -168,25 +177,39 @@ export function mpdToSql(tables: MpdTable[], dialect: SqlDialect, options: SqlOp
       let typePart = column.sqlType
       if (column.autoIncrement && dialect === 'postgresql') {
         // SERIAL remplace le type et porte l'auto-incrément.
-        typePart = 'SERIAL'
+        typePart = column.sqlType === 'BIGINT' ? 'BIGSERIAL' : column.sqlType === 'SMALLINT' ? 'SMALLSERIAL' : 'SERIAL'
       }
       const autoIncrementPart =
         column.autoIncrement && dialect === 'mysql' ? ' AUTO_INCREMENT' : ''
       const nullability = column.nullable ? '' : ' NOT NULL'
-      lines.push(`  ${sanitizeSqlName(column.name)} ${typePart}${nullability}${autoIncrementPart}`)
+      lines.push(`  ${quoteSqlName(column.name, dialect)} ${typePart}${nullability}${autoIncrementPart}`)
     }
     const primaryKey = table.columns.filter((c) => c.isPrimaryKey)
     if (primaryKey.length > 0) {
-      lines.push(`  PRIMARY KEY (${primaryKey.map((c) => sanitizeSqlName(c.name)).join(', ')})`)
+      lines.push(`  PRIMARY KEY (${primaryKey.map((c) => quoteSqlName(c.name, dialect)).join(', ')})`)
     }
-    parts.push(`CREATE TABLE ${sanitizeSqlName(table.name)} (\n${lines.join(',\n')}\n);`)
+    parts.push(`CREATE TABLE ${quoteSqlName(table.name, dialect)} (\n${lines.join(',\n')}\n);`)
   }
 
   // Clés étrangères après toutes les créations : plus de contrainte
   // d'ordre. Un groupe (une patte d'origine) = une contrainte.
-  const alterStatements: string[] = []
+  const alterStatements = foreignConstraints(tables).map(({ table, columns, targetName, name }) => {
+    const local = columns.map(c => quoteSqlName(c.name, dialect)).join(', ')
+    const foreign = columns.map(c => quoteSqlName(c.references?.columnName ?? '', dialect)).join(', ')
+    return 'ALTER TABLE ' + quoteSqlName(table.name, dialect) + '\n  ADD CONSTRAINT ' + quoteSqlName(name, dialect) + ' FOREIGN KEY (' + local + ') REFERENCES ' + quoteSqlName(targetName, dialect) + ' (' + foreign + ');'
+  })
+  if (alterStatements.length > 0) {
+    parts.push(alterStatements.join('\n\n'))
+  }
+
+  return parts.join('\n\n')
+}
+
+/** Les mêmes noms déterministes pour créer et retirer uniquement nos contraintes. */
+export function foreignConstraints(tables: MpdTable[]): { table: MpdTable; columns: MpdColumn[]; targetName: string; name: string }[] {
+  const constraints: { table: MpdTable; columns: MpdColumn[]; targetName: string; name: string }[] = []
   const usedConstraintNames = new Set<string>()
-  for (const table of ordered) {
+  for (const table of sortForCreation(tables)) {
     const groups = new Map<string, MpdColumn[]>()
     for (const column of table.columns) {
       if (column.references) {
@@ -201,23 +224,15 @@ export function mpdToSql(tables: MpdTable[], dialect: SqlDialect, options: SqlOp
     for (const columns of groups.values()) {
       const first = columns[0]!
       const targetName = first.references?.tableName ?? ''
-      let constraintName = `fk_${sanitizeSqlName(table.name)}_${sanitizeSqlName(targetName)}`.toLowerCase()
+      let constraintName = `fk_${sanitizeSqlName(table.name)}_${sanitizeSqlName(targetName)}`.toLowerCase().slice(0, 60)
       let n = 2
       while (usedConstraintNames.has(constraintName)) {
-        constraintName = `fk_${sanitizeSqlName(table.name)}_${sanitizeSqlName(targetName)}_${n}`.toLowerCase()
+        constraintName = `fk_${sanitizeSqlName(table.name)}_${sanitizeSqlName(targetName)}`.toLowerCase().slice(0, 55) + `_${n}`
         n += 1
       }
       usedConstraintNames.add(constraintName)
-      const local = columns.map((c) => sanitizeSqlName(c.name)).join(', ')
-      const foreign = columns.map((c) => sanitizeSqlName(c.references?.columnName ?? '')).join(', ')
-      alterStatements.push(
-        `ALTER TABLE ${sanitizeSqlName(table.name)}\n  ADD CONSTRAINT ${constraintName} FOREIGN KEY (${local}) REFERENCES ${sanitizeSqlName(targetName)} (${foreign});`,
-      )
+      constraints.push({ table, columns, targetName, name: constraintName })
     }
   }
-  if (alterStatements.length > 0) {
-    parts.push(alterStatements.join('\n\n'))
-  }
-
-  return parts.join('\n\n')
+  return constraints
 }

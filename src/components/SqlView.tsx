@@ -1,3 +1,5 @@
+import { physicalSchemaIssues } from '../model/physicalSchema'
+import { Notice } from './ui/Notice'
 import { useToast } from './ui/toastContext'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
@@ -38,10 +40,11 @@ function highlightSql(sql: string): ReactNode[] {
  */
 export function SqlView({ tables, dialect, hasErrors }: SqlViewProps) {
   useLanguage()
-  const [includeDrops, setIncludeDrops] = useState(true)
+  const [includeDrops, setIncludeDrops] = useState(false)
   const setCopyStatus = useToast()
   const dropsId = useId()
 
+  const typeIssues = physicalSchemaIssues(tables, dialect)
   const sql = useMemo(
     () => mpdToSql(tables, dialect, { includeDrops }),
     [tables, dialect, includeDrops],
@@ -74,11 +77,13 @@ export function SqlView({ tables, dialect, hasErrors }: SqlViewProps) {
       <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2">
         <Button
           size="sm"
+          disabled={hasErrors || typeIssues.length > 0}
           onClick={() => void handleCopy()}
         >
           {t("Copier")}</Button>
         <Button
           size="sm"
+          disabled={typeIssues.length > 0}
           onClick={() => void handleExport()}
         >
           {t("Exporter en .sql")}</Button>
@@ -95,6 +100,7 @@ export function SqlView({ tables, dialect, hasErrors }: SqlViewProps) {
       </div>
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {hasErrors && <ErrorsBanner />}
+        {typeIssues.length > 0 && <Notice tone="error"><ul>{typeIssues.map(issue => <li key={issue}>{issue}</li>)}</ul></Notice>}
         <pre
           tabIndex={0}
           role="region"

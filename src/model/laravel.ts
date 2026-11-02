@@ -1,6 +1,6 @@
 import type { CodeSchema, SchemaTable } from './codeSchema'
 import type { GeneratedFile } from './codegenTypes'
-import { laravelMigrationFile } from './laravelMigration'
+import { deferredForeignMigration, foreignGroups, laravelMigrationFile } from './laravelMigration'
 import { laravelModelFile } from './laravelModel'
 import { sortForCreation } from './mpd'
 
@@ -51,9 +51,16 @@ export function laravelFiles(schema: CodeSchema): GeneratedFile[] {
     (a, b) => creationOrder.indexOf(a.id) - creationOrder.indexOf(b.id),
   )
 
-  const migrations = ordered.map((table, index) =>
-    laravelMigrationFile(table, schema, index + 1, wantsTimestamps(table)),
-  )
+  const deferred = new Map<string, Set<string>>()
+  for (const [index, table] of ordered.entries()) {
+    const forward = foreignGroups(table).filter(group => {
+      const target = group.columns[0]?.foreignKey?.targetTableId
+      return target !== table.id && ordered.findIndex(candidate => candidate.id === target) > index
+    })
+    if (forward.length) deferred.set(table.id, new Set(forward.map(group => group.group)))
+  }
+  const migrations = ordered.map((table, index) => laravelMigrationFile(table, schema, index + 1, wantsTimestamps(table), deferred.get(table.id)))
+  if (deferred.size) migrations.push(deferredForeignMigration(schema, deferred, ordered.length + 1))
   const models = ordered.filter(hasModel).map((table) => laravelModelFile(table, schema))
 
   return [...migrations, ...models]

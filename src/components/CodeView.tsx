@@ -1,3 +1,7 @@
+import { buildMpd } from '../model/mpd'
+import { doctrineCompatibilityWarnings } from '../model/frameworkCompatibility'
+import { frameworkCommands } from '../model/frameworkCommands'
+import type { SymfonyMigrationLocation, SymfonyWorkflow } from '../model/frameworkCommands'
 import { useToast } from './ui/toastContext'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
@@ -31,11 +35,18 @@ export function CodeView({ mcd, tables, settings, hasErrors }: CodeViewProps) {
   const locale = useLanguage()
   const [framework, setFramework] = useState<FrameworkId>('laravel')
   const setStatus = useToast()
+  const [workflow, setWorkflow] = useState<SymfonyWorkflow>('entities')
+  const [migrationLocation, setMigrationLocation] = useState<SymfonyMigrationLocation>('modern')
 
-  const files = useMemo(
-    () => { void locale; return generateFiles(framework, mcd, tables, settings) },
-    [framework, mcd, tables, settings, locale],
-  )
+  const result = useMemo(() => {
+    void locale
+    try { return { files: generateFiles(framework, mcd, tables, settings), error: '' } }
+    catch (error) { return { files: [], error: error instanceof Error ? error.message : t('Génération impossible.') } }
+  }, [framework, mcd, tables, settings, locale])
+  const plan = frameworkCommands(framework, result.files, workflow, migrationLocation)
+  const files = plan.files
+  const compatibilityWarnings = framework === 'symfony' ? doctrineCompatibilityWarnings(settings, buildMpd(tables, settings)) : []
+  const blocked = hasErrors || !!result.error || (framework === 'symfony' && workflow === 'entities' && compatibilityWarnings.length > 0)
 
   if (tables.length === 0) {
     return <EmptyGeneration viewName="Code" />
@@ -51,7 +62,7 @@ export function CodeView({ mcd, tables, settings, hasErrors }: CodeViewProps) {
   const handleExport = async () => {
     const result = await saveFileAs(
       `${framework}.md`,
-      new Blob([filesToMarkdown(files, t("Code {0} généré par Meriz", [label]))], { type: 'text/markdown' }),
+      new Blob([filesToMarkdown(files, t("Code {0} généré par Meriz", [label])) + '\n## ' + plan.title + '\n\n' + plan.explanation + '\n\n```sh\n' + plan.commands.join('\n') + '\n```\n'], { type: 'text/markdown' }),
       t("Code généré"),
       { 'text/markdown': ['.md'] },
     )
@@ -69,9 +80,9 @@ export function CodeView({ mcd, tables, settings, hasErrors }: CodeViewProps) {
           value={framework}
           onChange={setFramework}
         />
-        <Button size="sm" onClick={() => void copy(concatFiles(files), t("Tous les fichiers copiés dans le presse-papiers."))}>
+        <Button size="sm" disabled={blocked} onClick={() => void copy(concatFiles(files), t("Tous les fichiers copiés dans le presse-papiers."))}>
           {t("Copier tout")}</Button>
-        <Button size="sm" onClick={() => void handleExport()}>
+        <Button size="sm" disabled={blocked} onClick={() => void handleExport()}>
           {t("Exporter en .md")}</Button>
         <p className="text-xs text-ink-soft">
           {files.length === 1 ? t("1 fichier généré pour ") : t("{0} fichiers générés pour ", [files.length])}
@@ -80,6 +91,16 @@ export function CodeView({ mcd, tables, settings, hasErrors }: CodeViewProps) {
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto p-4">
+        <section className="mb-4 min-w-0 rounded-card border border-line bg-surface p-4" aria-label={t('Commandes du framework')}>
+          {framework === 'symfony' && <label className="mb-3 flex flex-wrap items-center gap-2 text-sm">{t('Parcours Symfony')}<select value={workflow} onChange={e => setWorkflow(e.target.value as SymfonyWorkflow)} className="min-w-0 max-w-full rounded-control border border-line-strong bg-surface px-2 py-1"><option value="entities">{t('Entités puis migration Doctrine')}</option><option value="migration">{t('Migration fournie par Meriz')}</option></select></label>}
+          {framework === 'symfony' && workflow === 'migration' && <label className="mb-3 flex flex-wrap items-center gap-2 text-sm">{t('Emplacement des migrations')}<select value={migrationLocation} onChange={e => setMigrationLocation(e.target.value as SymfonyMigrationLocation)} className="min-w-0 max-w-full rounded-control border border-line-strong bg-surface px-2 py-1"><option value="modern">src/Migrations · App\Migrations</option><option value="classic">migrations · DoctrineMigrations</option></select><span className="text-xs text-ink-soft">{t('À vérifier dans config/packages/doctrine_migrations.yaml.')}</span></label>}
+          <p className="mb-2 text-xs text-ink-soft">{framework === 'symfony' ? t('Entités prévues pour Doctrine ORM 3 et DBAL 4.3 ou plus récent.') : t('Migrations vérifiées avec Laravel 13.')}</p>
+          <h2 className="font-semibold">{plan.title}</h2><p className="mt-2 text-sm text-ink-soft">{plan.explanation}</p>
+          <p className="mt-2 text-sm text-ink-soft">{t('Ces commandes se lancent dans votre projet, après configuration de sa base. Relisez la migration et son aperçu SQL avant de l’appliquer. Elles ne sont jamais exécutées par Meriz.')}</p>
+          {compatibilityWarnings.length > 0 && <Notice tone="warning" className="mt-3"><ul className="space-y-2">{compatibilityWarnings.map(warning => <li key={warning}>{warning}</li>)}</ul><p className="mt-2">{t('La migration fournie conserve ces types natifs. Leur utilisation avec les évolutions automatiques de Doctrine demande cette configuration supplémentaire. Aucun type n’est remplacé sans votre choix.')}</p></Notice>}
+          {result.error && <Notice tone="error" className="mt-3">{result.error}</Notice>}
+          <ol className="mt-3 space-y-2">{plan.commands.map((command, index) => <li key={command} className="flex min-w-0 flex-wrap items-center gap-2"><span className="text-xs text-ink-soft">{index + 1}.</span><code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-control bg-shell p-2 text-xs">{command}</code><Button size="sm" disabled={blocked} onClick={() => void copy(command, t('Commande copiée.'))}>{t('Copier')}</Button></li>)}</ol>
+        </section>
         {hasErrors && <ErrorsBanner />}
 
         <Notice
@@ -114,6 +135,7 @@ export function CodeView({ mcd, tables, settings, hasErrors }: CodeViewProps) {
                   size="sm"
                   variant="ghost"
                   className="ml-auto"
+                  disabled={blocked}
                   onClick={() => void copy(file.content, t("{0} copié dans le presse-papiers.", [file.path]))}
                   aria-label={t("Copier {0}", [file.path])}
                 >
