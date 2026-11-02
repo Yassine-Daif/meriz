@@ -24,7 +24,7 @@ const listeners = new Set<() => void>()
 function applyLanguage() {
   if (typeof document === 'undefined') return
   document.documentElement.lang = language
-  document.title = language === 'en' ? 'Meriz — Merise database modelling' : 'Meriz — Modélisation Merise'
+  document.title = language === 'en' ? 'Meriz Merise database modelling' : 'Meriz Modélisation Merise'
 }
 export function getLanguage(): Language { return language }
 export function localeTag(): string { return language === 'en' ? 'en-GB' : 'fr-FR' }
