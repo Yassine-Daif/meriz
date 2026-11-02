@@ -1,10 +1,12 @@
 # Dictionnaire, types SQL et exports
 
-Le dictionnaire regroupe les propriétés par entité, par association, puis dans « Non affectées ». L’ordre du modèle est conservé par défaut ; la recherche et le tri alphabétique restent disponibles. Chaque groupe peut être replié.
+Le dictionnaire présente les propriétés dans un tableau compact, avec trois onglets : Tables, Associations et Non affectées. Les tables correspondent aux entités du MCD. L’onglet Associations contient seulement les propriétés portées par les associations. Les associations sans propriété et les liaisons restent dans le MCD. L’ordre du modèle est conservé par défaut ; la recherche et le tri alphabétique restent disponibles. Chaque groupe peut être replié.
 
 La poignée déplace une propriété dans un groupe ou avant une autre propriété. Le sélecteur « Déplacer vers… » permet aussi le déplacement au clavier et sur écran tactile. La propriété conserve son identifiant, son nom et ses paramètres SQL. Elle n’est ni supprimée ni recréée. Déplacer un identifiant demande confirmation ; vers une association ou les propriétés non affectées, il perd son rôle d’identifiant. Vérifier ensuite les clés du modèle.
 
 Les déplacements, l’ordre et les réglages physiques passent par le document Yjs existant. L’annulation reste locale : elle ne doit pas annuler le renommage reçu d’un autre participant. Un déplacement concurrent vers deux groupes est résolu vers un seul porteur.
+
+Le bouton de suppression d’une table ouvre une confirmation. On peut supprimer la table avec ses propriétés, ou garder celles-ci parmi les non affectées. Les pattes vers la table sont retirées. L’action passe par le même historique Yjs : Ctrl+Z restaure la table, les propriétés, leurs paramètres et les liaisons. La lecture seule ne propose aucune suppression.
 
 ## Types proposés
 

@@ -47,6 +47,7 @@ export type McdAction =
   | { type: 'MOVE_NODE'; id: string; position: Position; gesture?: string }
   | { type: 'MOVE_NODES'; moves: { id: string; position: Position }[]; gesture?: string }
   | { type: 'DELETE_ENTITY'; id: string }
+  | { type: 'DELETE_DICTIONARY_TABLE'; id: string }
   | { type: 'DELETE_ASSOCIATION'; id: string }
   | { type: 'DELETE_LEG'; id: string }
   | { type: 'RENAME_ENTITY'; id: string; name: string }
@@ -260,6 +261,16 @@ function reduceModel(state: McdEditorState, action: McdAction): McdEditorState {
       return { ...state, layout }
     }
 
+    case 'DELETE_DICTIONARY_TABLE': {
+      const entity = state.mcd.entities.find(e => e.id === action.id)
+      if (!entity) return state
+      // On prend les propriétés encore présentes dans la table au moment de confirmer.
+      const removed = new Set(entity.attributes.map(a => a.propertyId))
+      const next = reduceModel(state, { type: 'DELETE_ENTITY', id: action.id })
+      const settings = state.mpd
+      const mpd = settings ? { ...settings, overrides: Object.fromEntries(Object.entries(settings.overrides).filter(([id]) => !removed.has(id))), ...(settings.identity ? { identity: Object.fromEntries(Object.entries(settings.identity).filter(([id]) => !removed.has(id))) } : {}) } : undefined
+      return { ...next, mcd: { ...next.mcd, properties: next.mcd.properties.filter(p => !removed.has(p.id)) }, ...(mpd ? { mpd } : {}) }
+    }
     case 'DELETE_ENTITY': {
       // Retire aussi les pattes qui référencent l'entité (pas de lien
       // orphelin). Ses propriétés restent au dictionnaire, non placées.

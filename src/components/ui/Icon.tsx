@@ -14,6 +14,7 @@ const paths = {
   comment: <path d="M5 3h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-6 4V5a2 2 0 0 1 2-2Z"/>,
   eye: <><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></>,
   eyeOff: <><path d="m3 3 18 18M10 5a13 13 0 0 1 12 7 19 19 0 0 1-4 5M6 6a19 19 0 0 0-4 6s4 7 10 7a12 12 0 0 0 4-1"/></>,
+  trash: <><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></>,
   eraser: <><path d="m15 3 6 6-11 12H6l-4-4zM7 12l6 6M10 21h12"/></>,
   check: <path d="m5 12 4 4L19 6"/>,
   logout: <><path d="M9 4H4v16h5M14 7l5 5-5 5M8 12h11"/></>,
