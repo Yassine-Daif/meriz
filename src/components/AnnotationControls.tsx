@@ -1,3 +1,4 @@
+import { Select } from './ui/Select'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import { Icon } from './ui/Icon'
@@ -31,9 +32,9 @@ export function AnnotationControls(props: {
       <Button size="sm" variant="soft" onClick={props.onComment} aria-keyshortcuts="C" title={t("Poser un commentaire (C)")}><Icon name="comment" /><span>{t("Commenter le schéma")}</span></Button>
       {props.canDraw && props.drawingActive && <>
         <label htmlFor={id}>{t("Durée du crayon")}</label>
-        <select id={id} value={props.duration} onChange={(event) => props.onDuration(event.target.value as InkDuration)} className="rounded-control border border-line-strong bg-surface px-2 py-1 text-ink">
+        <Select id={id} value={props.duration} onValueChange={value => props.onDuration(value as InkDuration)} className="rounded-control border border-line-strong bg-surface px-2 py-1 text-ink">
           <option value="short">{t("Court · 3 secondes")}</option><option value="long">{t("Cours · 15 secondes")}</option><option value="saved">{t("Conserver dans le document")}</option>
-        </select>
+        </Select>
         <Button size="sm" variant="ghost" onClick={props.onClear} title={t("Effacer mes traits temporaires")} aria-label={t("Effacer mes traits temporaires")}><Icon name="eraser" /><span className="hidden sm:inline">{t("Effacer mes traits")}</span></Button>
       </>}
       <Button size="sm" variant="ghost" aria-pressed={!props.visible} onClick={props.onToggleVisible}>

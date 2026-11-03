@@ -1,3 +1,4 @@
+import { Select } from './ui/Select'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import { useId, useState } from 'react'
@@ -63,10 +64,10 @@ export function ClassShortcuts({ title, classrooms, shortcuts, action, onOpen }:
           <div className="flex flex-wrap items-center gap-2">
             <label htmlFor={selectId} className="text-sm font-medium text-ink">
               {t("Classe")}</label>
-            <select
+            <Select
               id={selectId}
               value={current.id}
-              onChange={(event) => setChosen(event.target.value)}
+              onValueChange={value => setChosen(value)}
               className="rounded-control border border-line-strong bg-surface px-3 py-2 text-sm text-ink"
             >
               {classrooms.map((classroom) => (
@@ -74,7 +75,7 @@ export function ClassShortcuts({ title, classrooms, shortcuts, action, onOpen }:
                   {classroom.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         )}
 

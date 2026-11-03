@@ -1,3 +1,4 @@
+import { Select } from './ui/Select'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import { useId, useRef, useState } from 'react'
@@ -21,7 +22,7 @@ interface LegConnectorProps {
 export function LegConnector({ mcd, association, dispatch }: LegConnectorProps) {
   useLanguage()
   const selectId = useId()
-  const selectRef = useRef<HTMLSelectElement>(null)
+  const selectRef = useRef<HTMLButtonElement>(null)
   const [entityId, setEntityId] = useState('')
   const [announcement, setAnnouncement] = useState('')
 
@@ -50,11 +51,11 @@ export function LegConnector({ mcd, association, dispatch }: LegConnectorProps) 
           <label htmlFor={selectId} className="sr-only">
             {t("Entité à relier à l'association ")}{association.name}
           </label>
-          <select
+          <Select
             id={selectId}
             ref={selectRef}
             value={entityId}
-            onChange={(event) => setEntityId(event.target.value)}
+            onValueChange={value => setEntityId(value)}
             className="min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-1.5 py-1 text-xs"
           >
             <option value="">{t("Choisir une entité")}</option>
@@ -63,7 +64,7 @@ export function LegConnector({ mcd, association, dispatch }: LegConnectorProps) 
                 {entity.name}
               </option>
             ))}
-          </select>
+          </Select>
           <button
             type="button"
             onClick={handleConnect}

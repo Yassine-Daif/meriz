@@ -11,6 +11,7 @@ export function isEditableTarget(target: EventTarget | null): boolean {
     target.nodeName === 'INPUT' ||
     target.nodeName === 'TEXTAREA' ||
     target.nodeName === 'SELECT' ||
+    !!target.closest('[role="combobox"], [role="listbox"]') ||
     target.isContentEditable
   )
 }

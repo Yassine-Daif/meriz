@@ -1,3 +1,4 @@
+import { Select } from './ui/Select'
 import { SqlTypeControl } from './SqlTypeControl'
 import { useSqlTypes } from './sqlTypesContext'
 import { t } from "../i18n/runtime"
@@ -61,10 +62,10 @@ export function AttributesEditor({
           au lieu de la réécrire. */}
       {unplaced.length > 0 ? (
         <div className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-line bg-accent-soft p-1.5">
-          <select
+          <Select
             aria-label={t("Propriété du dictionnaire à placer ici")}
             value={propertyToPlace}
-            onChange={(event) => setPropertyToPlace(event.target.value)}
+            onValueChange={value => setPropertyToPlace(value)}
             className="w-full min-w-0 rounded-lg border border-line-strong bg-surface px-1.5 py-1 text-xs"
           >
             <option value="">{t("Placer depuis le dictionnaire")}</option>
@@ -73,7 +74,7 @@ export function AttributesEditor({
                 {property.name} ({physicalType(property.id, property.type, property.size)})
               </option>
             ))}
-          </select>
+          </Select>
           <button
             type="button"
             onClick={handlePlace}

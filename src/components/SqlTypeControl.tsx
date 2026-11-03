@@ -1,3 +1,4 @@
+import { Select } from './ui/Select'
 import { useEffect, useState } from 'react'
 import type { Property } from '../model/mcd'
 import { defaultSqlSpec, formatSqlType, hasLength, hasPrecision, parseSqlType, sqlTypeForDialect, sqlTypeNames } from '../model/sqlTypes'
@@ -43,13 +44,13 @@ export function SqlTypeControl({ property, compact = false, part = 'all' }: {
   const parameters = spec && (hasLength(spec.name) || hasPrecision(spec.name) || spec.name === 'ENUM' || unsigned)
   return <div className={part === 'all' ? 'flex min-w-0 flex-col gap-2' : 'flex min-w-0 flex-col gap-1'} data-sql-type={property.id} data-sql-part={part}>
     {part !== 'parameters' && <div className={part === 'all' ? 'flex min-w-0 flex-wrap items-center gap-2' : 'flex min-w-0 flex-wrap items-center gap-1'}>
-      <select value={spec?.name ?? raw} disabled={readOnly} aria-label={t('Type de la propriété {0}', [property.name])} className={field + (part === 'all' ? ' flex-1' : ' w-full')}
-        onChange={event => { const name = sqlTypeNames(settings.dialect).find(n => n === event.target.value); if (name) apply(defaultSqlSpec(name)) }}>
+      <Select value={spec?.name ?? raw} disabled={readOnly} aria-label={t('Type de la propriété {0}', [property.name])} className={field + (part === 'all' ? ' flex-1' : ' w-full')}
+        onValueChange={value => { const name = sqlTypeNames(settings.dialect).find(n => n === value); if (name) apply(defaultSqlSpec(name)) }}>
         {(!spec || !sqlTypeNames(settings.dialect).includes(spec.name)) && <option value={spec?.name ?? raw}>{raw}</option>}
         {[true, false].map(common => <optgroup key={String(common)} label={common ? t('Types courants') : t('Types complémentaires')}>
           {sqlTypeNames(settings.dialect).filter(name => ['VARCHAR', 'TEXT', 'INT', 'INTEGER', 'BIGINT', 'DECIMAL', 'NUMERIC', 'BOOLEAN', 'DATE', 'TIME', 'DATETIME', 'TIMESTAMP'].includes(name) === common).map(name => <option key={name} value={name}>{name}</option>)}
         </optgroup>)}
-      </select>
+      </Select>
       {part === 'all' && !compact && raw !== spec?.name && <code className="min-w-0 basis-full break-all text-xs text-ink-soft">{raw}</code>}
     </div>}
     {part !== 'type' && <div className={part === 'all' ? 'flex min-w-0 flex-wrap gap-2' : 'flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1'}>

@@ -1,3 +1,4 @@
+import { Select } from './ui/Select'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import { useEffect, useState } from 'react'
@@ -51,9 +52,9 @@ export function UiScaleControl() {
       <span aria-hidden="true" className="font-semibold">
         {t("Aa")}</span>
       <span className="sr-only">{t("Taille de l'interface et des textes")}</span>
-      <select
+      <Select
         value={scale}
-        onChange={(event) => setScale(event.target.value)}
+        onValueChange={value => setScale(value)}
         className="min-h-8 rounded-control border border-line-strong bg-surface px-2 py-1 text-xs text-ink"
       >
         {UI_SCALES.map((option) => (
@@ -61,7 +62,7 @@ export function UiScaleControl() {
             {option.label}
           </option>
         ))}
-      </select>
+      </Select>
     </label>
   )
 }

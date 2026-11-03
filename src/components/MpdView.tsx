@@ -1,3 +1,4 @@
+import { Select } from './ui/Select'
 import { SqlTypeControl } from './SqlTypeControl'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
@@ -75,11 +76,11 @@ export function MpdView({
       <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-2">
         <label htmlFor={dialectSelectId} className="text-xs font-medium text-ink-soft">
           {t("Dialecte SQL")}</label>
-        <select
+        <Select
           id={dialectSelectId}
           value={settings.dialect}
           disabled={readOnly}
-          onChange={(event) => onDialectChange(event.target.value as SqlDialect)}
+          onValueChange={value => onDialectChange(value as SqlDialect)}
           className="rounded-lg border border-line-strong px-1.5 py-1 font-mono text-xs"
         >
           {SQL_DIALECTS.map((dialect) => (
@@ -87,7 +88,7 @@ export function MpdView({
               {dialect.label}
             </option>
           ))}
-        </select>
+        </Select>
         <Button
           size="sm"
           aria-expanded={mappingOpen}
