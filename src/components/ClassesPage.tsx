@@ -1,6 +1,6 @@
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { ApiClient } from '../lib/apiClient'
 import type { ApiUser } from '../lib/authApi'
 import type { ClassroomDetail } from '../lib/classroomsApi'
@@ -18,12 +18,15 @@ import type {
 } from './assignments/types'
 import { CreateClassForm } from './CreateClassForm'
 import { JoinClassForm } from './JoinClassForm'
+import { TeachingLibraryPanel } from './TeachingLibraryPanel'
+import { CollectionOrganizer } from './CollectionOrganizer'
+import { useCollections } from './useCollections'
 import { PageShell } from './PageShell'
 import { Card } from './ui/Card'
 import { SearchField } from './ui/SearchField'
 
 /** En dessous de ce nombre, une recherche encombre plus qu'elle n'aide. */
-const SEARCH_FROM = 6
+const SEARCH_FROM = 0
 
 /** Classe à ouvrir en détail, avec son contenu s'il est déjà connu. */
 export interface ClassroomOpening {
@@ -72,6 +75,7 @@ export function ClassesPage({
   onStartLiveCoedition,
 }: ClassesPageProps) {
   useLanguage()
+  const organizer = useCollections(client, 'classrooms')
   const classrooms = useClassrooms(client)
   const { reload } = classrooms
   const [selected, setSelected] = useState<ClassroomOpening | null>(opening)
@@ -104,7 +108,7 @@ export function ClassesPage({
   const total = all?.length ?? 0
   const searchable = total > SEARCH_FROM
   const searching = searchable && query.trim() !== ''
-  const shown = useMemo(() => (all === null ? [] : filterByName(all, searching ? query : '')), [all, query, searching])
+  const shown = canCreate ? organizer.filter(all ?? [], query) : (all === null ? [] : filterByName(all, searching ? query : ''))
   const filtered = all === null ? classrooms : { ...classrooms, classrooms: shown }
 
   if (selected) {
@@ -187,6 +191,8 @@ export function ClassesPage({
         )}
       </div>
 
+      {canCreate && <TeachingLibraryPanel client={client} classrooms={all ?? []} />}
+
       <section aria-labelledby="liste-titre" className="mt-8">
         <h2 id="liste-titre" className="text-lg font-semibold tracking-tight text-ink">
           {t("Vos classes")}{total > 0 && <span className="font-normal text-ink-soft"> ({total})</span>}
@@ -203,7 +209,9 @@ export function ClassesPage({
           </div>
         )}
         <div className="mt-3">
+        {canCreate && <CollectionOrganizer onSpacesChanged={() => void reload()} client={client} kind="classrooms" organizer={organizer} items={(all ?? []).filter(c => c.myRole === 'teacher')} />}
           <ClassroomGrid
+            collections={canCreate ? organizer.collections.filter(c => (organizer.year === 'all' || String(c.yearStart) === organizer.year) && (organizer.archive === 'all' || c.archived === (organizer.archive === 'archived'))) : []}
             state={filtered}
             onOpen={(classroom) => setSelected({ id: classroom.id, initial: null, message: null })}
             emptyText={

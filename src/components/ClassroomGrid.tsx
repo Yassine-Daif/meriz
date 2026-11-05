@@ -1,3 +1,5 @@
+import { WorkspaceSections } from './WorkspaceSections'
+import type { WorkspaceCollection } from '../lib/collectionsApi'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import type { ClassroomsState } from '../lib/useClassrooms'
@@ -7,6 +9,7 @@ import { Button } from './ui/Button'
 import { Notice } from './ui/Notice'
 
 interface ClassroomGridProps {
+  collections?: readonly WorkspaceCollection[]
   state: ClassroomsState
   onOpen: (classroom: ClassroomSummary) => void
   onCopyCode?: (code: string) => void
@@ -14,7 +17,7 @@ interface ClassroomGridProps {
 }
 
 /** Classes en cartes, avec les états chargement, erreur et vide. */
-export function ClassroomGrid({ state, onOpen, onCopyCode, emptyText }: ClassroomGridProps) {
+export function ClassroomGrid({ state, onOpen, onCopyCode, emptyText, collections = [] }: ClassroomGridProps) {
   useLanguage()
   const { classrooms, error, reload } = state
   if (error) {
@@ -45,8 +48,8 @@ export function ClassroomGrid({ state, onOpen, onCopyCode, emptyText }: Classroo
     )
   }
   return (
-    <ul className="grid gap-3 sm:grid-cols-2">
-      {classrooms.map((classroom) => (
+    <WorkspaceSections<ClassroomSummary> items={classrooms} collections={collections} render={items => <ul className="grid gap-3 sm:grid-cols-2">
+      {items.map((classroom) => (
         <ClassroomCard
           key={classroom.id}
           classroom={classroom}
@@ -54,6 +57,6 @@ export function ClassroomGrid({ state, onOpen, onCopyCode, emptyText }: Classroo
           onCopyCode={onCopyCode}
         />
       ))}
-    </ul>
+    </ul>} />
   )
 }

@@ -18,6 +18,8 @@ import { AccountDataSection } from './AccountDataSection'
 import { EmailVerificationSection } from './EmailVerificationSection'
 import { TeacherModeSection } from './TeacherModeSection'
 import { Button } from './ui/Button'
+import { UsageCategoryControl } from './UsageCategoryControl'
+import { InterfaceModeControl } from './InterfaceModeControl'
 
 interface ProfilePageProps {
   user: ApiUser
@@ -116,6 +118,7 @@ export function ProfilePage({ user, client, onShowClasses, onAccountDeleted }: P
 
   return (
     <PageShell title={t("Mon profil")}>
+      <div className="mb-6 rounded-card border border-line bg-surface p-5 sm:p-6"><InterfaceModeControl /></div>
       <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-6">
         <FormAlert message={formError} attempt={attempt} />
 
@@ -246,9 +249,11 @@ export function ProfilePage({ user, client, onShowClasses, onAccountDeleted }: P
         </div>
       </form>
 
+      <UsageCategoryControl />
       <EmailVerificationSection user={user} client={client} />
 
       <TeacherModeSection user={user} client={client} onShowClasses={onShowClasses} />
+      {user.role !== 'teacher' && user.usageCategory === 'student' && <p className="mt-6 text-sm text-ink-soft">{t('Vous pouvez utiliser votre adresse personnelle et rejoindre une classe avec son code. Le rattachement par connexion à votre établissement sera facultatif lorsqu’il sera disponible.')}</p>}
 
       <AccountDataSection user={user} client={client} onDeleted={onAccountDeleted} />
     </PageShell>

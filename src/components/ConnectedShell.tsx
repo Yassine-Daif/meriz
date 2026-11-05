@@ -85,7 +85,7 @@ export function ConnectedShell({ user, page, onNavigate, notice, onClearNotice, 
       <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line bg-surface px-4 py-2.5 sm:px-6">
         <Lockup size={30} label={t("Meriz")} />
         <span className="hidden text-sm font-medium text-ink-soft sm:inline">
-          {user.role === 'teacher' ? t("Espace prof") : t("Espace élève")}
+          {user.role === 'teacher' ? t("Espace prof") : user.usageCategory != null && user.usageCategory !== 'student' ? t('Espace personnel') : t("Espace élève")}
         </span>
         <div className="ml-auto flex flex-wrap items-center gap-3">
           <PreferencesControl />

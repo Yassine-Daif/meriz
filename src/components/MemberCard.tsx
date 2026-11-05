@@ -1,7 +1,7 @@
+import { PersonName } from './ui/PersonName'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import type { ReactNode } from 'react'
-import { displayName } from '../lib/authApi'
 import type { PublicProfile } from '../lib/classroomsApi'
 import { Avatar } from './ui/Avatar'
 import { Card } from './ui/Card'
@@ -36,7 +36,7 @@ export function MemberCard({ person, joined, joinedLabel = t("Arrivé le"), badg
         <Avatar person={person} size="md" />
 
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-ink">{displayName(person)}</p>
+          <p className="min-w-0 text-sm font-semibold text-ink"><PersonName person={person} /></p>
 
           {/* Les deux lignes tiennent leur place, pleines ou vides. */}
           <p className="mt-0.5 min-h-4 text-xs text-ink-soft">

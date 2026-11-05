@@ -1,3 +1,4 @@
+import { PersonName } from '../ui/PersonName'
 import { t } from "../../i18n/runtime"
 import { useLanguage } from "../../lib/useLanguage"
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -297,7 +298,7 @@ export function LiveTrackingPanel({
               >
                 <Avatar person={worker.student} size="md" />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-ink">{name}</span>
+                  <span className="block min-w-0 text-sm font-semibold text-ink"><PersonName person={worker.student} /></span>
                   <span className="block text-xs text-ink-soft">
                     {formatLastActivity(worker.lastActivityAt)}
                     {observation && ` · ${observation}`}

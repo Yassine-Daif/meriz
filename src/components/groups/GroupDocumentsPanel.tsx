@@ -1,3 +1,4 @@
+import { GroupTemplatePanel } from './GroupTemplatePanel'
 import { t } from "../../i18n/runtime"
 import { useLanguage } from "../../lib/useLanguage"
 import { useCallback, useEffect, useId, useState } from 'react'
@@ -47,6 +48,7 @@ export function GroupDocumentsPanel({ client, group, onOpenGroupDocument, onStat
   const [documents, setDocuments] = useState<GroupDocument[] | null>(group.documents)
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  const [template, setTemplate] = useState<GroupDocument | null>(null)
   const [pendingDelete, setPendingDelete] = useState<GroupDocument | null>(null)
 
   const reload = useCallback(async () => {
@@ -147,6 +149,7 @@ export function GroupDocumentsPanel({ client, group, onOpenGroupDocument, onStat
               meta={document}
               onOpen={() => onOpenGroupDocument(group.id, group.name, document.id)}
               onRename={(name) => void rename(document, name)}
+              onDistribute={() => setTemplate(document)}
               onRequestDelete={() => setPendingDelete(document)}
               provenance={GROUP_PROVENANCE}
             />
@@ -154,6 +157,7 @@ export function GroupDocumentsPanel({ client, group, onOpenGroupDocument, onStat
         </ul>
       )}
 
+      {template && <GroupTemplatePanel key={template.id} client={client} sourceId={template.id} sourceGroup={group.id} name={template.name} onClose={() => setTemplate(null)} onDone={() => { setTemplate(null); onStatus(t('Modèle diffusé aux groupes sélectionnés.')) }} />}
       <ConfirmDialog
         open={pendingDelete !== null}
         title={t("Supprimer ce document du groupe ?")}

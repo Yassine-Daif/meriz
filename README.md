@@ -27,6 +27,12 @@ Le code généré pose la couche de données, pas une application complète. Il 
 
 Pour démarrer, le bouton « Découvrir avec l'exemple » ouvre le modèle Client passe Commande. Un modèle plus complet est fourni dans [examples/universite.meriz.json](examples/universite.meriz.json) : importez-le avec « Ouvrir un fichier ».
 
+## Une interface adaptée au niveau
+
+À la première ouverture d'un document, Meriz propose une interface Débutant ou Complète. Le choix est modifiable dans le profil et les préférences. Il est conservé dans le compte, ou sur l'appareil sans compte. Une préférence locale ne remplace pas celle d'un compte connecté.
+
+L'interface Débutant garde le dictionnaire, les types courants sous leurs vrais noms, le MCD, la vérification et le MLD. Elle masque MPD, SQL et génération de code. Les documents conservent toutes leurs données. Des participants utilisant des interfaces différentes peuvent travailler ensemble sur le même modèle.
+
 ## Documents, compte et confort
 
 - **Documents nommés.** Plusieurs documents à créer, ouvrir, renommer, dupliquer et supprimer depuis l'accueil. Sans compte, ils sont enregistrés sur cet appareil. Connecté, vos documents personnels sont synchronisés avec votre compte.
@@ -40,19 +46,24 @@ Pour démarrer, le bouton « Découvrir avec l'exemple » ouvre le modèle Clien
 ## Enseigner et apprendre en classe
 
 - **Accueil selon le rôle.** Documents récents, classes et travail à faire pour l'élève, rendus à corriger pour le prof. L'élève retrouve aussi ses devoirs dans « Mon travail », toutes classes confondues.
-- **Classes.** Un élève rejoint une classe avec le code donné par son prof et retrouve ses camarades. Un prof crée ses classes, partage leur code et gère les membres. L'activation du mode prof depuis le profil demande une adresse scolaire ou universitaire reconnue par le serveur **et un email vérifié**.
+- **Classes.** Un élève rejoint une classe avec le code donné par son prof et retrouve ses camarades. Un prof crée ses classes, partage leur code et gère les membres. L'inscription distingue professeur, élève ou étudiant, professionnel et particulier. La catégorie déclarée n'accorde aucun droit. L'activation du rôle professeur demande un email vérifié et un statut enseignant attesté. Une invitation nominative d'un référent d'établissement vérifié permet cette activation, y compris avec une adresse de contact personnelle. Les raccordements RENATER, eduGAIN et ENT/GAR restent à établir : aucune connexion institutionnelle n'est annoncée comme disponible.
 - **Devoirs.** Le prof prépare un exercice ou un examen avec un énoncé, une image éventuelle, une date limite facultative, un modèle de base et un corrigé. Il publie le devoir et choisit quand rendre le corrigé accessible aux élèves.
 - **Travail et rendus.** L'élève commence depuis la base du devoir, ou un modèle vide, puis dépose son rendu. Il peut le remettre à jour tant qu'il n'est pas noté. Le prof consulte le rendu, attribue une note et une appréciation. Un rendu noté est verrouillé, et retirer la note le rouvre.
 - **Aide à la correction automatique.** Le rendu est comparé au corrigé : entités, associations et attributs retrouvés, manquants ou supplémentaires, différences de types, d'identifiants et de cardinalités. Meriz propose une note indicative sur 20, que le prof peut reprendre ou modifier. La comparaison relève des points à vérifier, elle ne remplace pas le jugement du prof.
 - **Commentaires.** Un fil lié au document de travail permet d'échanger avec l'élève. Un commentaire peut être général ou posé en bulle sur le schéma. Chaque discussion accepte des réponses et peut être marquée résolue ou rouverte. Une nouvelle réponse rouvre la discussion. Le raccourci C prépare la pose d’un commentaire. Les documents de groupe ont aussi leur fil de commentaires.
 - **Cours en blocs.** Le prof compose et réordonne des titres, du texte, des liens, des images, des vidéos et des pistes audio, puis publie le cours pour sa classe. L'audio peut être envoyé ou enregistré au microphone. Les vidéos reconnues sont intégrées depuis YouTube, Vimeo ou Dailymotion, les autres adresses restent des liens.
 
+- **Interface des exercices.** Le professeur choisit les vues et les exports accessibles dans un devoir, prévisualise l'interface élève et peut débloquer des outils pendant une séance. Ces réglages priment sur le niveau personnel. Ils encadrent l'interface Meriz, sans bloquer les outils extérieurs.
+- **Regroupements et années.** Les classes peuvent être classées dans des regroupements personnels nommés, avec une année scolaire, une recherche et des filtres d'archivage. Ce classement ne change pas les permissions des classes.
+- **Bibliothèque pédagogique.** Un cours ou un devoir peut être conservé avec ses médias dans une bibliothèque privée, puis diffusé à plusieurs classes ou regroupements. Chaque classe garde ses rendus, notes et échéances. Les mises à jour des copies restent explicites et un corrigé remplacé doit être libéré à nouveau.
+- **Nouvelle année.** Un regroupement de classes peut être recréé pour une autre année, avec de nouveaux codes et les ressources choisies en brouillon. Les anciens élèves et leurs résultats ne sont pas repris.
+
 ## Suivi en direct et travail en groupe
 
 - **Observation du travail.** Quand le prof active le suivi d'un devoir, il peut voir le travail de l'élève avancer en lecture seule. Il ne publie alors ni présence ni curseur et ne peut pas modifier le modèle. L'élève garde un indicateur du suivi et une trace de la dernière consultation.
 - **Correction à deux.** Avec « Corriger en direct », le prof rejoint la co-édition. Sa présence est alors visible, avec la bannière et son curseur. Le crayon rouge permet de montrer une zone du schéma pendant la séance. Le trait apparaît aussi chez son auteur. Sa durée est réglable : 3 secondes, 15 secondes ou conservation sur le serveur, séparément du modèle Merise. Chaque participant peut masquer les annotations sur son écran. Les traits conservés peuvent être effacés par leur auteur ou le responsable du travail, après confirmation.
 - **Co-édition en temps réel.** Les modifications du modèle et du dessin sont échangées et fusionnées avec Yjs. Chaque participant voit les autres, leur vue courante, leurs curseurs, les éléments sélectionnés et le rectangle de sélection en cours. Le tracé d'une liaison est aussi partagé pendant sa création.
-- **Groupes de travail.** Des élèves peuvent créer un groupe et inviter leurs partenaires par code ou lien. Les membres partagent des documents et les modifient ensemble. Les groupes disposent aussi du crayon et des discussions avec repères et réponses. Le créateur gère le groupe et ses membres. Les participants restent visibles entre eux, contrairement au prof en observation seule.
+- **Groupes de travail.** Des élèves peuvent créer un groupe et inviter leurs partenaires par code ou lien. Les membres partagent des documents et les modifient ensemble. Les groupes disposent aussi du crayon et des discussions avec repères et réponses. Le créateur gère le groupe et ses membres. Les regroupements personnels permettent de classer ses groupes par année ou projet. Un modèle peut être diffusé à plusieurs groupes sous forme de copies indépendantes, avec des sessions en direct séparées. Les participants restent visibles entre eux, contrairement au prof en observation seule.
 
 Le direct utilise Laravel Echo et Reverb. Sans connexion au direct, la co-édition est interrompue et l'interface le signale. L'observation en lecture seule dispose aussi d'un rafraîchissement périodique de secours.
 

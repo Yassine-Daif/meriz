@@ -204,7 +204,7 @@ export function CommentsPanel({
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       <Avatar person={comment.author} size="sm" />
-                      <span className="text-xs font-semibold text-ink">
+                      <span className="min-w-0 max-w-full truncate text-xs font-semibold text-ink" title={author}>
                         {author}
                         {mine && ' (vous)'}
                       </span>

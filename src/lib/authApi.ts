@@ -2,6 +2,8 @@ import { t } from "../i18n/runtime"
 import type { ApiClient, Outcome } from './apiClient'
 import { DEFAULT_AVATAR_BG, DEFAULT_AVATAR_FG, parseAvatarColor } from './color'
 import { unexpectedResponse } from './apiClient'
+import { parseInterfaceMode, parseUsageCategory } from './interfaceMode'
+import type { InterfaceMode, UsageCategory } from './interfaceMode'
 
 /**
  * Appels de compte : inscription, connexion, profil, déconnexion.
@@ -38,6 +40,10 @@ export interface ApiUser {
    * pas. Le serveur reste seul juge : on lit, on ne recalcule rien.
    */
   emailVerifiedAt: string | null
+  interfaceMode?: InterfaceMode | null
+  usageCategory?: UsageCategory | null
+  teacherVerifiedAt?: string | null
+  teacherVerificationSource?: string | null
 }
 
 export interface AuthSuccess {
@@ -54,6 +60,7 @@ export interface Credentials {
 export interface SignUpData extends Credentials {
   name: string
   firstName: string
+  usageCategory?: UsageCategory
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -87,6 +94,8 @@ export function parseApiUser(raw: unknown): ApiUser | null {
   ) {
     return null
   }
+  if (raw.interface_mode != null && !parseInterfaceMode(raw.interface_mode)) return null
+  if (raw.usage_category != null && !parseUsageCategory(raw.usage_category)) return null
   const firstName = optionalText(raw.first_name)
   const bio = optionalText(raw.bio)
   const contact = optionalText(raw.contact)
@@ -117,6 +126,10 @@ export function parseApiUser(raw: unknown): ApiUser | null {
     avatarBg: parseAvatarColor(raw.avatar_bg, DEFAULT_AVATAR_BG),
     avatarFg: parseAvatarColor(raw.avatar_fg, DEFAULT_AVATAR_FG),
     emailVerifiedAt,
+    ...(raw.teacher_verified_at !== undefined ? { teacherVerifiedAt: optionalText(raw.teacher_verified_at) ?? null } : {}),
+    ...(raw.teacher_verification_source !== undefined ? { teacherVerificationSource: optionalText(raw.teacher_verification_source) ?? null } : {}),
+    ...(raw.interface_mode !== undefined ? { interfaceMode: parseInterfaceMode(raw.interface_mode) } : {}),
+    ...(raw.usage_category !== undefined ? { usageCategory: parseUsageCategory(raw.usage_category) } : {}),
   }
 }
 
@@ -157,6 +170,7 @@ export function register(client: ApiClient, data: SignUpData): Promise<Outcome<A
   return authenticate(client, '/auth/register', {
     name: data.name,
     first_name: data.firstName,
+    ...(data.usageCategory ? { usage_category: data.usageCategory } : {}),
     email: data.email,
     password: data.password,
   })

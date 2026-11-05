@@ -52,11 +52,11 @@ export function CollaborationBanner({ synced = true, onStop,
     // informe le prof de sa propre position, elle ne prévient de rien.
     return (
       <div className="flex flex-wrap items-center gap-2 border-b border-line bg-surface-soft px-4 py-2 text-sm text-ink-soft">
-        <span>
+        <span className="min-w-0 [overflow-wrap:anywhere]">
           {t("Vous lisez ce travail en lecture seule. Votre élève voit que ce devoir peut être suivi, et la date de votre dernière lecture.")}</span>
         <ParticipantList participants={participants} others={others} />
-        {!live && <span>{t("Connexion au direct en cours.")}</span>}
-        {live && participants.length === 0 && <span>{t("L’élève doit ouvrir son travail pour corriger à deux.")}</span>}
+        {!live && <span className="min-w-0 [overflow-wrap:anywhere]">{t("Connexion au direct en cours.")}</span>}
+        {live && participants.length === 0 && <span className="min-w-0 [overflow-wrap:anywhere]">{t("L’élève doit ouvrir son travail pour corriger à deux.")}</span>}
         {onStart && (
           <Button size="sm" variant="primary" onClick={onStart} disabled={!live || !synced || participants.length === 0} aria-label={t("Corriger en direct ce travail")}>
             {t("Corriger en direct")}</Button>
@@ -89,8 +89,8 @@ export function CollaborationBanner({ synced = true, onStop,
         className="flex flex-wrap items-center gap-2 border-b border-line bg-accent-soft px-4 py-2 text-sm text-accent-ink"
       >
         <ParticipantList participants={participants} others={others} />
-        <span>
-          <strong className="font-semibold">{names}</strong>
+        <span className="min-w-0 [overflow-wrap:anywhere]">
+          <strong className="font-semibold [overflow-wrap:anywhere]">{names}</strong>
           {participants.length > 1 ? t(" travaillent") : t(" travaille")} {t(" avec vous sur ce document du groupe.")}</span>
       </div>
     )
@@ -147,15 +147,15 @@ export function CollaborationBanner({ synced = true, onStop,
     >
       <ParticipantList participants={participants} others={others} />
       {guest ? (
-        <span>
-          {t("Vous corrigez avec ")}<strong className="font-semibold">{names}</strong>{t(". Vos modifications arrivent chez elle ou lui tout de suite, et c’est son travail qui s’enregistre.")}</span>
+        <span className="min-w-0 [overflow-wrap:anywhere]">
+          {t("Vous corrigez avec ")}<strong className="font-semibold [overflow-wrap:anywhere]">{names}</strong>{t(". Vos modifications arrivent chez elle ou lui tout de suite, et c’est son travail qui s’enregistre.")}</span>
       ) : teacher ? (
-        <span>
-          <strong className="font-semibold">{t("Votre prof corrige avec vous.")}</strong> {t(" Vous travaillez tous les deux sur ce modèle")}{editing.has(teacher.id) ? t(", et vous voyez son curseur à l’écran") : ''}.
+        <span className="min-w-0 [overflow-wrap:anywhere]">
+          <strong className="font-semibold [overflow-wrap:anywhere]">{t("Votre prof corrige avec vous.")}</strong> {t(" Vous travaillez tous les deux sur ce modèle")}{editing.has(teacher.id) ? t(", et vous voyez son curseur à l’écran") : ''}.
         </span>
       ) : (
-        <span>
-          <strong className="font-semibold">{names}</strong> {t(" travaille avec vous sur ce modèle.")}</span>
+        <span className="min-w-0 [overflow-wrap:anywhere]">
+          <strong className="font-semibold [overflow-wrap:anywhere]">{names}</strong> {t(" travaille avec vous sur ce modèle.")}</span>
       )}
       {guest && onStop && <Button size="sm" onClick={onStop}>{t("Revenir en observation")}</Button>}
       {teacher && !guest && <Badge tone="accent">{t("Prof présent")}</Badge>}

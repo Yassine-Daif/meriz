@@ -22,6 +22,7 @@ import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { FormSection } from '../ui/FormSection'
 import { Segmented } from '../ui/Segmented'
+import { CaptureTeachingResource } from '../CaptureTeachingResource'
 import { AssignmentImageField } from './AssignmentImageField'
 import type { EditAssignmentModel } from './types'
 
@@ -203,6 +204,7 @@ export function AssignmentEditor({
 
   return (
     <div className="flex flex-col gap-4">
+      {assignment && <div><CaptureTeachingResource client={client} kind="assignment" sourceId={assignment.id} disabled={pending || title.trim() !== assignment.title || instructions.trim() !== assignment.instructions || type !== assignment.type || dueAt !== toLocalInput(assignment.dueAt)} /></div>}
       <FormSection
         title={t("Énoncé")}
         level="h4"

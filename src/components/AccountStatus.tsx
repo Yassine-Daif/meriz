@@ -1,9 +1,9 @@
+import { PersonName } from './ui/PersonName'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
 import { Icon } from './ui/Icon'
 import { DesktopUpdateButton } from './DesktopUpdates'
 import { useState } from 'react'
-import { displayName } from '../lib/authApi'
 import { useSession } from './sessionContext'
 import { Avatar } from './ui/Avatar'
 import { Button } from './ui/Button'
@@ -54,7 +54,7 @@ export function AccountStatus({
         <>
           <Avatar person={session.user} size="sm" />
           <span className={compact ? 'relative hidden max-w-36 min-w-0 truncate text-sm text-ink-soft sm:inline-block' : 'relative max-w-36 min-w-0 truncate text-sm text-ink-soft'} title={session.user.email}>
-            <span className="font-semibold text-ink">{displayName(session.user)}</span>
+            <PersonName className="font-semibold text-ink" person={session.user} />
             {compact ? (
               <span className="sr-only"> ({session.user.email})</span>
             ) : (

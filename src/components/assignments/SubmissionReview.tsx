@@ -197,7 +197,7 @@ export function SubmissionReview({
       <div className="flex flex-wrap items-center gap-3">
         <Avatar person={student} size="lg" />
         <div className="min-w-0">
-          <h3 className="text-xl font-semibold tracking-tight text-ink">{name}</h3>
+          <h3 className="text-xl font-semibold tracking-tight text-ink [overflow-wrap:anywhere]">{name}</h3>
           <p className="text-sm text-ink-soft">
             {formatSubmittedAt(submission.submittedAt)}
             {submission.isLate && t(", après l’échéance")}.

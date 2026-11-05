@@ -5,6 +5,7 @@ import type { ViewId, ViewInfo } from './views'
 import { FOOTER_VIEWS, VIEWS } from './views'
 
 interface NavRailProps {
+  allowedViews?: readonly ViewId[]
   activeView: ViewId
   onSelectView: (view: ViewId) => void
 }
@@ -111,7 +112,7 @@ function RailItem({ view, active, onSelectView }: RailItemProps) {
  * d'AnalyseSI. Vues de travail en haut, Apprendre et À propos en
  * pied. Icônes seules sur écran étroit, libellés à partir de md.
  */
-export function NavRail({ activeView, onSelectView }: NavRailProps) {
+export function NavRail({ activeView, onSelectView, allowedViews }: NavRailProps) {
   useLanguage()
   return (
     <nav
@@ -119,7 +120,7 @@ export function NavRail({ activeView, onSelectView }: NavRailProps) {
       className="flex w-14 shrink-0 flex-col border-r border-line bg-shell md:w-52"
     >
       <ul className="flex flex-col gap-1 p-2">
-        {VIEWS.map((view) => (
+        {VIEWS.filter(view => !allowedViews || allowedViews.includes(view.id)).map((view) => (
           <RailItem
             key={view.id}
             view={view}

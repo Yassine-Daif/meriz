@@ -2,6 +2,7 @@ import type { ApiClient, Outcome } from './apiClient'
 import { unexpectedResponse } from './apiClient'
 import { parseApiUser } from './authApi'
 import type { ApiUser } from './authApi'
+import type { InterfaceMode, UsageCategory } from './interfaceMode'
 
 /**
  * Mon profil : nom, prénom, présentation et contact, avec leurs
@@ -10,6 +11,8 @@ import type { ApiUser } from './authApi'
  */
 
 export interface ProfilePatch {
+  interfaceMode?: InterfaceMode
+  usageCategory?: UsageCategory
   name?: string
   firstName?: string
   bio?: string | null
@@ -23,6 +26,8 @@ export interface ProfilePatch {
 
 export async function updateProfile(client: ApiClient, patch: ProfilePatch): Promise<Outcome<ApiUser>> {
   const body: Record<string, string | boolean | null> = {}
+  if (patch.interfaceMode !== undefined) body.interface_mode = patch.interfaceMode
+  if (patch.usageCategory !== undefined) body.usage_category = patch.usageCategory
   if (patch.name !== undefined) body.name = patch.name
   if (patch.firstName !== undefined) body.first_name = patch.firstName
   if (patch.bio !== undefined) body.bio = patch.bio
@@ -42,7 +47,7 @@ export async function updateProfile(client: ApiClient, patch: ProfilePatch): Pro
 
 /**
  * Active le mode prof. C'est le serveur qui décide : réservé aux adresses
- * scolaires ou universitaires, sinon un refus 403 avec son message.
+ * confirmés par leur établissement et dont l'email est vérifié, sinon un refus 403.
  */
 export async function becomeTeacher(client: ApiClient): Promise<Outcome<ApiUser>> {
   const result = await client.request('POST', '/me/teacher-role')

@@ -1,3 +1,5 @@
+import { WorkspaceSections } from '../WorkspaceSections'
+import type { WorkspaceCollection } from '../../lib/collectionsApi'
 import { t } from "../../i18n/runtime"
 import { useLanguage } from "../../lib/useLanguage"
 import type { GroupSummary } from '../../lib/groupsApi'
@@ -7,6 +9,7 @@ import { Notice } from '../ui/Notice'
 import { GroupCard } from './GroupCard'
 
 interface GroupGridProps {
+  collections?: readonly WorkspaceCollection[]
   state: GroupsState
   onOpen: (group: GroupSummary) => void
   onCopyCode?: (code: string) => void
@@ -14,7 +17,7 @@ interface GroupGridProps {
 }
 
 /** Groupes en cartes, avec les états chargement, erreur et vide. */
-export function GroupGrid({ state, onOpen, onCopyCode, emptyText }: GroupGridProps) {
+export function GroupGrid({ state, onOpen, onCopyCode, emptyText, collections = [] }: GroupGridProps) {
   useLanguage()
   const { groups, error, reload } = state
   if (error) {
@@ -45,10 +48,10 @@ export function GroupGrid({ state, onOpen, onCopyCode, emptyText }: GroupGridPro
     )
   }
   return (
-    <ul className="grid gap-3 sm:grid-cols-2">
-      {groups.map((group) => (
+    <WorkspaceSections<GroupSummary> items={groups} collections={collections} render={items => <ul className="grid gap-3 sm:grid-cols-2">
+      {items.map((group) => (
         <GroupCard key={group.id} group={group} onOpen={() => onOpen(group)} onCopyCode={onCopyCode} />
       ))}
-    </ul>
+    </ul>} />
   )
 }

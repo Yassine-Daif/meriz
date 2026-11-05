@@ -18,7 +18,7 @@ interface AuthPageProps {
   onModeChange: (mode: AuthMode) => void
   onBack: () => void
   /** Connexion ou inscription réussie : message à annoncer sur l'accueil. */
-  onAuthenticated: (message: string) => void
+  onAuthenticated: (message: string, user?: ApiUser) => void
 }
 
 const TITLES: Record<AuthMode, { title: string; lede: string }> = {
@@ -46,6 +46,7 @@ export function AuthPage({ mode, initialEmail, onModeChange, onBack, onAuthentic
       mode === 'sign-in'
         ? t("Connecté en tant que {0}.", [displayName(user)])
         : t("Compte créé. Bienvenue, {0} !", [user.firstName ?? displayName(user)]),
+      user,
     )
   }
 

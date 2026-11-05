@@ -1,6 +1,8 @@
 import { t } from "../i18n/runtime"
 import type { OpenedDocument } from '../model/document'
 import type { DocumentSaver } from '../lib/documentRepository'
+import type { InterfaceMode } from '../lib/interfaceMode'
+import type { AssignmentInterface } from '../lib/assignmentInterface'
 import type { AssignmentField } from '../lib/assignmentsApi'
 import type { SessionState } from '../lib/sessionState'
 import type { CollabUser } from '../model/collabProvider'
@@ -44,6 +46,8 @@ export type EditorTarget =
     }
   | {
       kind: 'review'
+      interfacePreview?: AssignmentInterface | null
+      interfacePreviewMode?: InterfaceMode
       classroomId: string
       assignmentId: string
       /** Rendu consulté, ou null pour un corrigé libéré. */
@@ -289,7 +293,7 @@ export function returnTarget(target: EditorTarget): { page: ConnectedPage; openi
         // Un travail observé ou corrigé à deux ramène au suivi, là où le
         // prof l'a ouvert.
         assignmentTab:
-          target.kind === 'coedit' || (target.kind === 'review' && target.live !== null)
+          target.kind === 'review' && target.interfacePreview !== undefined ? 'interface' : target.kind === 'coedit' || (target.kind === 'review' && target.live !== null)
             ? 'suivi'
             : undefined,
       },

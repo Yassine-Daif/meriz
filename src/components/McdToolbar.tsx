@@ -13,6 +13,7 @@ import type { Position } from '../model/layout'
 import { Button } from './ui/Button'
 
 interface McdToolbarProps {
+  canGenerate?: boolean
   dispatch: Dispatch<McdAction>
   problems: ValidationProblem[]
   /** Ouvre les résultats (MLD, MPD, SQL), toujours dérivés du MCD courant. */
@@ -40,7 +41,7 @@ const iconProps = {
 } as const
 
 /** Sous-barre de la vue MCD : ajout d'éléments, vérification, génération. */
-export function McdToolbar({ dispatch, problems, onGenerate, readOnly = false, pencil, panel }: McdToolbarProps) {
+export function McdToolbar({ dispatch, problems, onGenerate, canGenerate = true, readOnly = false, pencil, panel }: McdToolbarProps) {
   useLanguage()
   const { screenToFlowPosition, fitView } = useReactFlow()
   const setStatus = useToast()
@@ -82,6 +83,7 @@ export function McdToolbar({ dispatch, problems, onGenerate, readOnly = false, p
   // La coche verte d'AnalyseSI : vérification puis accès aux résultats.
   // Seules les erreurs bloquent, les avertissements informent.
   const handleGenerate = () => {
+    if (!canGenerate) return
     if (errors.length > 0) {
       setStatus({
         kind: 'error',
@@ -148,11 +150,11 @@ export function McdToolbar({ dispatch, problems, onGenerate, readOnly = false, p
             <path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1" />
           </svg>
           <span className="hidden sm:inline">{t("Vérifier")}</span></Button>
-        <Button size="sm" variant="primary" onClick={handleGenerate}>
+        {canGenerate && <Button size="sm" variant="primary" onClick={handleGenerate}>
           <svg {...iconProps}>
             <path d="m4.5 12.5 5 5 10-11" />
           </svg>
-          {t("Générer")}</Button>
+          {t("Générer")}</Button>}
       </div>
 
       <div role="group" aria-label={t("Vues")} className="flex shrink-0 gap-1">

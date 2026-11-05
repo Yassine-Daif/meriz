@@ -15,7 +15,7 @@ export function SqlTypeControl({ property, compact = false, part = 'all' }: {
 }) {
   useLanguage()
   const field = (part === 'all' ? 'min-w-0 max-w-full rounded-control' : 'min-h-8 min-w-0 max-w-full rounded-lg') + ' border border-line-strong bg-surface px-2 py-1 font-mono text-xs'
-  const { settings, dispatch, readOnly, physicalType } = useSqlTypes()
+  const { settings, dispatch, readOnly, physicalType, beginner } = useSqlTypes()
   const raw = physicalType(property.id, property.type, property.size)
   const spec = parseSqlType(raw)
   const [draft, setDraft] = useState({ length: '', precision: '', scale: '', values: '' })
@@ -40,14 +40,14 @@ export function SqlTypeControl({ property, compact = false, part = 'all' }: {
         onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur() }}
         onBlur={() => { if (spec) apply({ ...spec, [key]: draft[key].trim() ? Number(draft[key]) : -1 }) }} />
     </label>
-  const unsigned = settings.dialect === 'mysql' && spec && ['INT', 'BIGINT', 'SMALLINT', 'TINYINT'].includes(spec.name)
+  const unsigned = !beginner && settings.dialect === 'mysql' && spec && ['INT', 'BIGINT', 'SMALLINT', 'TINYINT'].includes(spec.name)
   const parameters = spec && (hasLength(spec.name) || hasPrecision(spec.name) || spec.name === 'ENUM' || unsigned)
   return <div className={part === 'all' ? 'flex min-w-0 flex-col gap-2' : 'flex min-w-0 flex-col gap-1'} data-sql-type={property.id} data-sql-part={part}>
     {part !== 'parameters' && <div className={part === 'all' ? 'flex min-w-0 flex-wrap items-center gap-2' : 'flex min-w-0 flex-wrap items-center gap-1'}>
       <Select value={spec?.name ?? raw} disabled={readOnly} aria-label={t('Type de la propriété {0}', [property.name])} className={field + (part === 'all' ? ' flex-1' : ' w-full')}
         onValueChange={value => { const name = sqlTypeNames(settings.dialect).find(n => n === value); if (name) apply(defaultSqlSpec(name)) }}>
-        {(!spec || !sqlTypeNames(settings.dialect).includes(spec.name)) && <option value={spec?.name ?? raw}>{raw}</option>}
-        {[true, false].map(common => <optgroup key={String(common)} label={common ? t('Types courants') : t('Types complémentaires')}>
+        {(!spec || !sqlTypeNames(settings.dialect).includes(spec.name) || (beginner && !['VARCHAR', 'TEXT', 'INT', 'INTEGER', 'BIGINT', 'DECIMAL', 'NUMERIC', 'BOOLEAN', 'DATE', 'TIME', 'DATETIME', 'TIMESTAMP'].includes(spec.name))) && <option value={spec?.name ?? raw}>{raw}</option>}
+        {(beginner ? [true] : [true, false]).map(common => <optgroup key={String(common)} label={common ? t('Types courants') : t('Types complémentaires')}>
           {sqlTypeNames(settings.dialect).filter(name => ['VARCHAR', 'TEXT', 'INT', 'INTEGER', 'BIGINT', 'DECIMAL', 'NUMERIC', 'BOOLEAN', 'DATE', 'TIME', 'DATETIME', 'TIMESTAMP'].includes(name) === common).map(name => <option key={name} value={name}>{name}</option>)}
         </optgroup>)}
       </Select>

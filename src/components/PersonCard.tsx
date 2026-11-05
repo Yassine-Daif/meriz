@@ -1,6 +1,6 @@
+import { PersonName } from './ui/PersonName'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
-import { displayName } from '../lib/authApi'
 import type { PublicProfile } from '../lib/classroomsApi'
 import { Avatar } from './ui/Avatar'
 
@@ -16,7 +16,7 @@ export function PersonCard({ person, extra }: { person: PublicProfile; extra?: s
     <div className="flex min-w-0 items-start gap-3">
       <Avatar person={person} size="md" />
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-ink">{displayName(person)}</p>
+        <p className="min-w-0 text-sm font-semibold text-ink"><PersonName person={person} /></p>
         {extra && <p className="mt-0.5 text-xs text-ink-soft">{extra}</p>}
         {person.contact && (
           <p className="mt-0.5 text-xs text-ink-soft">

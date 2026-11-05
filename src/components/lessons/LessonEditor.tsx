@@ -28,6 +28,7 @@ import { ConfirmDialog } from '../ConfirmDialog'
 import { FormField } from '../FormField'
 import { BackButton } from '../ui/BackButton'
 import { Badge } from '../ui/Badge'
+import { CaptureTeachingResource } from '../CaptureTeachingResource'
 import { Button } from '../ui/Button'
 import { FormSection } from '../ui/FormSection'
 import { LiveAnnouncement } from '../ui/LiveAnnouncement'
@@ -363,6 +364,7 @@ export function LessonEditor({ client, classroomName, lesson, onDone, onChanged 
         </div>
       </header>
 
+      <div><CaptureTeachingResource client={client} kind="lesson" sourceId={lesson.id} disabled={pending || !saver} beforeCapture={async () => (await saver?.flush()) ?? false} /></div>
       <LiveAnnouncement message={announcement} />
 
       {actionError && (

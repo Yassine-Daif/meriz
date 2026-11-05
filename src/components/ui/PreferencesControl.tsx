@@ -10,6 +10,7 @@ import { ToggleSwitch } from '../ToggleSwitch'
 import { Button } from './Button'
 import { Icon } from './Icon'
 import { dialogClass } from './dialogClass'
+import { InterfaceModeControl } from '../InterfaceModeControl'
 
 export function PreferencesControl() {
   useLanguage()
@@ -23,6 +24,7 @@ export function PreferencesControl() {
     <dialog ref={dialog} aria-labelledby={titleId} className={dialogClass('sm')}>
       <div className="space-y-6 p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3"><h2 id={titleId} className="text-lg font-semibold">{t("Préférences")}</h2><Button size="sm" variant="ghost" aria-label={t("Fermer")} onClick={() => dialog.current?.close()}><Icon name="close" /></Button></div>
+        <InterfaceModeControl />
         <LanguageControl />
         <ThemeToggle showLegend size="md" />
         <div className="space-y-2"><p className="text-sm font-medium">{t("Taille des textes")}</p><UiScaleControl /></div>

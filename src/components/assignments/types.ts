@@ -1,3 +1,5 @@
+import type { InterfaceMode } from '../../lib/interfaceMode'
+import type { AssignmentInterface } from '../../lib/assignmentInterface'
 import type { ApiError } from '../../lib/apiClient'
 import type { AssignmentField } from '../../lib/assignmentsApi'
 
@@ -28,6 +30,8 @@ export type OpenWorkDocument = (
 
 /** Modèle ouvert en consultation : rien n'est modifié ni enregistré. */
 export interface ReadOnlyModel {
+  interfacePreview?: AssignmentInterface | null
+  interfacePreviewMode?: InterfaceMode
   classroomId: string
   assignmentId: string
   /** Rendu consulté, ou null pour un corrigé libéré. */

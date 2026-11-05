@@ -258,6 +258,8 @@ export function useDocumentOpening({
           cloud,
           target: {
             kind: 'review',
+            interfacePreview: model.interfacePreview,
+            interfacePreviewMode: model.interfacePreviewMode,
             classroomId: model.classroomId,
             assignmentId: model.assignmentId,
             submissionId: model.submissionId,

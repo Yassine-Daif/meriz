@@ -6,7 +6,7 @@ import { DEFAULT_MPD_SETTINGS, proposedSqlType } from '../model/mpd'
 import type { MpdSettings } from '../model/mpd'
 import { formatSqlType, parseSqlType, sqlTypeForDialect } from '../model/sqlTypes'
 
-export const SqlTypesContext = createContext<{ settings: MpdSettings; dispatch: Dispatch<McdAction>; readOnly: boolean }>({ settings: DEFAULT_MPD_SETTINGS, dispatch: () => {}, readOnly: true })
+export const SqlTypesContext = createContext<{ settings: MpdSettings; dispatch: Dispatch<McdAction>; readOnly: boolean; beginner?: boolean }>({ settings: DEFAULT_MPD_SETTINGS, dispatch: () => {}, readOnly: true })
 export function useSqlTypes() {
   const context = useContext(SqlTypesContext)
   return { ...context, physicalType: (id: string, type: AttributeType, size?: number) => {

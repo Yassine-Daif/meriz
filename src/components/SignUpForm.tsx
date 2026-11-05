@@ -3,6 +3,8 @@ import { useLanguage } from "../lib/useLanguage"
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ApiUser } from '../lib/authApi'
+import type { UsageCategory } from '../lib/interfaceMode'
+import { Select } from './ui/Select'
 import { useSession } from './sessionContext'
 import { FormField } from './FormField'
 import { FormAlert } from './FormAlert'
@@ -30,6 +32,7 @@ const SERVER_FIELD: Record<Field, string> = {
 export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
   useLanguage()
   const { signUp } = useSession()
+  const [usageCategory, setUsageCategory] = useState<UsageCategory>('student')
   const [values, setValues] = useState<Record<Field, string>>({ firstName: '', name: '', email: '', password: '' })
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<Field, string>>>({})
   const [pending, setPending] = useState(false)
@@ -66,6 +69,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
       name: values.name.trim(),
       email: values.email.trim(),
       password: values.password,
+      usageCategory,
     })
     setPending(false)
     if (outcome.ok) {
@@ -89,6 +93,13 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
   return (
     <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-4">
       <FormAlert message={formError} attempt={attempt} />
+      <label className="flex min-w-0 flex-col gap-2 text-sm font-medium">{t('Vous utilisez Meriz en tant que')}
+        <Select value={usageCategory} onValueChange={value => setUsageCategory(value as UsageCategory)} disabled={pending}>
+          <optgroup label={t('École')}><option value="student">{t('Élève ou étudiant')}</option><option value="teacher">{t('Professeur')}</option></optgroup>
+          <optgroup label={t('Autre')}><option value="professional">{t('Professionnel')}</option><option value="individual">{t('Particulier')}</option></optgroup>
+        </Select>
+      </label>
+      {usageCategory === 'teacher' && <p className="text-sm text-ink-soft">{t('Votre catégorie ne donne pas automatiquement le rôle professeur. La vérification de votre statut sera proposée après l’inscription.')}</p>}
       <FormField
         label={t("Prénom")}
         type="text"

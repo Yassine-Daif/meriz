@@ -7,13 +7,14 @@ import type { Assignment } from '../../lib/assignmentsApi'
 import { BackButton } from '../ui/BackButton'
 import { Badge } from '../ui/Badge'
 import { TabPanel, Tabs } from '../ui/Tabs'
+import { AssignmentInterfacePanel } from './AssignmentInterfacePanel'
 import { AssignmentEditor } from './AssignmentEditor'
 import { LiveTrackingPanel } from './LiveTrackingPanel'
 import { SubmissionsPanel } from './SubmissionsPanel'
 import type { EditAssignmentModel, OpenLiveCoedition, OpenReadOnlyModel } from './types'
 
 /** Sections d'un devoir ouvert, un cran sous les onglets de la classe. */
-export type AssignmentTab = 'enonce' | 'rendus' | 'suivi'
+export type AssignmentTab = 'enonce' | 'rendus' | 'suivi' | 'interface'
 
 interface AssignmentWorkspaceProps {
   client: ApiClient
@@ -40,6 +41,7 @@ const TABS = [
   { value: 'enonce', get label() { return t("Énoncé") } },
   { value: "rendus", get label() { return t("Rendus") } },
   { value: 'suivi', get label() { return t("Suivi") } },
+  { value: 'interface', get label() { return t('Paramétrage de l’interface de l’exercice') } },
 ] as const
 
 /**
@@ -124,6 +126,8 @@ export function AssignmentWorkspace({
             idBase={idBase}
             size="sm"
           />
+
+          {tab === 'interface' && <TabPanel idBase={idBase} value="interface"><AssignmentInterfacePanel key={assignment.id} client={client} assignment={assignment} onSaved={onAssignmentChanged} onPreview={onOpenReadOnlyModel} /></TabPanel>}
 
           {tab === 'enonce' && (
             <TabPanel idBase={idBase} value="enonce">

@@ -35,6 +35,7 @@ function clampWidth(width: number): number {
 }
 
 interface McdViewProps {
+  canGenerate?: boolean
   state: McdEditorState
   dispatch: Dispatch<McdAction>
   selection: CanvasSelection
@@ -77,6 +78,7 @@ interface McdViewProps {
  * redimensionnable qui empile l'inspecteur et la validation.
  */
 export function McdView({
+  canGenerate = true,
   state,
   dispatch,
   selection,
@@ -227,7 +229,7 @@ export function McdView({
       aria-label={t("Vue MCD")}
       className={isActive ? 'flex min-h-0 flex-1 flex-col' : 'hidden'}
     >
-      <McdToolbar
+      <McdToolbar canGenerate={canGenerate}
         dispatch={dispatch}
         problems={problems}
         onGenerate={onGenerate}

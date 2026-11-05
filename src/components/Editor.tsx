@@ -1,3 +1,7 @@
+import { assignmentViews } from '../lib/assignmentInterface'
+import type { AssignmentInterface } from '../lib/assignmentInterface'
+import { visibleViews } from '../lib/interfaceMode'
+import type { InterfaceMode } from '../lib/interfaceMode'
 import { SqlTypesContext } from './sqlTypesContext'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
@@ -37,6 +41,8 @@ import { ConfirmDialog } from './ConfirmDialog'
 import { SkipLink } from './ui/SkipLink'
 
 interface EditorProps {
+  interfaceSettings?: AssignmentInterface | null
+  interfaceMode?: InterfaceMode
   /**
    * Document ouvert. Son contenu initialise l'éditeur au montage :
    * l'éditeur est remonté (clé) à chaque changement de document.
@@ -84,14 +90,15 @@ interface EditorProps {
 }
 
 /** Consultation seule : aucune action n'atteint le modèle. */
-const IGNORE_ACTION = () => {
-  useLanguage()}
+const IGNORE_ACTION = () => {}
 
 /**
  * L'éditeur Merise sur un document : MCD, dictionnaire, MLD, MPD, SQL,
  * Apprendre. Le MCD du document reste la source de vérité.
  */
 export function Editor({
+  interfaceSettings,
+  interfaceMode = 'complete',
   openedDocument,
   saver,
   cloud,
@@ -137,7 +144,12 @@ export function Editor({
   )
   const [pendingAnnotations, setPendingAnnotations] = useState(false)
   const [confirmLeaveAnnotations, setConfirmLeaveAnnotations] = useState(false)
-  const [activeView, setActiveView] = useState<ViewId>('mcd')
+  const allowedViews = useMemo(() => interfaceSettings ? assignmentViews(interfaceSettings) : visibleViews(interfaceMode), [interfaceMode, interfaceSettings])
+  const [requestedView, setRequestedView] = useState<ViewId>('mcd')
+  const activeView = allowedViews.includes(requestedView) ? requestedView : allowedViews[0] ?? 'mcd'
+  const setActiveView = useCallback((view: ViewId) => {
+    if (allowedViews.includes(view)) setRequestedView(view)
+  }, [allowedViews])
   const viewRef = useRef<HTMLElement>(null)
   useViewEntrance(viewRef, activeView)
   const collab = useCollaboration({
@@ -306,7 +318,7 @@ export function Editor({
   // Générer : le MCD est vérifié par la barre d'outils, on ouvre le résultat.
   const handleGenerate = useCallback(() => {
     setActiveView('mld')
-  }, [])
+  }, [setActiveView])
 
   const setDialect = useCallback((dialect: SqlDialect) => {
     dispatch({ type: 'SET_DIALECT', dialect })
@@ -329,7 +341,7 @@ export function Editor({
   )
 
   return (
-    <SqlTypesContext value={{ settings: mpdSettings, dispatch, readOnly: locked }}>
+    <SqlTypesContext value={{ settings: mpdSettings, dispatch, readOnly: locked, beginner: interfaceMode === 'beginner' }}>
     <div className="flex h-dvh flex-col bg-shell font-sans text-ink">
       <SkipLink />
       <ConfirmDialog open={confirmLeaveAnnotations} title={t("Des commentaires ou traits ne sont pas enregistrés")}
@@ -338,6 +350,8 @@ export function Editor({
 
       <ReactFlowProvider>
         <TopBar
+          exportImage={interfaceSettings?.export_image ?? true}
+          exportModel={interfaceSettings?.export_model ?? true}
           state={state}
           mpdSettings={mpdSettings}
           documentName={openedDocument.meta.name}
@@ -362,9 +376,10 @@ export function Editor({
         />
 
         <div className="flex min-h-0 flex-1">
-          <NavRail activeView={activeView} onSelectView={setActiveView} />
+          <NavRail allowedViews={allowedViews} activeView={activeView} onSelectView={setActiveView} />
 
           <main ref={viewRef} id="contenu" className="flex min-h-0 min-w-0 flex-1 flex-col">
+            {interfaceSettings && <p className="border-b border-line bg-surface px-4 py-2 text-xs text-ink-soft">{t('Les outils disponibles pour cet exercice sont choisis par votre professeur.')}</p>}
             {activeView === 'dictionnaire' && (
               <DictionaryView mcd={state.mcd} dispatch={dispatch} readOnly={locked} />
             )}
@@ -376,6 +391,7 @@ export function Editor({
               onSelectionChange={setSelection}
               problems={problems}
               onSelectElement={selectElement}
+              canGenerate={allowedViews.includes('mld')}
               onGenerate={handleGenerate}
               isActive={activeView === 'mcd'}
               others={collab.others}

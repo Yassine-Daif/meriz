@@ -67,9 +67,9 @@ export function RemoteCursors({
                * donc il ne séparait rien. C'est l'ombre qui détache la
                * pastille, et elle marche sur n'importe quel fond.
                */
-              className="-mt-0.5 ml-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap shadow-lift"
+              className="-mt-0.5 ml-2 inline-flex max-w-56 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap shadow-lift"
             >
-              {name}
+              <span className="min-w-0 truncate">{name}</span>
               {teacher && <span className="text-nano font-bold tracking-wide uppercase opacity-80">{t("prof")}</span>}
             </span>
           </div>

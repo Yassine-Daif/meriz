@@ -1,12 +1,14 @@
 import { t } from "../../i18n/runtime"
 import { useLanguage } from "../../lib/useLanguage"
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { ApiClient } from '../../lib/apiClient'
 import { formatJoinCode } from '../../lib/classroomsApi'
 import { copyText } from '../../lib/clipboard'
 import type { GroupDetail } from '../../lib/groupsApi'
-import { filterByName, searchCountLabel } from '../../lib/searchFilter'
+import { searchCountLabel } from '../../lib/searchFilter'
 import { useGroups } from '../../lib/useGroups'
+import { CollectionOrganizer } from '../CollectionOrganizer'
+import { useCollections } from '../useCollections'
 import { PageShell } from '../PageShell'
 import { SearchField } from '../ui/SearchField'
 import { Card } from '../ui/Card'
@@ -18,7 +20,7 @@ import type { GroupTab } from './GroupView'
 import { JoinGroupForm } from './JoinGroupForm'
 
 /** En dessous de ce nombre, une recherche encombre plus qu'elle n'aide. */
-const SEARCH_FROM = 6
+const SEARCH_FROM = 0
 
 /** Ce qu'il faut pour rouvrir un groupe, au retour de l'outil MCD. */
 export interface GroupOpening {
@@ -42,6 +44,7 @@ interface GroupsPageProps {
  */
 export function GroupsPage({ client, opening = null, onOpenGroupDocument }: GroupsPageProps) {
   useLanguage()
+  const organizer = useCollections(client, 'groups')
   const groups = useGroups(client)
   const { reload } = groups
   const [selected, setSelected] = useState<GroupOpening | null>(opening)
@@ -78,7 +81,7 @@ export function GroupsPage({ client, opening = null, onOpenGroupDocument }: Grou
   const total = all?.length ?? 0
   const searchable = total > SEARCH_FROM
   const searching = searchable && query.trim() !== ''
-  const shown = useMemo(() => (all === null ? [] : filterByName(all, searching ? query : '')), [all, query, searching])
+  const shown = (all === null ? [] : organizer.filter(all, query))
   const filtered = all === null ? groups : { ...groups, groups: shown }
 
   if (selected) {
@@ -169,7 +172,9 @@ export function GroupsPage({ client, opening = null, onOpenGroupDocument }: Grou
           </div>
         )}
         <div className="mt-3">
+        {<CollectionOrganizer client={client} kind="groups" organizer={organizer} items={(all ?? [])} />}
           <GroupGrid
+            collections={organizer.collections.filter(c => (organizer.year === 'all' || String(c.yearStart) === organizer.year) && (organizer.archive === 'all' || c.archived === (organizer.archive === 'archived')))}
             state={filtered}
             onOpen={(group) => setSelected({ id: group.id, initial: null, message: null })}
             onCopyCode={(code) => void copyCode(code)}

@@ -1,6 +1,6 @@
 import { t } from "./i18n/runtime"
 import { useLanguage } from "./lib/useLanguage"
-import { lazy, Suspense, useCallback, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { browserStorage } from './lib/browserStorage'
 import { createLocalRepository } from './lib/documentRepository'
 import type { DocumentRepository } from './lib/documentRepository'
@@ -44,6 +44,10 @@ import { useSession } from './components/sessionContext'
 import { useDocumentOpening } from './components/useDocumentOpening'
 import { useLocalImportOffer } from './components/useLocalImportOffer'
 import { useLiveObservation } from './components/useLiveObservation'
+import { useInterfaceMode } from './components/useInterfaceMode'
+import { InterfaceModeControl } from './components/InterfaceModeControl'
+import { useAssignmentInterface } from './components/useAssignmentInterface'
+import { Button } from './components/ui/Button'
 
 
 /**
@@ -54,6 +58,8 @@ import { useLiveObservation } from './components/useLiveObservation'
 export function App() {
   useLanguage()
   const { session, account, notice, clearNotice } = useSession()
+  const { mode: interfaceMode } = useInterfaceMode()
+  const pendingTeacherSetup = useRef<number | null>(null)
 
   // Espace local, inchangé sans compte : l'ancien plan de travail
   // unique devient au premier lancement un document « Mon document ».
@@ -145,6 +151,14 @@ export function App() {
     onSpaceChange,
   })
 
+  // La remise à zéro du nouvel espace passe avant le parcours d'inscription.
+  useEffect(() => {
+    if (account.kind === 'cloud' && session.status === 'signed-in' && pendingTeacherSetup.current === session.user.id) {
+      setPage('profile')
+      pendingTeacherSetup.current = null
+    }
+  }, [account, session])
+
   const leaveEditor = useCallback(async () => {
     // L'ordre compte : on ferme, puis on revient par la porte d'entrée
     // de la page d'origine, que la cible ouverte désigne.
@@ -157,6 +171,12 @@ export function App() {
 
   // Un travail suivi avance sous les yeux du prof, sans qu'il recharge.
   useLiveObservation({ account, target: current?.target ?? null, onContent: adoptLiveContent })
+
+  const restrictedAssignmentId = session.status === 'signed-in' && session.user.role !== 'teacher' && current
+    ? current.target.kind === 'work' ? current.target.assignmentId
+      : current.target.kind === 'document' && current.document.meta.origin?.kind === 'assignment' ? current.document.meta.origin.assignmentId : null
+    : null
+  const exerciseInterface = useAssignmentInterface(account.kind === 'cloud' ? account.client : null, restrictedAssignmentId, account.key)
 
   // L'offre de copier les documents de cet appareil dans le compte.
   const { proposal, runImport, keepLocal, dismiss } = useLocalImportOffer({
@@ -228,7 +248,8 @@ export function App() {
         initialEmail={knownEmail}
         onModeChange={setAuthMode}
         onBack={() => setAuthMode(null)}
-        onAuthenticated={(message) => {
+        onAuthenticated={(message, user) => {
+          if (authMode === 'sign-up' && user?.usageCategory === 'teacher') { pendingTeacherSetup.current = user.id; setPage('profile') }
           setHomeAnnouncement(message)
           setAuthMode(null)
         }}
@@ -379,6 +400,9 @@ export function App() {
       </>
     )
   }
+  if (interfaceMode === null) return <InterfaceModeControl key={spaceKey} initial onBack={() => void leaveEditor()} />
+  if (exerciseInterface.loading) return <main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-shell p-6 text-ink"><p role="status">{exerciseInterface.error ?? t('Vérification des réglages de l’exercice…')}</p><Button onClick={exerciseInterface.retry}>{t('Réessayer')}</Button><Button variant="ghost" onClick={() => void leaveEditor()}>{t('Retour')}</Button></main>
+  const interfaceSettings = current.target.kind === 'review' && current.target.interfacePreview !== undefined ? current.target.interfacePreview : exerciseInterface.settings
   const chrome = editorChrome(current.target)
   /*
    * Co-édition : seul un travail rattaché à un devoir suivi ouvre un
@@ -426,6 +450,8 @@ export function App() {
         // Une clé par document : historique, sélection et vues repartent
         // à zéro quand on change de document ou de compte.
         key={`${spaceKey}:${current.document.meta.id}`}
+        interfaceSettings={interfaceSettings}
+        interfaceMode={current.target.kind === 'review' && current.target.interfacePreview !== undefined ? current.target.interfacePreviewMode ?? interfaceMode : interfaceMode}
         openedDocument={current.document}
         saver={current.saver}
         cloud={current.cloud}

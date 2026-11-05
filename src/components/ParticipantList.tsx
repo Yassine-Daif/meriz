@@ -1,6 +1,6 @@
+import { PersonName } from './ui/PersonName'
 import { t } from "../i18n/runtime"
 import { useLanguage } from "../lib/useLanguage"
-import { displayName } from '../lib/authApi'
 import type { CollabUser, CollabView, RemotePresence } from '../model/collabProvider'
 import { Avatar } from './ui/Avatar'
 
@@ -16,7 +16,7 @@ export function ParticipantList({ participants, others }: { participants: Collab
       const views = [...new Set(others.filter((other) => other.user.id === person.id).flatMap((other) => other.view ? [VIEW_LABELS[other.view]] : []))]
       return <span key={person.id} className="inline-flex max-w-64 shrink-0 items-center gap-1.5 text-xs">
         <Avatar person={person} size="sm" />
-        <span className="min-w-0"><span className="block truncate font-semibold">{displayName(person)}</span>
+        <span className="min-w-0"><PersonName className="font-semibold" person={person} />
           {views.length > 0 && <span className="block truncate text-ink-soft">{' '}{views.join(', ')}</span>}
         </span>
       </span>

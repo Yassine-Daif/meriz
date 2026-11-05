@@ -206,7 +206,7 @@ export function CorrectionsPage({ client, opening, onOpenReadOnlyModel }: Correc
                 >
                   <Avatar person={row.student} size="md" />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold text-ink">{displayName(row.student)}</span>
+                    <span className="block min-w-0 truncate text-sm font-semibold text-ink">{displayName(row.student)}</span>
                     <span className="block text-sm text-ink">{row.assignment.title}</span>
                     <span className="block text-xs text-ink-soft">
                       {row.classroom.name} · {formatSubmittedAt(row.submittedAt)}

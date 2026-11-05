@@ -17,6 +17,8 @@ import { PreferencesControl } from './ui/PreferencesControl'
 
 
 interface TopBarProps {
+  exportImage?: boolean
+  exportModel?: boolean
   state: McdEditorState
   mpdSettings: MpdSettings
   documentName: string
@@ -67,6 +69,8 @@ const undoButtonClass =
  * document courant, annuler/rétablir, actions fichier.
  */
 export function TopBar({
+  exportImage,
+  exportModel,
   state,
   mpdSettings,
   documentName,
@@ -151,6 +155,8 @@ export function TopBar({
       </div>
       )}
       <FileActions
+        exportImage={exportImage}
+        exportModel={exportModel}
         state={state}
         mpdSettings={mpdSettings}
         documentName={documentName}

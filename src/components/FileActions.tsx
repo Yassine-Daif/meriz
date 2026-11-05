@@ -12,6 +12,8 @@ import { saveFileAs } from '../lib/download'
 import { ImportFileButton } from './ImportFileButton'
 
 interface FileActionsProps {
+  exportImage?: boolean
+  exportModel?: boolean
   state: McdEditorState
   /** Réglages MPD (dialecte, surcharges de types), enregistrés avec le modèle. */
   mpdSettings: MpdSettings
@@ -34,6 +36,8 @@ const buttonClass =
  * le document en fichier, Exporter en image produit un PNG du MCD.
  */
 export function FileActions({
+  exportImage = true,
+  exportModel = true,
   state,
   mpdSettings,
   documentName,
@@ -56,6 +60,7 @@ export function FileActions({
   const { getNodes } = useReactFlow()
 
   const handleSave = async () => {
+    if (!exportModel) return
     const blob = new Blob([serializeModel(state, mpdSettings, documentName)], {
       type: 'application/json',
     })
@@ -82,6 +87,7 @@ export function FileActions({
   }
 
   const handleExport = async () => {
+    if (!exportImage) return
     if (!mcdVisible) {
       setStatus({ kind: 'error', text: t("Erreur : ouvrez la vue MCD pour exporter l'image.") })
       return
@@ -118,12 +124,12 @@ export function FileActions({
         <div style={menuAt} className="editor-file-menu fixed z-50 flex max-w-[calc(100vw-24px)] flex-col gap-1 rounded-card border border-line-strong bg-surface p-2 shadow-soft">
           {onNewDocument && <button type="button" className={buttonClass + ' !justify-start'} onClick={() => { closeMenu(); onNewDocument() }}><Icon name="plus" />{t("Nouveau")}</button>}
           {onImportFile && <ImportFileButton className={buttonClass + ' !justify-start'} onFile={file => { closeMenu(); void handleImport(file) }}><Icon name="folder" />{t("Ouvrir")}</ImportFileButton>}
-          <button type="button" className={buttonClass + ' !justify-start'} onClick={() => { closeMenu(); void handleSave() }}><Icon name="save" />{t("Enregistrer une copie en fichier")}</button>
-          <button type="button" className={buttonClass + ' !justify-start'} disabled={!mcdVisible} onClick={() => { closeMenu(); void handleExport() }}><Icon name="image" />{t("Exporter le MCD en image PNG")}</button>
+          {exportModel && <button type="button" className={buttonClass + ' !justify-start'} onClick={() => { closeMenu(); void handleSave() }}><Icon name="save" />{t("Enregistrer une copie en fichier")}</button>}
+          {exportImage && <button type="button" className={buttonClass + ' !justify-start'} disabled={!mcdVisible} onClick={() => { closeMenu(); void handleExport() }}><Icon name="image" />{t("Exporter le MCD en image PNG")}</button>}
         </div>
       </details>
-      <button type="button" className={buttonClass} title={t("Enregistrer une copie en fichier")} aria-label={t("Enregistrer une copie en fichier")} onClick={() => void handleSave()}><Icon name="save" /><span className="hidden md:inline">{t("Enregistrer")}</span></button>
-      <button type="button" className={buttonClass} disabled={!mcdVisible} title={t("Exporter le MCD en image PNG")} aria-label={t("Exporter le MCD en image PNG")} onClick={() => void handleExport()}><Icon name="image" /><span className="hidden lg:inline">{t("Image")}</span></button>
+      {exportModel && <button type="button" className={buttonClass} title={t("Enregistrer une copie en fichier")} aria-label={t("Enregistrer une copie en fichier")} onClick={() => void handleSave()}><Icon name="save" /><span className="hidden md:inline">{t("Enregistrer")}</span></button>}
+      {exportImage && <button type="button" className={buttonClass} disabled={!mcdVisible} title={t("Exporter le MCD en image PNG")} aria-label={t("Exporter le MCD en image PNG")} onClick={() => void handleExport()}><Icon name="image" /><span className="hidden lg:inline">{t("Image")}</span></button>}
     </div>
   )
 }

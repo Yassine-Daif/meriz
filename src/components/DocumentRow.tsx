@@ -13,6 +13,7 @@ interface DocumentRowProps {
   onRename: (name: string) => void
   /** Absent : aucun bouton de duplication. */
   onDuplicate?: () => void
+  onDistribute?: () => void
   onRequestDelete: () => void
   /** Pastille de provenance (ex. « Perso »), écrite en toutes lettres. */
   provenance?: Provenance
@@ -24,7 +25,7 @@ const actionClass = buttonClass({ variant: 'secondary', size: 'sm' })
  * Une ligne de la liste des documents : ouvrir d'un clic, renommer sur
  * place, dupliquer, supprimer (la confirmation est gérée par la liste).
  */
-export function DocumentRow({ meta, onOpen, onRename, onDuplicate, onRequestDelete, provenance }: DocumentRowProps) {
+export function DocumentRow({ meta, onOpen, onRename, onDuplicate, onDistribute, onRequestDelete, provenance }: DocumentRowProps) {
   useLanguage()
   const inputId = useId()
   const [editing, setEditing] = useState(false)
@@ -125,6 +126,7 @@ export function DocumentRow({ meta, onOpen, onRename, onDuplicate, onRequestDele
           className={actionClass}
         >
           {t("Renommer")}</button>
+        {onDistribute && <button type="button" className={actionClass} onClick={onDistribute} aria-label={t('Diffuser le modèle {0}', [meta.name])}>{t('Diffuser')}</button>}
         {onDuplicate && (
           <button type="button" onClick={onDuplicate} aria-label={t("Dupliquer {0}", [meta.name])} className={actionClass}>
             {t("Dupliquer")}</button>

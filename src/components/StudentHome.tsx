@@ -92,7 +92,7 @@ export function StudentHome({
 
   return (
     <PageShell
-      eyebrow={t("Espace élève")}
+      eyebrow={user.usageCategory != null && user.usageCategory !== 'student' ? t('Espace personnel') : t("Espace élève")}
       title={t("Bonjour {0}", [user.firstName ?? user.name])}
       leading={<Avatar person={user} size="lg" />}
       description={t("Ce qui reste à rendre, votre travail en cours, et vos classes.")}

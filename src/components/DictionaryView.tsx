@@ -24,7 +24,7 @@ const control = 'min-h-8 min-w-0 max-w-full rounded-lg border border-transparent
 /** Tableau compact : les porteurs restent distincts et le document partagé reste inchangé. */
 export function DictionaryView({ mcd, dispatch, readOnly = false }: { mcd: Mcd; dispatch: Dispatch<McdAction>; readOnly?: boolean }) {
   const locale = useLanguage(), toast = useToast()
-  const { settings, physicalType } = useSqlTypes()
+  const { settings, physicalType, beginner } = useSqlTypes()
   const [tab, setTab] = useState<DictionaryTab>('tables')
   const [search, setSearch] = useState(''), [sort, setSort] = useState('placement')
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
@@ -106,7 +106,7 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: { mcd: Mcd; 
     <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-line bg-surface px-4 py-2">
       <label className="flex min-w-0 max-w-sm basis-48 flex-1 items-center gap-2 text-xs">{t('Rechercher')}<input type="search" value={search} onChange={e => setSearch(e.target.value)} className="min-h-8 min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-2 py-1" /></label>
       <label className="flex min-w-0 items-center gap-2 text-xs">{t('Trier')}<Select className={control + ' border-line-strong bg-surface'} value={sort} onValueChange={value => setSort(value)}><option value="placement">{t('Ordre du modèle')}</option><option value="name">{t('Nom')}</option><option value="type">{t('Type SQL')}</option></Select></label>
-      <label className="flex min-w-0 items-center gap-2 text-xs lg:ml-auto">{t('Moteur SQL')}<Select disabled={readOnly} value={settings.dialect} onValueChange={value => dispatch({ type: 'SET_DIALECT', dialect: value === 'postgresql' ? 'postgresql' : 'mysql' })} className={control + ' border-line-strong bg-surface'}><option value="mysql">MySQL</option><option value="postgresql">PostgreSQL</option></Select></label>
+      {!beginner && <label className="flex min-w-0 items-center gap-2 text-xs lg:ml-auto">{t('Moteur SQL')}<Select disabled={readOnly} value={settings.dialect} onValueChange={value => dispatch({ type: 'SET_DIALECT', dialect: value === 'postgresql' ? 'postgresql' : 'mysql' })} className={control + ' border-line-strong bg-surface'}><option value="mysql">MySQL</option><option value="postgresql">PostgreSQL</option></Select></label>}
     </div>
     <div className="min-h-0 min-w-0 flex-1 overflow-auto p-3 sm:p-4" data-dictionary-scroll>
       {tab === 'associations' && <p className="mb-3 text-xs leading-relaxed text-ink-soft">{t('Propriétés portées par les associations. Les associations sans propriété et leurs liaisons restent dans le MCD.')}</p>}
@@ -149,7 +149,7 @@ export function DictionaryView({ mcd, dispatch, readOnly = false }: { mcd: Mcd; 
                   <td className={cell + ' col-span-2'}><div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                     {placement?.kind === 'entity' ? <>
                       <label className="inline-flex min-h-8 items-center gap-1.5 text-xs" title={t('Identifiant')}><input type="checkbox" disabled={readOnly} checked={identifier} aria-label={t('Identifiant de {0}', [property.name])} onChange={e => dispatch({ type: 'SET_ATTRIBUTE_IDENTIFIER', entityId: placement.owner.id, propertyId: property.id, isIdentifier: e.target.checked })} /><span className="lg:sr-only">{t('Identifiant')}</span><span aria-hidden="true" className="hidden font-mono text-accent-ink lg:inline">{t('clé')}</span></label>
-                      {identifier && spec && isIntegerType(spec.name) && <label className="inline-flex min-h-8 items-center gap-1 text-xs" title={t('Auto-incrément')}><input type="checkbox" disabled={readOnly || placement.owner.attributes.filter(a => a.isIdentifier).length !== 1} checked={(placement.owner.attributes.filter(a => a.isIdentifier).length === 1) && (settings.identity?.[property.id] ?? settings.overrides[property.id] === undefined)} aria-label={t('Auto-incrément de {0}', [property.name])} onChange={e => dispatch({ type: 'SET_IDENTITY', propertyId: property.id, value: e.target.checked })} />{t('Auto')}</label>}
+                      {!beginner && identifier && spec && isIntegerType(spec.name) && <label className="inline-flex min-h-8 items-center gap-1 text-xs" title={t('Auto-incrément')}><input type="checkbox" disabled={readOnly || placement.owner.attributes.filter(a => a.isIdentifier).length !== 1} checked={(placement.owner.attributes.filter(a => a.isIdentifier).length === 1) && (settings.identity?.[property.id] ?? settings.overrides[property.id] === undefined)} aria-label={t('Auto-incrément de {0}', [property.name])} onChange={e => dispatch({ type: 'SET_IDENTITY', propertyId: property.id, value: e.target.checked })} />{t('Auto')}</label>}
                     </> : <span className="hidden text-xs text-ink-soft lg:inline">—</span>}
                   </div></td>
                   <td className={cell}><Select data-property-placement aria-label={t('Déplacer {0} vers', [property.name])} disabled={readOnly} className={control + ' w-full border-line-strong bg-surface'} value={group.id} onValueChange={value => requestMove(property.id, value || null)}>

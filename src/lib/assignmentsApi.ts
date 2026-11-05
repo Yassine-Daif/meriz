@@ -3,6 +3,8 @@ import { t } from "../i18n/runtime"
 import type { ApiClient, Outcome } from './apiClient'
 import { unexpectedResponse } from './apiClient'
 import { optionalText } from './authApi'
+import { parseAssignmentInterface } from './assignmentInterface'
+import type { AssignmentInterface } from './assignmentInterface'
 import { parseCloudDocument } from './documentsApi'
 import type { CloudDocument } from './documentsApi'
 
@@ -45,6 +47,7 @@ export interface AssignmentSummary {
 
 /** Devoir complet, tel que le serveur le renvoie au prof. */
 export interface Assignment extends AssignmentSummary {
+  interfaceSettings?: AssignmentInterface | null
   instructions: string
   baseContent: string | null
   /** Corrigé : absent tant que le lecteur n'y a pas droit. */
@@ -52,6 +55,7 @@ export interface Assignment extends AssignmentSummary {
 }
 
 export interface AssignmentDraft {
+  interfaceSettings?: AssignmentInterface | null
   title: string
   instructions: string
   type: AssignmentType
@@ -125,7 +129,9 @@ export function parseAssignment(raw: unknown): Assignment | null {
   if (baseContent === undefined || solutionContent === undefined) {
     return null
   }
-  return { ...summary, instructions: raw.instructions, baseContent, solutionContent }
+  const interfaceSettings = parseAssignmentInterface(raw.interface_settings)
+  if (interfaceSettings === undefined) return null
+  return { ...summary, instructions: raw.instructions, baseContent, solutionContent, ...(raw.interface_settings !== undefined ? { interfaceSettings } : {}) }
 }
 
 function assignmentPath(id: string, suffix = ''): string {
@@ -183,6 +189,7 @@ export function createAssignment(
     instructions: draft.instructions,
     type: draft.type,
     due_at: draft.dueAt ?? null,
+    ...(draft.interfaceSettings !== undefined ? { interface_settings: draft.interfaceSettings } : {}),
   })
 }
 
@@ -193,6 +200,7 @@ export function updateAssignment(
   patch: Partial<AssignmentDraft> & { baseContent?: string | null; solutionContent?: string | null },
 ): Promise<Outcome<Assignment>> {
   const body: Record<string, unknown> = {}
+  if (patch.interfaceSettings !== undefined) body.interface_settings = patch.interfaceSettings
   if (patch.title !== undefined) body.title = patch.title
   if (patch.instructions !== undefined) body.instructions = patch.instructions
   if (patch.type !== undefined) body.type = patch.type
