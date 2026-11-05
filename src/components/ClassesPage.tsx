@@ -1,6 +1,6 @@
-import { t } from "../i18n/runtime"
-import { useLanguage } from "../lib/useLanguage"
-import { useCallback, useState } from 'react'
+import { t } from '../i18n/runtime'
+import { useLanguage } from '../lib/useLanguage'
+import { useCallback, useId, useState } from 'react'
 import type { ApiClient } from '../lib/apiClient'
 import type { ApiUser } from '../lib/authApi'
 import type { ClassroomDetail } from '../lib/classroomsApi'
@@ -19,6 +19,9 @@ import type {
 import { CreateClassForm } from './CreateClassForm'
 import { JoinClassForm } from './JoinClassForm'
 import { TeachingLibraryPanel } from './TeachingLibraryPanel'
+import { Tabs, TabPanel } from './ui/Tabs'
+import { CollectionFilters } from './CollectionFilters'
+import { periodKey } from '../lib/collectionPeriod'
 import { CollectionOrganizer } from './CollectionOrganizer'
 import { useCollections } from './useCollections'
 import { PageShell } from './PageShell'
@@ -82,9 +85,18 @@ export function ClassesPage({
   const [status, setStatus] = useState<string | null>(null)
   const [query, setQuery] = useState('')
 
+  const [pageTab, setPageTab] = useState<
+    'list' | 'organize' | 'create' | 'join' | 'library'
+  >('list')
+  const tabsId = useId()
   const canCreate = user.role === 'teacher'
 
   const open = (next: ClassroomOpening) => {
+    setPageTab('list')
+    organizer.setSelection('all')
+    organizer.setYear('all')
+    organizer.setArchive('active')
+    setQuery('')
     setSelected(next)
     void reload()
   }
@@ -108,12 +120,22 @@ export function ClassesPage({
   const total = all?.length ?? 0
   const searchable = total > SEARCH_FROM
   const searching = searchable && query.trim() !== ''
-  const shown = canCreate ? organizer.filter(all ?? [], query) : (all === null ? [] : filterByName(all, searching ? query : ''))
-  const filtered = all === null ? classrooms : { ...classrooms, classrooms: shown }
+  const shown = canCreate
+    ? organizer.filter(all ?? [], query)
+    : all === null
+      ? []
+      : filterByName(all, searching ? query : '')
+  const filtered =
+    all === null ? classrooms : { ...classrooms, classrooms: shown }
 
   if (selected) {
     return (
-      <PageShell title={t("Classe")} focusKey={selected.id} onBack={() => backToList(null)} backLabel={t("Retour à mes classes")}>
+      <PageShell
+        title={t('Classe')}
+        focusKey={selected.id}
+        onBack={() => backToList(null)}
+        backLabel={t('Retour à mes classes')}
+      >
         <ClassroomView
           key={selected.id}
           client={client}
@@ -136,94 +158,154 @@ export function ClassesPage({
 
   return (
     <PageShell
-      title={t("Mes classes")}
+      title={t('Mes classes')}
       description={
         canCreate
-          ? t("Créez une classe et partagez son code, ou rejoignez celle d’un collègue.")
-          : t("Rejoignez une classe avec le code donné par votre prof.")
+          ? t('Retrouvez vos classes et organisez-les par regroupement.')
+          : t('Rejoignez une classe avec le code donné par votre prof.')
       }
     >
-      <p role="status" aria-live="polite" className="min-h-5 text-sm">
-        {status && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-sage-soft px-3 py-1 text-ink">
-            <span aria-hidden="true" className="text-sage">
-              ✓
-            </span>
-            {status}
-          </span>
-        )}
-      </p>
-
-      <div className={`mt-3 grid gap-4 ${canCreate ? 'md:grid-cols-2' : 'md:max-w-md'}`}>
-        <Card as="section" aria-labelledby="rejoindre-titre">
-          <h2 id="rejoindre-titre" className="text-base font-semibold text-ink">
-            {t("Rejoindre une classe")}</h2>
-          <div className="mt-3">
+      <Tabs
+        idBase={tabsId}
+        label={t('Navigation des classes')}
+        value={pageTab}
+        onChange={setPageTab}
+        items={[
+          { value: 'list', label: t('Mes classes'), count: total },
+          ...(canCreate
+            ? [
+                { value: 'organize' as const, label: t('Regroupements') },
+                { value: 'create' as const, label: t('Créer une classe') },
+              ]
+            : []),
+          { value: 'join', label: t('Rejoindre une classe') },
+          ...(canCreate
+            ? [
+                {
+                  value: 'library' as const,
+                  label: t('Bibliothèque pédagogique'),
+                },
+              ]
+            : []),
+        ]}
+      />
+      {status && (
+        <p role="status" className="mt-3 text-sm text-ink-soft">
+          {status}
+        </p>
+      )}
+      <TabPanel idBase={tabsId} value={pageTab}>
+        {pageTab === 'join' && (
+          <Card as="section" className="max-w-xl">
+            <h2 className="mb-3 text-base font-semibold">
+              {t('Rejoindre une classe')}
+            </h2>
             <JoinClassForm
               client={client}
               onJoined={(classroom) =>
-                open({ id: classroom.id, initial: classroom, message: t("Vous avez rejoint la classe « {0} ».", [classroom.name]) })
+                open({
+                  id: classroom.id,
+                  initial: classroom,
+                  message: t('Vous avez rejoint la classe « {0} ».', [
+                    classroom.name,
+                  ]),
+                })
               }
             />
-          </div>
-        </Card>
-
-        {canCreate && (
-          <Card as="section" aria-labelledby="creer-titre">
-            <h2 id="creer-titre" className="text-base font-semibold text-ink">
-              {t("Créer une classe")}</h2>
-            <div className="mt-3">
-              <CreateClassForm
-                client={client}
-                onCreated={(classroom) =>
-                  open({
-                    id: classroom.id,
-                    initial: classroom,
-                    message: t("Classe « {0} » créée. Partagez son code à vos élèves.", [classroom.name]),
-                    // À la création seulement : le prof voit son code tout
-                    // de suite. Les visites suivantes ouvrent les membres.
-                    tab: 'reglages',
-                  })
-                }
-              />
-            </div>
           </Card>
         )}
-      </div>
-
-      {canCreate && <TeachingLibraryPanel client={client} classrooms={all ?? []} />}
-
-      <section aria-labelledby="liste-titre" className="mt-8">
-        <h2 id="liste-titre" className="text-lg font-semibold tracking-tight text-ink">
-          {t("Vos classes")}{total > 0 && <span className="font-normal text-ink-soft"> ({total})</span>}
-        </h2>
-        {searchable && (
-          <div className="mt-3 max-w-md">
-            <SearchField
-              label={t("Rechercher une classe")}
-              value={query}
-              onChange={setQuery}
-              placeholder={t("Nom de la classe")}
-              count={searchCountLabel(shown.length, total, 'classe', 'classes')}
+        {pageTab === 'create' && canCreate && (
+          <Card as="section" className="max-w-xl">
+            <h2 className="mb-3 text-base font-semibold">
+              {t('Créer une classe')}
+            </h2>
+            <CreateClassForm
+              client={client}
+              onCreated={(classroom) =>
+                open({
+                  id: classroom.id,
+                  initial: classroom,
+                  message: t(
+                    'Classe « {0} » créée. Partagez son code à vos élèves.',
+                    [classroom.name],
+                  ),
+                  tab: 'reglages',
+                })
+              }
             />
-          </div>
+          </Card>
         )}
-        <div className="mt-3">
-        {canCreate && <CollectionOrganizer onSpacesChanged={() => void reload()} client={client} kind="classrooms" organizer={organizer} items={(all ?? []).filter(c => c.myRole === 'teacher')} />}
-          <ClassroomGrid
-            collections={canCreate ? organizer.collections.filter(c => (organizer.year === 'all' || String(c.yearStart) === organizer.year) && (organizer.archive === 'all' || c.archived === (organizer.archive === 'archived'))) : []}
-            state={filtered}
-            onOpen={(classroom) => setSelected({ id: classroom.id, initial: null, message: null })}
-            emptyText={
-              searching
-                ? t("Aucune classe ne porte ce nom. Essayez un autre mot, ou effacez la recherche.")
-                : canCreate
-                  ? t("Aucune classe pour l’instant : créez-en une, ou rejoignez celle d’un collègue.")
-                  : t("Aucune classe pour l’instant : saisissez le code donné par votre prof.")
-            }
-          />
-        </div>
-      </section>
+        {pageTab === 'library' && canCreate && (
+          <TeachingLibraryPanel client={client} classrooms={all ?? []} />
+        )}
+        {pageTab === 'organize' &&
+          canCreate &&
+          (all === null ? (
+            <ClassroomGrid state={classrooms} onOpen={() => {}} emptyText="" />
+          ) : (
+            <CollectionOrganizer
+              onSpacesChanged={() => void reload()}
+              client={client}
+              kind="classrooms"
+              organizer={organizer}
+              items={all.filter((c) => c.myRole === 'teacher')}
+              onOpen={(id) => setSelected({ id, initial: null, message: null })}
+            />
+          ))}
+        {pageTab === 'list' && (
+          <section aria-label={t('Vos classes')} className="space-y-4">
+            {searchable && (
+              <div className="max-w-xl">
+                <SearchField
+                  label={t('Rechercher une classe')}
+                  value={query}
+                  onChange={setQuery}
+                  placeholder={t('Nom de la classe')}
+                  count={searchCountLabel(
+                    shown.length,
+                    total,
+                    'classe',
+                    'classes',
+                  )}
+                />
+              </div>
+            )}
+            {canCreate && (
+              <CollectionFilters organizer={organizer} items={all ?? []} />
+            )}
+            <ClassroomGrid
+              state={filtered}
+              collections={
+                canCreate
+                  ? organizer.collections.filter(
+                      (c) =>
+                        (organizer.year === 'all' ||
+                          periodKey(c) === organizer.year) &&
+                        (organizer.archive === 'all' ||
+                          c.archived === (organizer.archive === 'archived')),
+                    )
+                  : []
+              }
+              onOpen={(classroom) =>
+                setSelected({ id: classroom.id, initial: null, message: null })
+              }
+              emptyText={
+                total > 0
+                  ? t(
+                      'Aucun résultat avec ces filtres. Réinitialisez-les ou consultez les archives.',
+                    )
+                  : canCreate
+                    ? t(
+                        'Aucune classe pour l’instant. Utilisez les onglets Créer ou Rejoindre pour commencer.',
+                      )
+                    : t(
+                        'Aucune classe pour l’instant : saisissez le code donné par votre prof.',
+                      )
+              }
+            />
+          </section>
+        )}
+      </TabPanel>
     </PageShell>
   )
 }
