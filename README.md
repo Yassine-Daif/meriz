@@ -147,6 +147,8 @@ Les versions récentes du logiciel vérifient les mises à jour au démarrage et
 
 Voir [deploy/MISES-A-JOUR.md](deploy/MISES-A-JOUR.md) pour la publication et les clés de signature, et [deploy/DEPLOIEMENT.md](deploy/DEPLOIEMENT.md) pour l'hébergement.
 
+Pour héberger la version web dans un conteneur, voir [deploy/DOCKER.md](deploy/DOCKER.md). Une commande suffit : `docker compose up -d --build`.
+
 ## Structure
 
 ```text
@@ -161,6 +163,7 @@ site/            site vitrine en HTML, CSS et JavaScript, sans framework
 src-tauri/       application de bureau, configuration et icônes
 examples/        modèles d'exemple
 deploy/          configurations serveur et réceptionnaire de déploiement
+docker/          configuration nginx et démarrage de l'image Docker
 scripts/         gestion et vérification des numéros de version
 .github/workflows/ compilation, publication et déploiement automatisés
 ```
