@@ -1,0 +1,31 @@
+# Meriz en conteneur. Lancement : docker compose up -d --build
+# Puis ouvrez http://localhost:8080 (port réglable par MERIZ_PORT).
+# Les réglages se mettent dans un fichier .env à côté de ce fichier,
+# sur le modèle de .env.docker.example. Voir deploy/DOCKER.md.
+
+services:
+  meriz:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${MERIZ_IMAGE:-meriz:latest}
+    container_name: meriz
+    restart: unless-stopped
+    ports:
+      - "${MERIZ_BIND:-0.0.0.0}:${MERIZ_PORT:-8080}:8080"
+    environment:
+      MERIZ_API_URL: ${MERIZ_API_URL:-}
+      MERIZ_REVERB_APP_KEY: ${MERIZ_REVERB_APP_KEY:-}
+      MERIZ_REVERB_HOST: ${MERIZ_REVERB_HOST:-}
+      MERIZ_REVERB_PORT: ${MERIZ_REVERB_PORT:-}
+      MERIZ_REVERB_SCHEME: ${MERIZ_REVERB_SCHEME:-}
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3

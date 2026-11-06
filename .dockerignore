@@ -1,0 +1,25 @@
+# Rien de ceci ne sert au build web.
+.git
+.github
+node_modules
+dist
+dist-ssr
+src-tauri
+site
+deploy
+design
+docs
+examples
+*.md
+.env
+.env.*
+!.env.example
+*.local
+*.key
+*.password
+.claude
+.vscode
+.idea
+.DS_Store
+Dockerfile
+compose.yaml
